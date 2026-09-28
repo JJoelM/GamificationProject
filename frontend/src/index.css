@@ -1,0 +1,4 @@
+/* Importa el design system completo (Tailwind @theme + variables + base) */
+@import './styles/theme.css';
+/* Importa los keyframes globales */
+@import './styles/animations.css';

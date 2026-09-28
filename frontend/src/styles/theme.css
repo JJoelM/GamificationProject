@@ -1,0 +1,257 @@
+/* ============================================================
+   DESIGN SYSTEM — Painterly RPG & Educational Gamification
+   Tailwind v4 @theme block
+   ============================================================
+   Paleta de colores:
+   · Light Mode:
+     - Fondos: crema cálido (#F5F0E8 / #FAF7F1), nunca blanco puro
+     - Adornos y bordes: celeste / azul (#2563EB / #3B82F6)
+     - Detalles y acentos: morado (#7C3AED / #6D28D9)
+     - Textos principales: pizarra oscuro (#1E293B)
+   · Dark Mode:
+     - Base obsidiana marina (#0B131C) con paneles pizarra (#132232)
+     - Acentos celeste (#38BDF8) y ámbar (#FCD34D)
+     - Sin luxury-night, sin violeta saturado
+   ============================================================ */
+
+/* 1. Tailwind — directiva obligatoria en v4 */
+@import "tailwindcss";
+
+/* ============================================================
+   TAILWIND v4 — @theme block (genera clases automáticamente)
+   ============================================================ */
+@theme {
+  /* --- Tipografía: Outfit (display) + Inter (body) --- */
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  /* ─── PALETA BASE (Light Mode — Crema cálido) ─── */
+  --color-bg-base:        #F2EDE4;   /* Crema cálido — fondo general */
+  --color-bg-panel:       #FAF7F1;   /* Crema claro pergamino para tarjetas */
+  --color-bg-muted:       #F5F0E8;   /* Crema alternativo */
+  --color-bg-accent:      #E8EDF6;   /* Highlight celeste-crema suave */
+
+  --color-text-primary:   #1E293B;   /* Pizarra oscuro — máximo contraste */
+  --color-text-secondary: #475569;   /* Pizarra medio */
+  --color-text-muted:     #94A3B8;   /* Pizarra claro */
+  --color-text-inverse:   #FFFFFF;   /* Texto sobre botones oscuros */
+
+  /* Marca — Azul como adorno principal, morado como detalle */
+  --color-brand-primary:     #2563EB; /* Azul vibrante — bordes, botones, nav activa */
+  --color-brand-primary-hov: #1D4ED8; /* Azul hover */
+  --color-brand-secondary:   #D97706; /* Ámbar cálido — racha, XP */
+  --color-brand-gold:        #D97706; /* Dorado XP */
+  --color-brand-emerald:     #059669; /* Esmeralda acierto */
+  --color-brand-crimson:     #DC2626; /* Rojo error */
+  --color-brand-sky:         #0EA5E9; /* Celeste info / adorno */
+  --color-brand-violet:      #7C3AED; /* Morado — detalles, badges, acentos */
+
+  /* Bordes y sombras sólidas — azul como borde principal */
+  --color-border:        #2563EB; /* Borde azul principal */
+  --color-border-muted:  #CBD5E1; /* Borde suave gris-azulado */
+  --color-border-accent: #7C3AED; /* Borde morado para énfasis */
+
+  /* ─── PALETA DARK (Obsidiana Marina) ─── */
+  --color-dark-bg-base:   #0B131C; /* Obsidiana profunda con tinte marino */
+  --color-dark-bg-panel:  #132232; /* Pizarra marino profundo */
+  --color-dark-bg-muted:  #0E1A26; /* Pizarra oscura */
+  --color-dark-bg-accent: #1C334A; /* Highlight celeste-pizarra */
+
+  --color-dark-text-primary:   #F8FAFC; /* Marfil luminoso */
+  --color-dark-text-secondary: #94A3B8; /* Plata pizarra */
+  --color-dark-text-muted:     #64748B; /* Pizarra medio */
+
+  --color-dark-brand-primary:   #38BDF8; /* Celeste de alto contraste */
+  --color-dark-brand-secondary: #F59E0B; /* Ámbar brillante */
+  --color-dark-brand-gold:      #FCD34D; /* Dorado luminoso */
+  --color-dark-brand-emerald:   #34D399; /* Verde esmeralda vivo */
+  --color-dark-brand-crimson:   #FB7185; /* Rosa coral */
+  --color-dark-brand-sky:       #7DD3FC; /* Celeste claro */
+  --color-dark-brand-violet:    #A78BFA; /* Lavanda suave */
+
+  --color-dark-border:       #334E68; /* Borde pizarra definido */
+  --color-dark-border-muted: #1E2E3E; /* Borde oscuro */
+
+  /* ─── SOMBRAS OFFSET SÓLIDAS ─── */
+  --shadow-card:       3px 3px 0px #2563EB;
+  --shadow-card-hover: 6px 6px 0px #2563EB;
+  --shadow-dark-card:  3px 3px 0px #060B10;
+  --shadow-dark-hover: 6px 6px 0px #38BDF8;
+  --shadow-modal:      0 20px 60px rgba(0,0,0,0.3), 0 8px 24px rgba(37,99,235,0.1);
+
+  /* ─── RADII ─── */
+  --radius-card:   14px;
+  --radius-badge:  9999px;
+  --radius-button: 8px;
+  --radius-input:  6px;
+}
+
+/* ============================================================
+   VARIABLES CSS SEMÁNTICAS (Adaptables Claro / Oscuro)
+   ============================================================ */
+:root {
+  color-scheme: light dark;
+
+  --bg-base:           var(--color-bg-base);
+  --bg-panel:          var(--color-bg-panel);
+  --bg-accent:         var(--color-bg-accent);
+  --bg-muted:          var(--color-bg-muted);
+
+  --text-primary:      var(--color-text-primary);
+  --text-secondary:    var(--color-text-secondary);
+  --text-muted:        var(--color-text-muted);
+  --text-inverse:      var(--color-text-inverse);
+
+  --brand-primary:     var(--color-brand-primary);
+  --brand-primary-hov: var(--color-brand-primary-hov);
+  --brand-secondary:   var(--color-brand-secondary);
+  --brand-gold:        var(--color-brand-gold);
+  --brand-emerald:     var(--color-brand-emerald);
+  --brand-crimson:     var(--color-brand-crimson);
+  --brand-sky:         var(--color-brand-sky);
+  --brand-violet:      var(--color-brand-violet);
+
+  --border:            var(--color-border);
+  --border-muted:      var(--color-border-muted);
+  --border-accent:     var(--color-border-accent);
+
+  --shadow-c:          var(--shadow-card);
+  --shadow-c-hov:      var(--shadow-card-hover);
+
+  --font-heading:      var(--font-display);
+  --font-sans:         var(--font-body);
+}
+
+/* Modo oscuro — clase .dark en <html> */
+html.dark {
+  color-scheme: dark;
+
+  --bg-base:           var(--color-dark-bg-base);
+  --bg-panel:          var(--color-dark-bg-panel);
+  --bg-accent:         var(--color-dark-bg-accent);
+  --bg-muted:          var(--color-dark-bg-muted);
+
+  --text-primary:      var(--color-dark-text-primary);
+  --text-secondary:    var(--color-dark-text-secondary);
+  --text-muted:        var(--color-dark-text-muted);
+  --text-inverse:      var(--color-dark-bg-base);
+
+  --brand-primary:     var(--color-dark-brand-primary);
+  --brand-primary-hov: #0284C7;
+  --brand-secondary:   var(--color-dark-brand-secondary);
+  --brand-gold:        var(--color-dark-brand-gold);
+  --brand-emerald:     var(--color-dark-brand-emerald);
+  --brand-crimson:     var(--color-dark-brand-crimson);
+  --brand-sky:         var(--color-dark-brand-sky);
+  --brand-violet:      var(--color-dark-brand-violet);
+
+  --border:            var(--color-dark-border);
+  --border-muted:      var(--color-dark-border-muted);
+  --border-accent:     var(--color-dark-brand-primary);
+
+  --shadow-c:          var(--shadow-dark-card);
+  --shadow-c-hov:      var(--shadow-dark-hover);
+}
+
+/* ============================================================
+   BASE STYLES & BACKGROUND ILUSTRATIVO
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  scrollbar-color: var(--border-muted) var(--bg-muted);
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  /* Patrón cartográfico sutil — azul y morado */
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.04) 0%, transparent 45%),
+    repeating-linear-gradient(45deg, rgba(37, 99, 235, 0.012) 0px, rgba(37, 99, 235, 0.012) 2px, transparent 2px, transparent 24px);
+  background-attachment: fixed;
+}
+
+html.dark body {
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 85% 85%, rgba(245, 158, 11, 0.04) 0%, transparent 45%),
+    repeating-linear-gradient(-45deg, rgba(51, 78, 104, 0.03) 0px, rgba(51, 78, 104, 0.03) 1px, transparent 1px, transparent 32px);
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   UTILITARIOS PAINTERLY
+   ============================================================ */
+
+/* Tarjetas */
+.card-painterly {
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  border-radius: 14px 20px 16px 18px;
+  box-shadow: var(--shadow-c);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-painterly:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-c-hov);
+}
+
+.font-display {
+  font-family: var(--font-heading);
+}
+
+/* Selección de texto — sigue la marca */
+::selection {
+  background: rgba(37, 99, 235, 0.2);
+  color: var(--text-primary);
+}
+
+html.dark ::selection {
+  background: rgba(56, 189, 248, 0.3);
+}
+
+/* Focus ring global */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-muted);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-muted);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary);
+}

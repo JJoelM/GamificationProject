@@ -1,0 +1,18 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=gamificacion_dev_db;Username=gamificacion_dev;Password=REEMPLAZAR_CON_TU_CONTRASENA_LOCAL"  },
+  "AiService": {
+    "BaseUrl": "http://localhost:8001/",
+    "TokenInterno": "REEMPLAZAR_CON_UN_TOKEN_SEGURO_GENERADO_LOCALMENTE"
+  },
+  "JwtSettings": {
+    "Issuer": "GamificacionPFC",
+    "Audience": "GamificacionPFC"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}

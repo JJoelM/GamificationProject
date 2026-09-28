@@ -1,0 +1,52 @@
+# ──────────────────────────────────────────────
+# .gitignore — Plataforma de Gamificación Educativa (PFC)
+# ──────────────────────────────────────────────
+
+# ── Secretos y configuración local (NUNCA commitear) ──
+**/.env
+**/appsettings.Development.json
+
+# ── Documentación interna del agente (solo para desarrollo local) ──
+agents.md
+memory.md
+frontend/AGENTS_bugs.md
+frontend/spec.md
+**/AGENTS_*.md
+
+# ── .NET ──
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+*.suo
+.vs/
+
+# ── Python ──
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/**/*.pyc
+ai-service/**/*.pyo
+
+# ── Node / React ──
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── Carpetas archivadas / spike ──
+archive/
+spike/
+
+# ── Sistema operativo ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editores e IDEs ──
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ── Logs ──
+*.log
+logs/
