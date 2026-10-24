@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class EsquemaCompleto : Migration
+    public partial class AgregarConsentimientoInvestigacion : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -91,7 +91,9 @@ namespace Infrastructure.Migrations
                     password_hash = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     fecha_nacimiento = table.Column<DateOnly>(type: "date", nullable: true),
                     email_tutor = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    estado_cuenta = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false)
+                    estado_cuenta = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    acepta_uso_investigacion = table.Column<bool>(type: "boolean", nullable: false),
+                    fecha_consentimiento_investigacion = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {

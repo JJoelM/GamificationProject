@@ -12,7 +12,8 @@ public sealed record RegistrarAlumnoConInvitacionCommand(
     string NombreCompleto,
     string Password,
     DateOnly FechaNacimiento,
-    string? EmailTutor) : IRequest<ResultadoRegistroAlumno>;
+    string? EmailTutor,
+    bool AceptaUsoInvestigacion) : IRequest<ResultadoRegistroAlumno>;
 
 public sealed record ResultadoRegistroAlumno(Guid AlumnoId, Guid AulaId, bool RequiereAprobacionParental);
 
@@ -52,6 +53,7 @@ public sealed class RegistrarAlumnoConInvitacionCommandHandler
 
         var usuario = new Usuario(request.Email, request.NombreCompleto, rolAlumno.Id);
         usuario.EstablecerContrasena(_hasher.HashPassword(usuario, request.Password));
+        usuario.ActualizarConsentimientoInvestigacion(request.AceptaUsoInvestigacion);
 
         if (esMenor)
             usuario.RegistrarDatosDeMenor(request.FechaNacimiento, request.EmailTutor!);

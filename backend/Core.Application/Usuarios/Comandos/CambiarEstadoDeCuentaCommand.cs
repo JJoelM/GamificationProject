@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Core.Application.Usuarios.Comandos;
 
-public sealed record CambiarEstadoDeCuentaCommand(Guid UsuarioId, EstadoCuenta NuevoEstado) : IRequest;
+public sealed record CambiarEstadoDeCuentaCommand(Guid UsuarioId, EstadoCuenta NuevoEstado, string RolDelSolicitante) : IRequest;
 
 public sealed class CambiarEstadoDeCuentaCommandHandler : IRequestHandler<CambiarEstadoDeCuentaCommand>
 {
@@ -16,8 +16,12 @@ public sealed class CambiarEstadoDeCuentaCommandHandler : IRequestHandler<Cambia
 
     public async Task Handle(CambiarEstadoDeCuentaCommand request, CancellationToken cancellationToken)
     {
-        var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == request.UsuarioId, cancellationToken)
+        var usuario = await _db.Usuarios.Include(u => u.Rol)
+            .FirstOrDefaultAsync(u => u.Id == request.UsuarioId, cancellationToken)
             ?? throw new AgregadoNoEncontradoException(nameof(Usuario), request.UsuarioId);
+
+        if (usuario.Rol.Nombre == "Administrador" && request.RolDelSolicitante != "Administrador")
+            throw new UnauthorizedAccessException("Un Directivo no puede modificar una cuenta de Administrador.");
 
         switch (request.NuevoEstado)
         {
@@ -28,7 +32,7 @@ public sealed class CambiarEstadoDeCuentaCommandHandler : IRequestHandler<Cambia
                 usuario.Suspender();
                 break;
             default:
-                throw new ArgumentException($"No se puede establecer el estado {request.NuevoEstado} directamente.");
+                throw new ArgumentException($"No se puede establecer el estado {request.NuevoEstado} a través de este comando.");
         }
 
         await _db.SaveChangesAsync(cancellationToken);

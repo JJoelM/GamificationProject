@@ -18,6 +18,8 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.PasswordHash).HasMaxLength(500);
         builder.Property(u => u.EmailTutor).HasMaxLength(256);
         builder.Property(u => u.EstadoCuenta).HasConversion<string>().HasMaxLength(40);
+        builder.Property(u => u.AceptaUsoInvestigacion).IsRequired();
+        builder.Property(u => u.FechaConsentimientoInvestigacion);
 
         builder.HasOne(u => u.Rol)
                .WithMany()
