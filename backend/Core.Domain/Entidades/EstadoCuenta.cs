@@ -4,5 +4,6 @@ public enum EstadoCuenta
 {
     Activa,
     PendienteDeAprobacion,
-    Suspendida
+    Suspendida,
+    Eliminada
 }
