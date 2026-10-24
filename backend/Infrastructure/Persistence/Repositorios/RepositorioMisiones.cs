@@ -81,10 +81,12 @@ public class RepositorioMisiones : IRepositorioMisiones
             case MisionValidada e:
                 var borradorValidado = await ObtenerBorradorOLanzar(e.MisionId, ct);
                 borradorValidado.MarcarComoValidado();
+                var payloadSeguro = SanitizadorPayloadMision.SanitizarParaAlumno(
+                    borradorValidado.TipoPlantilla, borradorValidado.PayloadJson);
                 _db.MisionesActivas.Add(new MisionActiva(
                     e.MisionId, borradorValidado.DocenteId, borradorValidado.AulaId,
                     borradorValidado.Narrativa, borradorValidado.TipoPlantilla,
-                    borradorValidado.PayloadJson, borradorValidado.RecompensaXpSugerida));
+                    payloadSeguro, borradorValidado.RecompensaXpSugerida));
                 break;
 
             case MisionRechazada e:

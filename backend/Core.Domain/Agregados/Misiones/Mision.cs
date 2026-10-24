@@ -16,13 +16,8 @@ public sealed class Mision : AgregadoRaiz
     public int NivelConfianzaIA { get; private set; }
     public int RecompensaXp { get; private set; }
 
-    // Case-insensitive a proposito: PayloadJson puede haber sido escrito por
-    // distintos caminos con el tiempo (serializacion C#, un fixture de test,
-    // eventualmente una edicion manual) -- no vale la pena que Calificar
-    // dependa silenciosamente de que todos usen exactamente la misma
-    // convencion de mayusculas/minusculas. Default de System.Text.Json es
-    // case-sensitive, a diferencia de Newtonsoft; hay que pedirlo explicito.
-    private static readonly JsonSerializerOptions OpcionesJson = new() { PropertyNameCaseInsensitive = true };
+    // Las opciones de deserializacion del payload viven en OpcionesJsonMision
+    // (fuente unica compartida, case-insensitive -- ver ahi el porque).
 
     // Mismos criterios que los límites del microservicio de IA (ai-service),
     // aplicados acá también porque POST /api/misiones (el endpoint de
@@ -126,16 +121,32 @@ public sealed class Mision : AgregadoRaiz
     }
 
     // Consulta de solo lectura -- no genera evento ni cambia Version.
+    // OpcionMultiple y BatallaDeJefe comparten esta rama -- misma forma de
+    // respuesta, solo cambia el nombre del campo contenedor en el payload.
     public ResultadoCalificacion Calificar(IReadOnlyList<RespuestaAlumno> respuestas)
     {
-        if (TipoPlantilla != "OpcionMultiple")
-            throw new NotSupportedException(
-                $"Calificacion automatica no implementada todavia para el tipo '{TipoPlantilla}'.");
+        return TipoPlantilla switch
+        {
+            "OpcionMultiple" => CalificarPreguntas(
+                JsonSerializer.Deserialize<ContenidoOpcionMultiple>(PayloadJson, OpcionesJsonMision.Instancia)?.Preguntas?
+                    .Select(p => (p.Enunciado, p.Opciones, p.RespuestaCorrecta, p.Explicacion)).ToList()
+                    ?? throw new InvalidOperationException("El payload de la mision no tiene el formato esperado."),
+                respuestas),
+            "BatallaDeJefe" => CalificarPreguntas(
+                JsonSerializer.Deserialize<ContenidoBatallaDeJefe>(PayloadJson, OpcionesJsonMision.Instancia)?.Fases?
+                    .Select(f => (f.Enunciado, f.Opciones, f.RespuestaCorrecta, f.Explicacion)).ToList()
+                    ?? throw new InvalidOperationException("El payload de la mision no tiene el formato esperado."),
+                respuestas),
+            _ => throw new NotSupportedException(
+                $"Calificacion automatica no implementada todavia para el tipo '{TipoPlantilla}'."),
+        };
+    }
 
-        var contenido = JsonSerializer.Deserialize<ContenidoOpcionMultiple>(PayloadJson, OpcionesJson)
-            ?? throw new InvalidOperationException("El payload de la mision no tiene el formato esperado.");
-
-        if (contenido.Preguntas.Count == 0)
+    private static ResultadoCalificacion CalificarPreguntas(
+        List<(string Enunciado, List<string> Opciones, string RespuestaCorrecta, string Explicacion)> preguntas,
+        IReadOnlyList<RespuestaAlumno> respuestas)
+    {
+        if (preguntas.Count == 0)
             return new ResultadoCalificacion(0, 0, 0, new List<FeedbackPregunta>());
 
         // Se itera sobre las preguntas del payload (la fuente canónica), no
@@ -143,11 +154,11 @@ public sealed class Mision : AgregadoRaiz
         // el mismo índice no puede contar dos veces, y una pregunta sin
         // responder simplemente queda marcada como incorrecta, sin romper el cálculo.
         var correctas = 0;
-        var feedback = new List<FeedbackPregunta>(contenido.Preguntas.Count);
+        var feedback = new List<FeedbackPregunta>(preguntas.Count);
 
-        for (var i = 0; i < contenido.Preguntas.Count; i++)
+        for (var i = 0; i < preguntas.Count; i++)
         {
-            var pregunta = contenido.Preguntas[i];
+            var pregunta = preguntas[i];
             var respuesta = respuestas.FirstOrDefault(r => r.IndicePregunta == i);
             var esCorrecta = respuesta is not null
                 && string.Equals(pregunta.RespuestaCorrecta, respuesta.OpcionElegida, StringComparison.Ordinal);
@@ -157,8 +168,48 @@ public sealed class Mision : AgregadoRaiz
             feedback.Add(new FeedbackPregunta(i, esCorrecta, pregunta.RespuestaCorrecta, pregunta.Explicacion));
         }
 
-        var porcentaje = (int)Math.Round(100.0 * correctas / contenido.Preguntas.Count);
-        return new ResultadoCalificacion(porcentaje, correctas, contenido.Preguntas.Count, feedback);
+        var porcentaje = (int)Math.Round(100.0 * correctas / preguntas.Count);
+        return new ResultadoCalificacion(porcentaje, correctas, preguntas.Count, feedback);
+    }
+
+    // Metodo propio, no una rama de Calificar: la forma de la respuesta
+    // (un orden + un culpable) es genuinamente distinta, no una variante de
+    // "lista de respuestas por indice". Tambien de solo lectura.
+    public ResultadoOrdenTemporal CalificarOrdenTemporal(RespuestaOrdenTemporal respuesta)
+    {
+        if (TipoPlantilla != "LineaTemporal")
+            throw new NotSupportedException(
+                $"Este metodo es exclusivo del tipo 'LineaTemporal'. La mision es '{TipoPlantilla}'.");
+
+        var contenido = JsonSerializer.Deserialize<ContenidoLineaTemporal>(PayloadJson, OpcionesJsonMision.Instancia)
+            ?? throw new InvalidOperationException("El payload de la mision no tiene el formato esperado.");
+
+        if (contenido.EventosDesordenados is null or { Count: 0 }) {
+            var ordenVacio = contenido.EventosDesordenados?.OrderBy(e => e.OrdenCorrecto).Select(e => e.Id).ToList() ?? new List<string>();
+            return new ResultadoOrdenTemporal(0, false, contenido.Explicacion, ordenVacio, contenido.EventoCulpableId);
+        }
+
+        // Se compara por posicion: un Id repetido en el orden propuesto no
+        // puede sumar dos veces, porque cada posicion tiene un unico
+        // OrdenCorrecto posible.
+        var posicionesCorrectas = 0;
+        for (var i = 0; i < respuesta.OrdenPropuesto.Count && i < contenido.EventosDesordenados.Count; i++)
+        {
+            var evento = contenido.EventosDesordenados.FirstOrDefault(e => e.Id == respuesta.OrdenPropuesto[i]);
+            if (evento is not null && evento.OrdenCorrecto == i + 1)
+                posicionesCorrectas++;
+        }
+
+        var culpableCorrecto = string.Equals(
+            respuesta.EventoCulpableElegido, contenido.EventoCulpableId, StringComparison.Ordinal);
+
+        // 70% por el orden, 30% por identificar al culpable: construir el
+        // razonamiento completo pesa mas que la conclusion final.
+        var porcentajeOrden = 100.0 * posicionesCorrectas / contenido.EventosDesordenados.Count;
+        var porcentaje = Math.Min((int)Math.Round(porcentajeOrden * 0.7 + (culpableCorrecto ? 30 : 0)), 100);
+
+        var ordenCorrecto = contenido.EventosDesordenados.OrderBy(e => e.OrdenCorrecto).Select(e => e.Id).ToList();
+        return new ResultadoOrdenTemporal(porcentaje, culpableCorrecto, contenido.Explicacion, ordenCorrecto, contenido.EventoCulpableId);
     }
 
     protected override void Aplicar(IEventoDominio evento)

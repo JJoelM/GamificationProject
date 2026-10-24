@@ -199,4 +199,115 @@ public class MisionTests
         Assert.Equal(original.Version, reconstruida.Version);
         Assert.Empty(reconstruida.EventosNoConfirmados); // reconstruir no genera eventos nuevos
     }
+
+    [Fact]
+    public void Calificar_BatallaDeJefe_ReutilizaLaMismaLogicaQueOpcionMultiple()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "BatallaDeJefe",
+            payloadJson: """
+                {"nombreJefe":"El Bug Ancestral","hpMaximo":100,"fases":[
+                    {"enunciado":"¿Qué es un JOIN?","opciones":["Union de tablas","Un tipo de dato"],"respuestaCorrecta":"Union de tablas","explicacion":"Combina filas de dos tablas.","danioAlJefe":50,"penalizacionFallo":"temblor"},
+                    {"enunciado":"¿Qué es una FK?","opciones":["Clave foránea","Una funcion"],"respuestaCorrecta":"Clave foránea","explicacion":"Referencia a otra tabla.","danioAlJefe":50,"penalizacionFallo":"destello"}
+                ]}
+                """,
+            nivelConfianzaIA: 85, recompensaXpSugerida: 100);
+        mision.Validar(Guid.NewGuid());
+
+        var resultado = mision.Calificar(new List<RespuestaAlumno> { new(0, "Union de tablas"), new(1, "Clave foránea") });
+
+        Assert.Equal(100, resultado.PorcentajeCorrecto);
+        Assert.Equal(2, resultado.TotalPreguntas);
+    }
+
+    [Fact]
+    public void CalificarOrdenTemporal_ConOrdenYCulpableCorrectos_Da100PorCiento()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "LineaTemporal",
+            payloadJson: """
+                {"estadoErroneoDescripcion":"El saldo del usuario quedó negativo.",
+                 "eventosDesordenados":[
+                    {"id":"ev1","descripcion":"Se crea la cuenta","ordenCorrecto":1},
+                    {"id":"ev2","descripcion":"Se deposita dinero","ordenCorrecto":2},
+                    {"id":"ev3","descripcion":"Se retira sin validar saldo","ordenCorrecto":3}
+                 ],
+                 "eventoCulpableId":"ev3",
+                 "explicacion":"Faltó validar el saldo antes de retirar."}
+                """,
+            nivelConfianzaIA: 85, recompensaXpSugerida: 100);
+        mision.Validar(Guid.NewGuid());
+
+        var resultado = mision.CalificarOrdenTemporal(
+            new RespuestaOrdenTemporal(new List<string> { "ev1", "ev2", "ev3" }, "ev3"));
+
+        Assert.Equal(100, resultado.PorcentajeCorrecto);
+        Assert.True(resultado.CulpableIdentificadoCorrectamente);
+        Assert.Equal(new List<string> { "ev1", "ev2", "ev3" }, resultado.OrdenCorrecto);
+        Assert.Equal("ev3", resultado.EventoCulpableId);
+    }
+
+    [Fact]
+    public void CalificarOrdenTemporal_ConOrdenCorrectoPeroCulpableEquivocado_PierdeSoloElTreintaPorCiento()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "LineaTemporal",
+            payloadJson: """
+                {"estadoErroneoDescripcion":"desc",
+                 "eventosDesordenados":[
+                    {"id":"ev1","descripcion":"a","ordenCorrecto":1},
+                    {"id":"ev2","descripcion":"b","ordenCorrecto":2}
+                 ],
+                 "eventoCulpableId":"ev2",
+                 "explicacion":"exp"}
+                """,
+            nivelConfianzaIA: 85, recompensaXpSugerida: 100);
+
+        var resultado = mision.CalificarOrdenTemporal(
+            new RespuestaOrdenTemporal(new List<string> { "ev1", "ev2" }, "ev1")); // culpable mal elegido
+
+        Assert.Equal(70, resultado.PorcentajeCorrecto); // 100% de orden * 0.7, sin el bonus de 30
+        Assert.False(resultado.CulpableIdentificadoCorrectamente);
+    }
+
+    [Fact]
+    public void CalificarOrdenTemporal_ConIdsRepetidos_NoSumaDosVeces()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "LineaTemporal",
+            payloadJson: """
+                {"estadoErroneoDescripcion":"desc",
+                 "eventosDesordenados":[
+                    {"id":"ev1","descripcion":"a","ordenCorrecto":1},
+                    {"id":"ev2","descripcion":"b","ordenCorrecto":2}
+                 ],
+                 "eventoCulpableId":"ev2",
+                 "explicacion":"exp"}
+                """,
+            nivelConfianzaIA: 85, recompensaXpSugerida: 100);
+
+        var resultado = mision.CalificarOrdenTemporal(
+            new RespuestaOrdenTemporal(new List<string> { "ev1", "ev1" }, "ev1"));
+
+        Assert.Equal(35, resultado.PorcentajeCorrecto); // 1 de 2 posiciones (50%) * 0.7, sin culpable
+    }
+
+    [Fact]
+    public void Calificar_UnaMisionLineaTemporal_NoSePuedeCalificarConElMetodoDeOpcionMultiple()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "LineaTemporal",
+            payloadJson: "{}", nivelConfianzaIA: 85, recompensaXpSugerida: 100);
+
+        Assert.Throws<NotSupportedException>(() => mision.Calificar(new List<RespuestaAlumno>()));
+    }
+
+    [Fact]
+    public void CalificarOrdenTemporal_EnUnaMisionDeOtroTipo_Lanza()
+    {
+        var mision = CrearMisionValida(); // OpcionMultiple
+
+        Assert.Throws<NotSupportedException>(() =>
+            mision.CalificarOrdenTemporal(new RespuestaOrdenTemporal(new List<string>(), "ev1")));
+    }
 }

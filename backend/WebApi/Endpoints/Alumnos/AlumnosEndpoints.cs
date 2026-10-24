@@ -27,6 +27,19 @@ public static class AlumnosEndpoints
         .WithName("ResolverMision")
         .RequireAuthorization(p => p.RequireRole("Alumno"));
 
+        grupo.MapPost("/misiones/{misionId:guid}/resolver-orden-temporal", async (
+            Guid misionId, ResolverOrdenTemporalRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
+        {
+            var comando = new ResolverMisionOrdenTemporalCommand(
+                misionId, usuario.ObtenerUsuarioId(), request.OrdenPropuesto, request.EventoCulpableElegido,
+                DateOnly.FromDateTime(DateTime.UtcNow));
+
+            var resultado = await mediator.Send(comando);
+            return Results.Ok(resultado);
+        })
+        .WithName("ResolverMisionOrdenTemporal")
+        .RequireAuthorization(p => p.RequireRole("Alumno"));
+
         grupo.MapGet("/personaje/{aulaId:guid}", async (
             Guid aulaId, ClaimsPrincipal usuario, Core.Domain.Agregados.Personajes.IRepositorioPersonajes repositorio) =>
         {

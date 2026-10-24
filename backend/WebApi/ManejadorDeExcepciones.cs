@@ -19,6 +19,9 @@ public class ManejadorDeExcepciones : IExceptionHandler
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "No autorizado", exception.Message),
             InvalidOperationException => (StatusCodes.Status409Conflict, "Transición de estado inválida", exception.Message),
             ArgumentException => (StatusCodes.Status400BadRequest, "Solicitud inválida", exception.Message),
+            // Ej.: resolver una LineaTemporal por /resolver (o al revés) -- error
+            // del cliente al elegir endpoint, no un fallo del servidor.
+            NotSupportedException => (StatusCodes.Status400BadRequest, "Operación no soportada", exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "Error interno",
                   "Ocurrió un error inesperado. Si persiste, contactá al equipo."),
         };
