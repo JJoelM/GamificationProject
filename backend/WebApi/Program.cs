@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Core.Domain.Agregados.Personajes;
 using Core.Domain.Agregados.Misiones;
 using Core.Application.Misiones.Comandos;
@@ -70,6 +71,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Por IP, no por usuario -- en login/registro todavía no hay identidad.
+    // 5 intentos por minuto alcanza para un uso legítimo (incluso con algún
+    // typo) y frena tanto fuerza bruta de contraseñas como spam de altas.
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+});
+
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(ValidarMisionCommand).Assembly));
 
@@ -102,6 +121,7 @@ app.UseHttpsRedirection();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 
 

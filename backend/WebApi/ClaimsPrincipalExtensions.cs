@@ -10,4 +10,8 @@ public static class ClaimsPrincipalExtensions
             ?? throw new InvalidOperationException("El token no contiene el claim usuarioId.");
         return Guid.Parse(valor);
     }
+
+    public static string ObtenerRol(this ClaimsPrincipal usuario) =>
+        usuario.FindFirstValue(ClaimTypes.Role)
+            ?? throw new InvalidOperationException("El token no contiene el claim de rol.");
 }

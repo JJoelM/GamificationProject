@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260909144503_EsquemaCompleto")]
-    partial class EsquemaCompleto
+    [Migration("20261024213542_AgregarConsentimientoInvestigacion")]
+    partial class AgregarConsentimientoInvestigacion
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -213,6 +213,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("AceptaUsoInvestigacion")
+                        .HasColumnType("boolean")
+                        .HasColumnName("acepta_uso_investigacion");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -229,6 +233,10 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("estado_cuenta");
+
+                    b.Property<DateTime?>("FechaConsentimientoInvestigacion")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fecha_consentimiento_investigacion");
 
                     b.Property<DateOnly?>("FechaNacimiento")
                         .HasColumnType("date")

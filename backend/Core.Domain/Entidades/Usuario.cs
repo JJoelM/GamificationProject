@@ -18,6 +18,8 @@ public class Usuario
     public DateOnly? FechaNacimiento { get; private set; }
     public string? EmailTutor { get; private set; }
     public EstadoCuenta EstadoCuenta { get; private set; } = EstadoCuenta.Activa;
+    public bool AceptaUsoInvestigacion { get; private set; }
+    public DateTime? FechaConsentimientoInvestigacion { get; private set; }
 
     private Usuario() { }
 
@@ -54,4 +56,33 @@ public class Usuario
 
     public void Activar() => EstadoCuenta = EstadoCuenta.Activa;
     public void Suspender() => EstadoCuenta = EstadoCuenta.Suspendida;
+
+    public void ActualizarNombre(string nombreCompleto)
+    {
+        if (string.IsNullOrWhiteSpace(nombreCompleto) || nombreCompleto.Length > 200)
+            throw new ArgumentException("El nombre completo es inválido.", nameof(nombreCompleto));
+        NombreCompleto = nombreCompleto;
+    }
+
+    // Revocable en cualquier momento, no es requisito para usar la app --
+    // condicionar el acceso a aceptar esto sería consentimiento forzado.
+    public void ActualizarConsentimientoInvestigacion(bool acepta)
+    {
+        AceptaUsoInvestigacion = acepta;
+        FechaConsentimientoInvestigacion = DateTime.UtcNow;
+    }
+
+    // No borra la fila: el Ledger referencia este Id desde eventos inmutables
+    // que nunca se tocan. Anonimizar el registro de identidad es lo que
+    // cumple el derecho de supresión sin romper esa inmutabilidad -- el
+    // Guid queda en los eventos, pero ya no asociado a un email o nombre real.
+    public void Anonimizar()
+    {
+        Email = $"eliminado-{Id}@eliminado.local";
+        NombreCompleto = "Usuario eliminado";
+        PasswordHash = null;
+        EmailTutor = null;
+        AceptaUsoInvestigacion = false;
+        EstadoCuenta = EstadoCuenta.Eliminada;
+    }
 }
