@@ -33,7 +33,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'csharp', 'javascript-typescript', 'python' ]
+        include:
+          - language: csharp
+            build-mode: autobuild
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -42,7 +48,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: autobuild
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Ejecutar análisis CodeQL
         uses: github/codeql-action/analyze@v3
