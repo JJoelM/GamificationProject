@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Core.Application.Common;
 using Core.Domain.Agregados.Misiones;
+using Core.Domain.SeedWork;
 using MediatR;
 
 namespace Core.Application.Misiones.Comandos;
@@ -15,16 +16,6 @@ public sealed class SolicitarGeneracionDeMisionCommandHandler
     // -- fijo un valor provisorio en vez de fingir precisión que no existe.
     // El docente lo recalibra en la práctica al revisar (aprobar/editar/rechazar).
     private const int NivelConfianzaProvisorio = 70;
-
-    // El payload se guarda como string en la BD y viaja opaco dentro del JSON
-    // de la API -- System.Text.Json por defecto usa PascalCase, pero el
-    // frontend (y Mision.Calificar con PropertyNameCaseInsensitive=true) espera
-    // camelCase. Hay que pedirlo explícitamente aquí, en el único lugar donde
-    // se genera el string que terminará en la BD.
-    private static readonly JsonSerializerOptions OpcionesCamelCase = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
 
     private readonly IGeneradorDeMisiones _generador;
     private readonly IRepositorioMisiones _repositorio;
@@ -50,7 +41,10 @@ public sealed class SolicitarGeneracionDeMisionCommandHandler
                 .Select(p => new PreguntaOpcionMultiple(p.Enunciado, p.Opciones, p.RespuestaCorrecta, p.Explicacion))
                 .ToList());
 
-        var payloadJson = JsonSerializer.Serialize(payload, OpcionesCamelCase);
+        // Misma fuente de opciones que usa Mision.Calificar para leer -- así
+        // lo que este comando escribe y lo que el dominio (y el frontend)
+        // esperan leer nunca pueden desincronizarse entre sí.
+        var payloadJson = JsonSerializer.Serialize(payload, OpcionesJsonMision.Instancia);
 
         // 20 XP por pregunta generada: es una fórmula simple y determinística,
         // no un número mágico -- fácil de justificar y de recalibrar en la defensa.

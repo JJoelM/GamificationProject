@@ -1,14 +1,14 @@
-import { Swords, Award, HelpCircle, Clock, RefreshCw, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Swords, Award, HelpCircle, Clock, RefreshCw, Sparkles, CheckCircle2, ChevronRight, GitCommit } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Card from '../../../components/ui/Card';
 import Badge from '../../../components/ui/Badge';
-import Button from '../../../components/ui/Button';
 import useSessionStore from '../../../store/useSessionStore';
 import { playParchment } from '../../../utils/audio';
 
 /**
- * TarjetaMision v3 — Tarjeta de misión con diferenciación inequívoca entre
- * "NUEVA A REALIZAR" y "DE REPASO" (con historial previo).
+ * TarjetaMision v3 — Tarjeta de misión con soporte para minijuegos
+ * (Opción Múltiple, Batalla de Jefe, Línea Temporal) y diferenciación
+ * entre "NUEVA A REALIZAR" y "DE REPASO".
  */
 
 const dificultadPorXp = (xp) => {
@@ -22,16 +22,41 @@ function TarjetaMision({ mision, onResolver, index = 0 }) {
   const datosResolucion = misionesResueltas[mision.misionId];
   const esCompletada = Boolean(datosResolucion?.completada);
 
-  let preguntas = [];
+  const tipoPlantilla = mision.tipoPlantilla || 'OpcionMultiple';
+
+  let totalItems = 0;
+  let itemsLabel = 'preguntas';
+  let TipoIcono = HelpCircle;
+  let tipoTitulo = 'Opción Múltiple';
+  let tipoBadgeVariant = 'info';
+
   try {
     const parsed = typeof mision.payloadJson === 'string'
       ? JSON.parse(mision.payloadJson)
       : mision.payloadJson;
-    preguntas = parsed?.preguntas ?? [];
+
+    if (tipoPlantilla === 'BatallaDeJefe') {
+      totalItems = parsed?.fases?.length ?? 0;
+      itemsLabel = totalItems === 1 ? 'fase' : 'fases';
+      TipoIcono = Swords;
+      tipoTitulo = 'Batalla de Jefe';
+      tipoBadgeVariant = 'racha';
+    } else if (tipoPlantilla === 'LineaTemporal') {
+      totalItems = parsed?.eventosDesordenados?.length ?? 0;
+      itemsLabel = totalItems === 1 ? 'evento' : 'eventos';
+      TipoIcono = GitCommit;
+      tipoTitulo = 'Línea Temporal';
+      tipoBadgeVariant = 'violet';
+    } else {
+      totalItems = parsed?.preguntas?.length ?? 0;
+      itemsLabel = totalItems === 1 ? 'pregunta' : 'preguntas';
+      TipoIcono = HelpCircle;
+      tipoTitulo = 'Opción Múltiple';
+      tipoBadgeVariant = 'info';
+    }
   } catch { /* empty */ }
 
-  const preguntasCount = preguntas.length;
-  const minutosEstimados = Math.max(2, Math.round(preguntasCount * 1.5));
+  const minutosEstimados = Math.max(2, Math.round(totalItems * 1.5));
   const dificultad = dificultadPorXp(mision.recompensaXp ?? 100);
 
   const handleClick = () => {
@@ -83,6 +108,9 @@ function TarjetaMision({ mision, onResolver, index = 0 }) {
                     <Sparkles size={10} /> Nueva
                   </Badge>
                 )}
+                <Badge variant={tipoBadgeVariant} className="text-[10px] px-2 py-0.5 font-bold">
+                  <TipoIcono size={10} /> {tipoTitulo}
+                </Badge>
                 <Badge variant={dificultad.color} className="text-[10px] px-2 py-0.5">
                   {'★'.repeat(dificultad.stars)}{'☆'.repeat(3 - dificultad.stars)} {dificultad.label}
                 </Badge>
@@ -124,8 +152,8 @@ function TarjetaMision({ mision, onResolver, index = 0 }) {
         <div className="flex items-center justify-between gap-2 pt-3 border-t border-[var(--border-muted)] mt-auto text-xs text-[var(--text-muted)]">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <HelpCircle size={13} />
-              {preguntasCount} {preguntasCount === 1 ? 'pregunta' : 'preguntas'}
+              <TipoIcono size={13} />
+              {totalItems} {itemsLabel}
             </span>
             <span className="flex items-center gap-1">
               <Clock size={13} />

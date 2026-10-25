@@ -78,8 +78,8 @@ function Sidebar() {
     } catch {
       // Ignorar error en logout — la sesión local se limpia igual
     }
-    // Limpiar progreso de juego ANTES de limpiar el usuario
-    // para evitar que el próximo usuario herede XP/avatar/inventario
+    // Limpiar storage persistido y estado de progreso en memoria
+    useSessionStore.persist.clearStorage();
     resetearProgreso();
     clearUsuario();
     navigate('/');

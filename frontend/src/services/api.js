@@ -157,6 +157,13 @@ export const alumnosApi = {
       method: 'POST',
       body: JSON.stringify({ respuestas }),
     }),
+
+  // POST /api/alumnos/misiones/{misionId}/resolver-orden-temporal (Alumno vía JWT)
+  resolverOrdenTemporal: (misionId, { ordenPropuesto, eventoCulpableElegido }) =>
+    apiFetch(`/api/alumnos/misiones/${misionId}/resolver-orden-temporal`, {
+      method: 'POST',
+      body: JSON.stringify({ ordenPropuesto, eventoCulpableElegido }),
+    }),
 };
 
 // ── Servicios de API de Aulas ──

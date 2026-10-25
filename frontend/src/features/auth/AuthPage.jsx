@@ -34,7 +34,7 @@ function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nombreCompleto, setNombreCompleto] = useState('');
-  const [codigoInvitacion, setCodigoInvitacion] = useState('AR92K8X4');
+  const [codigoInvitacion, setCodigoInvitacion] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('2003-01-01');
   const [emailTutor, setEmailTutor] = useState('');
 
