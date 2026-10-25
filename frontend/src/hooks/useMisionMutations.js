@@ -119,6 +119,7 @@ export function useRechazarMision() {
  * POST /api/alumnos/misiones/{misionId}/resolver
  */
 export function useResolverMision() {
+  const queryClient = useQueryClient();
   const sumarXp = useSessionStore((s) => s.sumarXp);
   const sumarAp = useSessionStore((s) => s.sumarAp);
   const desbloquearLogro = useSessionStore((s) => s.desbloquearLogro);
@@ -164,21 +165,37 @@ export function useResolverMision() {
           apGanado,
         };
       } catch (err) {
-        // Mock fallback offline para evaluar localmente si el backend está apagado
-        if (!err.isApiError) {
+        // Mock fallback offline o para misiones de prueba hardcodeadas (404/401)
+        if (!err.isApiError || err.status === 404 || err.status === 401) {
           let aciertos = 0;
           const feedback = respuestas.map((r, idx) => {
             const pregunta = preguntasOriginales[idx];
-            const esCorrecta = pregunta?.respuestaCorrecta
-              ? r.opcionElegida === pregunta.respuestaCorrecta
-              : idx % 2 === 0;
+            let respuestaCorrectaEsperada = pregunta?.respuestaCorrecta;
+            if (!respuestaCorrectaEsperada) {
+              if (misionId === 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f') {
+                const respuestasJefe = [
+                  'O(N)',
+                  'Condición de carrera (Race Condition)',
+                  'Tabla Hash (Hash Map)',
+                ];
+                respuestaCorrectaEsperada = respuestasJefe[idx] || pregunta?.opciones?.[0];
+              } else {
+                respuestaCorrectaEsperada = pregunta?.opciones?.[0] || 'Opción A';
+              }
+            }
+
+            const esCorrecta = r.opcionElegida === respuestaCorrectaEsperada;
             if (esCorrecta) aciertos++;
 
             return {
               indicePregunta: idx,
               esCorrecta,
-              respuestaCorrecta: pregunta?.respuestaCorrecta || 'Opción A',
-              explicacion: pregunta?.explicacion || 'Explicación didáctica del concepto evaluado.',
+              respuestaCorrecta: respuestaCorrectaEsperada,
+              explicacion:
+                pregunta?.explicacion ||
+                (esCorrecta
+                  ? '¡Excelente deducción! El concepto fue aplicado correctamente.'
+                  : 'Se requería analizar con precisión la causa y la complejidad del problema.'),
             };
           });
 
@@ -222,6 +239,128 @@ export function useResolverMision() {
     },
     onSuccess: () => {
       playChime();
+      queryClient.invalidateQueries({ queryKey: ['personaje'] });
+    },
+  });
+}
+
+/**
+ * useResolverMisionOrdenTemporal — Mutación para resolver misiones de Línea Temporal
+ * POST /api/alumnos/misiones/{misionId}/resolver-orden-temporal
+ */
+export function useResolverMisionOrdenTemporal() {
+  const queryClient = useQueryClient();
+  const sumarXp = useSessionStore((s) => s.sumarXp);
+  const sumarAp = useSessionStore((s) => s.sumarAp);
+  const desbloquearLogro = useSessionStore((s) => s.desbloquearLogro);
+  const registrarMisionResuelta = useSessionStore((s) => s.registrarMisionResuelta);
+  const esMisionResuelta = useSessionStore((s) => s.esMisionResuelta);
+
+  return useMutation({
+    mutationFn: async ({
+      misionId,
+      ordenPropuesto,
+      eventoCulpableElegido,
+      eventosOriginales = [],
+      eventoCulpableOriginalId = '',
+    }) => {
+      const eraRepasoPrevio = esMisionResuelta(misionId);
+
+      try {
+        const resultado = await alumnosApi.resolverOrdenTemporal(misionId, {
+          ordenPropuesto,
+          eventoCulpableElegido,
+        });
+
+        const apGanado = resultado.apGanado && resultado.apGanado > 0
+          ? resultado.apGanado
+          : ((resultado.porcentajeCorrecto || 0) >= 50 ? 25 : 0);
+
+        if (resultado?.xpGanado) {
+          sumarXp(resultado.xpGanado);
+          desbloquearLogro('primer_paso');
+          if (resultado.porcentajeCorrecto === 100) {
+            desbloquearLogro('mente_critica');
+          }
+          if (resultado.esRepaso || eraRepasoPrevio) {
+            desbloquearLogro('repaso_magistral');
+          }
+        }
+
+        if (apGanado > 0) {
+          sumarAp(apGanado);
+        }
+
+        registrarMisionResuelta({
+          misionId,
+          porcentaje: resultado.porcentajeCorrecto || 0,
+          xpGanado: resultado.xpGanado || 0,
+          apGanado,
+        });
+
+        return {
+          ...resultado,
+          apGanado,
+        };
+      } catch (err) {
+        // Mock fallback offline o para misiones de prueba hardcodeadas (404/401)
+        if (!err.isApiError || err.status === 404 || err.status === 401) {
+          const ordenCorrectoEsperado =
+            misionId === 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a'
+              ? ['ev-auth', 'ev-deposito', 'ev-retiro', 'ev-sync']
+              : eventosOriginales.map((e) => e.id);
+
+          const culpableEsperado =
+            misionId === 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a'
+              ? 'ev-retiro'
+              : eventoCulpableOriginalId || ordenPropuesto[0];
+
+          let aciertos = 0;
+          ordenPropuesto.forEach((id, idx) => {
+            if (id === ordenCorrectoEsperado[idx]) aciertos++;
+          });
+          const total = ordenPropuesto.length || 1;
+          const porcentajeOrden = Math.round((aciertos / total) * 70);
+          const culpableCorrecto = Boolean(eventoCulpableElegido === culpableEsperado);
+          const bonusCulpable = culpableCorrecto ? 30 : 0;
+          const porcentajeCorrecto = Math.min(100, porcentajeOrden + bonusCulpable);
+
+          const baseXP = eraRepasoPrevio ? 75 : 150;
+          const xpGanado = Math.round((porcentajeCorrecto / 100) * baseXP);
+          const apGanado = porcentajeCorrecto >= 50 ? (eraRepasoPrevio ? 15 : 30) : 0;
+
+          sumarXp(xpGanado);
+          if (apGanado > 0) sumarAp(apGanado);
+
+          desbloquearLogro('primer_paso');
+          if (porcentajeCorrecto === 100) desbloquearLogro('mente_critica');
+          if (eraRepasoPrevio) desbloquearLogro('repaso_magistral');
+
+          registrarMisionResuelta({
+            misionId,
+            porcentaje: porcentajeCorrecto,
+            xpGanado,
+            apGanado,
+          });
+
+          return {
+            porcentajeCorrecto,
+            culpableIdentificadoCorrectamente: culpableCorrecto,
+            explicacionCorrecta:
+              'El cajero automático entregó efectivo antes de que el servidor validara si el saldo era suficiente para cubrir el retiro.',
+            ordenCorrecto: ordenCorrectoEsperado,
+            eventoCulpableId: culpableEsperado,
+            xpGanado,
+            apGanado,
+            esRepaso: eraRepasoPrevio,
+          };
+        }
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      playChime();
+      queryClient.invalidateQueries({ queryKey: ['personaje'] });
     },
   });
 }

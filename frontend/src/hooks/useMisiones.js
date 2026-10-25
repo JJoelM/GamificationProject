@@ -32,10 +32,11 @@ const MOCK_BORRADORES = [
   },
 ];
 
-const MOCK_MISIONES_ACTIVAS = [
+export const MOCK_MISIONES_ACTIVAS = [
   {
     misionId: 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
     aulaId: '33333333-3333-3333-3333-333333333333',
+    temaCurricular: 'Historia: Revolución de Mayo',
     narrativa:
       'El virrey Cisneros ha convocado al pueblo ante los rumores de España. Los patriotas se reúnen en la plaza para exigir un cabildo abierto que decida el futuro de la nación.',
     tipoPlantilla: 'OpcionMultiple',
@@ -58,26 +59,64 @@ const MOCK_MISIONES_ACTIVAS = [
     }),
   },
   {
-    misionId: 'b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e',
+    misionId: 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f',
     aulaId: '33333333-3333-3333-3333-333333333333',
+    temaCurricular: 'Algoritmos: Batalla de Jefe',
     narrativa:
-      'Explora los fundamentos de la energía solar y cómo los paneles fotovoltaicos transforman la radiación en electricidad utilizable en nuestros hogares.',
-    tipoPlantilla: 'OpcionMultiple',
-    recompensaXp: 120,
+      'El Bug Ancestral ha despertado en las profundidades del código fuente. Desata ciclos infinitos y corrompe la memoria. ¡Enfréntalo con tus mejores tácticas de optimización!',
+    tipoPlantilla: 'BatallaDeJefe',
+    recompensaXp: 220,
     payloadJson: JSON.stringify({
-      preguntas: [
+      nombreJefe: 'El Bug Ancestral',
+      hpMaximo: 100,
+      varianteArte: 'capas',
+      fases: [
         {
-          enunciado: '¿Qué tipo de radiación aprovechan las celdas solares?',
-          opciones: [
-            'Radiación solar electromagnética',
-            'Calor geotérmico',
-            'Ondas de radio',
-            'Viento atmosférico',
-          ],
-          respuestaCorrecta: 'Radiación solar electromagnética',
-          explicacion: 'El efecto fotovoltaico convierte la luz solar directamente en electricidad.',
+          enunciado: 'El jefe invoca una búsqueda lineal sobre 1.000.000 de elementos desordenados. ¿Cuál es la complejidad temporal en el peor caso?',
+          opciones: ['O(N)', 'O(log N)', 'O(1)', 'O(N^2)'],
+          danioAlJefe: 35,
+          penalizacionFallo: 'temblor',
+          respuestaCorrecta: 'O(N)',
+          explicacion: 'En el peor caso de búsqueda lineal sin ordenar se debe examinar cada elemento hasta el final: O(N).',
+        },
+        {
+          enunciado: 'El jefe intenta mutar un estado compartido entre múltiples hilos sin sincronización. ¿Qué problema crítico ocurre?',
+          opciones: ['Condición de carrera (Race Condition)', 'Stack Overflow', 'Segmentation Fault', 'Buffer Underrun'],
+          danioAlJefe: 35,
+          penalizacionFallo: 'destello',
+          respuestaCorrecta: 'Condición de carrera (Race Condition)',
+          explicacion: 'Múltiples accesos concurrentes de escritura no sincronizados causan condiciones de carrera.',
+        },
+        {
+          enunciado: 'Para el golpe de gracia: ¿Qué estructura de datos permite inserción y búsqueda en tiempo promedio O(1)?',
+          opciones: ['Tabla Hash (Hash Map)', 'Árbol Binario de Búsqueda', 'Lista Enlazada', 'Grafo no ponderado'],
+          danioAlJefe: 30,
+          penalizacionFallo: 'enfriamiento',
+          respuestaCorrecta: 'Tabla Hash (Hash Map)',
+          explicacion: 'Las tablas hash calculan el índice mediante función hash promediando tiempo constante O(1).',
         },
       ],
+    }),
+  },
+  {
+    misionId: 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a',
+    aulaId: '33333333-3333-3333-3333-333333333333',
+    temaCurricular: 'Sistemas: Línea Temporal',
+    narrativa:
+      'Una inconsistencia temporal provocó que un cliente retirara más dinero del que poseía en su cuenta. Reconstruye el orden cronológico de los eventos y acusa a la causa raíz.',
+    tipoPlantilla: 'LineaTemporal',
+    recompensaXp: 180,
+    payloadJson: JSON.stringify({
+      estadoErroneoDescripcion: 'El saldo del usuario quedó en -$5.000 y el sistema permitió el retiro sin validación previa.',
+      eventosDesordenados: [
+        { id: 'ev-auth', descripcion: 'El usuario inicia sesión exitosamente en el cajero automático' },
+        { id: 'ev-deposito', descripcion: 'Se acredita un depósito previo de $2.000 en su caja de ahorro' },
+        { id: 'ev-retiro', descripcion: 'El cajero entrega $7.000 en efectivo sin verificar el saldo disponible' },
+        { id: 'ev-sync', descripcion: 'El servidor central sincroniza el saldo negativo y genera una alerta' },
+      ],
+      ordenCorrecto: ['ev-auth', 'ev-deposito', 'ev-retiro', 'ev-sync'],
+      eventoCulpableId: 'ev-retiro',
+      explicacionCorrecta: 'El retiro de efectivo se autorizó antes de la validación del saldo disponible en cuenta.',
     }),
   },
 ];
@@ -115,6 +154,6 @@ export function useMisionesActivas() {
     queryFn: USE_MOCK
       ? () => Promise.resolve(MOCK_MISIONES_ACTIVAS)
       : () => misionesApi.getActivas(aulaId),
-    enabled: Boolean(aulaId && usuario?.rol === 'Alumno'),
+    enabled: Boolean(aulaId && (!usuario || usuario.rol === 'Alumno')),
   });
 }

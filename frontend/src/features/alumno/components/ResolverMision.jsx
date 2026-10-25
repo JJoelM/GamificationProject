@@ -3,6 +3,8 @@ import { Swords, Send, CheckCircle2, ChevronRight, ChevronLeft, Shield } from 'l
 import { motion, AnimatePresence } from 'framer-motion';
 import { useResolverMision } from '../../../hooks/useMisionMutations';
 import ResultadoResolucion from './ResultadoResolucion';
+import BatallaDeJefe from './BatallaDeJefe';
+import LineaTemporal from './LineaTemporal';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
@@ -10,17 +12,9 @@ import ErrorBanner from '../../../components/ui/ErrorBanner';
 import { playParchment, playChime } from '../../../utils/audio';
 
 /**
- * ResolverMision v2 — Experiencia de quiz inmersiva pregunta por pregunta.
- *
- * Cambios respecto a v1:
- * - UNA pregunta a la vez (en vez de scroll con todas) — más foco, menos overwhelm
- * - Transiciones animadas entre preguntas (slide horizontal)
- * - Barra de progreso con indicadores de punto por pregunta
- * - Confirmación visual de selección con efecto de carta
- * - Resumen de respuestas antes de enviar con posibilidad de revisar
- * - Accesibilidad: radiogroup, keyboard nav, ARIA live
+ * ResolverQuiz — Experiencia de quiz inmersiva pregunta por pregunta (Opción Múltiple).
  */
-function ResolverMision({ mision, isOpen, onClose }) {
+function ResolverQuiz({ mision, isOpen, onClose }) {
   const { mutate: resolver, isPending, data: resultadoData, error, reset } = useResolverMision();
 
   let preguntas = [];
@@ -407,4 +401,27 @@ function ResolverMision({ mision, isOpen, onClose }) {
   );
 }
 
+/**
+ * ResolverMision — Despachador principal según el tipoPlantilla de la misión:
+ * - 'BatallaDeJefe' -> BatallaDeJefe.jsx (Anime.js)
+ * - 'LineaTemporal' -> LineaTemporal.jsx (Framer Motion)
+ * - 'OpcionMultiple' -> ResolverQuiz (Framer Motion)
+ */
+function ResolverMision({ mision, isOpen, onClose }) {
+  if (!mision || !isOpen) return null;
+
+  const tipoPlantilla = mision?.tipoPlantilla || 'OpcionMultiple';
+
+  if (tipoPlantilla === 'BatallaDeJefe') {
+    return <BatallaDeJefe mision={mision} isOpen={isOpen} onClose={onClose} />;
+  }
+
+  if (tipoPlantilla === 'LineaTemporal') {
+    return <LineaTemporal mision={mision} isOpen={isOpen} onClose={onClose} />;
+  }
+
+  return <ResolverQuiz mision={mision} isOpen={isOpen} onClose={onClose} />;
+}
+
+export { BatallaDeJefe, LineaTemporal, ResolverQuiz };
 export default ResolverMision;
