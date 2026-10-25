@@ -310,4 +310,26 @@ public class MisionTests
         Assert.Throws<NotSupportedException>(() =>
             mision.CalificarOrdenTemporal(new RespuestaOrdenTemporal(new List<string>(), "ev1")));
     }
+
+    [Fact]
+    public void OcultarYRepublicar_CambianElEstadoCorrectamente()
+    {
+        var mision = CrearMisionValida();
+        var docenteId = Guid.NewGuid();
+        mision.Validar(docenteId);
+        Assert.Equal(EstadoMision.Validada, mision.Estado);
+
+        mision.Ocultar(docenteId);
+        Assert.Equal(EstadoMision.Oculta, mision.Estado);
+
+        mision.Republicar(docenteId);
+        Assert.Equal(EstadoMision.Validada, mision.Estado);
+    }
+
+    [Fact]
+    public void Ocultar_UnaMisionNoValidada_LanzaInvalidOperationException()
+    {
+        var mision = CrearMisionValida(); // Generada
+        Assert.Throws<InvalidOperationException>(() => mision.Ocultar(Guid.NewGuid()));
+    }
 }

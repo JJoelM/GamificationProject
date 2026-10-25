@@ -38,9 +38,10 @@ public class PersonajeTests
     {
         var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
 
-        personaje.RegistrarResolucionDeMision(MisionId, 100, 0, 100, Hoy);
+        personaje.RegistrarResolucionDeMision(MisionId, 100, 50, 100, Hoy);
 
         Assert.Equal(100, personaje.ExperienciaXP);
+        Assert.Equal(50, personaje.PuntosAccionAP);
         Assert.Equal(1, personaje.RachaDiasActivos);
     }
 
@@ -50,9 +51,10 @@ public class PersonajeTests
         var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
 
         for (var i = 0; i < 10; i++)
-            personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 0, 100, Hoy);
+            personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 25, 100, Hoy);
 
         Assert.Equal(1000, personaje.ExperienciaXP);
+        Assert.Equal(250, personaje.PuntosAccionAP);
     }
 
     [Fact]
@@ -82,12 +84,76 @@ public class PersonajeTests
     }
 
     [Fact]
+    public void ComprarArticulo_ConApSuficientes_DeduceApYEquipa()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 100, 100, Hoy);
+
+        personaje.ComprarArticulo("avatar_mago", 60, TipoArticulo.Avatar, "mago_fuego");
+
+        Assert.Equal(40, personaje.PuntosAccionAP);
+        Assert.Equal("mago_fuego", personaje.AvatarEquipado);
+        Assert.Contains("avatar_mago", personaje.CosmeticosComprados);
+    }
+
+    [Fact]
+    public void ComprarArticulo_ConApInsuficientes_LanzaTransicionDeEstadoInvalidaException()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 20, 100, Hoy);
+
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
+            personaje.ComprarArticulo("marco_dorado", 100, TipoArticulo.Marco, "dorado"));
+    }
+
+    [Fact]
+    public void ComprarArticulo_YaComprado_LanzaTransicionDeEstadoInvalidaException()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 200, 100, Hoy);
+
+        personaje.ComprarArticulo("avatar_mago", 50, TipoArticulo.Avatar, "mago");
+
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
+            personaje.ComprarArticulo("avatar_mago", 50, TipoArticulo.Avatar, "mago"));
+    }
+
+    [Fact]
+    public void EquiparArticulo_NoComprado_LanzaTransicionDeEstadoInvalidaException()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
+            personaje.EquiparArticulo("mascota_dragon", TipoArticulo.Mascota, "dragon"));
+    }
+
+    [Fact]
+    public void EscudoRacha_ProtegeRacha_EnSaltoDeDias()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 200, 100, Hoy);
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 0, 100, Hoy.AddDays(1));
+        Assert.Equal(2, personaje.RachaDiasActivos);
+
+        // Comprar escudo de racha
+        personaje.ComprarArticulo("escudo_1", 50, TipoArticulo.EscudoRacha, "1");
+        Assert.Equal(1, personaje.EscudosRachaDisponibles);
+
+        // Salto de 3 días (debería perderse racha, pero el escudo la protege)
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 0, 100, Hoy.AddDays(4));
+
+        Assert.Equal(2, personaje.RachaDiasActivos);
+        Assert.Equal(0, personaje.EscudosRachaDisponibles);
+    }
+
+    [Fact]
     public void CargarDesdeHistorial_ReconstruyeIdAlumnoIdYAulaId()
     {
         var alumnoId = Guid.NewGuid();
         var aulaId = Guid.NewGuid();
         var original = Personaje.Iniciar(alumnoId, aulaId);
-        original.RegistrarResolucionDeMision(MisionId, 100, 0, 100, Hoy);
+        original.RegistrarResolucionDeMision(MisionId, 100, 100, 100, Hoy);
+        original.ComprarArticulo("avatar_guerrero", 50, TipoArticulo.Avatar, "guerrero");
 
         var reconstruido = Personaje.ParaReconstruccion();
         reconstruido.CargarDesdeHistorial(original.EventosNoConfirmados.ToList());
@@ -95,6 +161,8 @@ public class PersonajeTests
         Assert.Equal(original.Id, reconstruido.Id);
         Assert.Equal(alumnoId, reconstruido.AlumnoId);
         Assert.Equal(aulaId, reconstruido.AulaId);
+        Assert.Equal("guerrero", reconstruido.AvatarEquipado);
+        Assert.Equal(50, reconstruido.PuntosAccionAP);
         Assert.Equal(IdentidadCompuesta.Combinar(alumnoId, aulaId), reconstruido.Id);
     }
 }

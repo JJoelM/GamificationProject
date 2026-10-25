@@ -4,5 +4,6 @@ public enum EstadoMision
 {
     Generada,
     Validada,
-    Rechazada
+    Rechazada,
+    Oculta
 }

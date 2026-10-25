@@ -18,6 +18,8 @@ public class RepositorioMisiones : IRepositorioMisiones
         [nameof(MisionEditada)] = typeof(MisionEditada),
         [nameof(MisionValidada)] = typeof(MisionValidada),
         [nameof(MisionRechazada)] = typeof(MisionRechazada),
+        [nameof(MisionOcultada)] = typeof(MisionOcultada),
+        [nameof(MisionRepublicada)] = typeof(MisionRepublicada),
     };
 
     private readonly ApplicationDbContext _db;
@@ -31,8 +33,7 @@ public class RepositorioMisiones : IRepositorioMisiones
             .OrderBy(e => e.Version)
             .ToListAsync(ct);
 
-        if (filas.Count == 0)
-            return null;
+        if (filas.Count == 0) return null;
 
         var mision = Mision.ParaReconstruccion();
         mision.CargarDesdeHistorial(filas.Select(Deserializar));
@@ -53,9 +54,6 @@ public class RepositorioMisiones : IRepositorioMisiones
                 mision.Id, TipoAgregado, version, evento.GetType().Name,
                 JsonSerializer.Serialize(evento, evento.GetType())));
 
-            // Misma transaccion que el evento de arriba: si esto falla, el
-            // SaveChangesAsync de abajo tampoco confirma el evento. No hay
-            // ventana donde el Ledger tenga un hecho que la proyeccion no vio.
             await AplicarAProyeccionAsync(evento, ct);
         }
 
@@ -74,24 +72,75 @@ public class RepositorioMisiones : IRepositorioMisiones
                 break;
 
             case MisionEditada e:
-                var borradorEditado = await ObtenerBorradorOLanzar(e.MisionId, ct);
-                borradorEditado.Actualizar(e.Narrativa, e.PayloadJson, e.RecompensaXp);
+                var borrador = await ObtenerBorradorOLanzar(e.MisionId, ct);
+                borrador.Actualizar(e.Narrativa, e.PayloadJson, e.RecompensaXp);
+
+                var misionActivaEdicion = await _db.MisionesActivas
+                    .FirstOrDefaultAsync(m => m.MisionId == e.MisionId, ct);
+                if (misionActivaEdicion is not null)
+                {
+                    var payloadSeguro = SanitizadorPayloadMision.SanitizarParaAlumno(
+                        borrador.TipoPlantilla, e.PayloadJson);
+                    misionActivaEdicion.Actualizar(e.Narrativa, payloadSeguro, e.RecompensaXp);
+                }
                 break;
 
             case MisionValidada e:
                 var borradorValidado = await ObtenerBorradorOLanzar(e.MisionId, ct);
                 borradorValidado.MarcarComoValidado();
-                var payloadSeguro = SanitizadorPayloadMision.SanitizarParaAlumno(
+
+                var payloadAlumno = SanitizadorPayloadMision.SanitizarParaAlumno(
                     borradorValidado.TipoPlantilla, borradorValidado.PayloadJson);
-                _db.MisionesActivas.Add(new MisionActiva(
-                    e.MisionId, borradorValidado.DocenteId, borradorValidado.AulaId,
-                    borradorValidado.Narrativa, borradorValidado.TipoPlantilla,
-                    payloadSeguro, borradorValidado.RecompensaXpSugerida));
+
+                var existente = await _db.MisionesActivas
+                    .FirstOrDefaultAsync(m => m.MisionId == e.MisionId, ct);
+
+                if (existente is not null)
+                {
+                    existente.Actualizar(borradorValidado.Narrativa, payloadAlumno, borradorValidado.RecompensaXpSugerida);
+                    existente.Republicar();
+                }
+                else
+                {
+                    _db.MisionesActivas.Add(new MisionActiva(
+                        e.MisionId, borradorValidado.DocenteId, borradorValidado.AulaId,
+                        borradorValidado.Narrativa, borradorValidado.TipoPlantilla,
+                        payloadAlumno, borradorValidado.RecompensaXpSugerida));
+                }
+
+                // Generación automática de FichaGrimorio si no existe
+                var fichaExistente = await _db.FichasGrimorio
+                    .FirstOrDefaultAsync(f => f.MisionId == e.MisionId, ct);
+
+                if (fichaExistente is null)
+                {
+                    var conceptos = ExtraerConceptosClave(
+                        borradorValidado.TemaCurricular, borradorValidado.TipoPlantilla, borradorValidado.PayloadJson);
+                    _db.FichasGrimorio.Add(new FichaGrimorio(
+                        e.MisionId, borradorValidado.AulaId, borradorValidado.TemaCurricular,
+                        borradorValidado.Narrativa, JsonSerializer.Serialize(conceptos)));
+                }
                 break;
 
             case MisionRechazada e:
                 var borradorRechazado = await ObtenerBorradorOLanzar(e.MisionId, ct);
                 borradorRechazado.MarcarComoRechazado(e.Motivo);
+                break;
+
+            case MisionOcultada e:
+                var borradorOculto = await ObtenerBorradorOLanzar(e.MisionId, ct);
+                borradorOculto.MarcarComoOculto();
+                var activaOcultar = await _db.MisionesActivas
+                    .FirstOrDefaultAsync(m => m.MisionId == e.MisionId, ct);
+                activaOcultar?.Ocultar();
+                break;
+
+            case MisionRepublicada e:
+                var borradorRepublicado = await ObtenerBorradorOLanzar(e.MisionId, ct);
+                borradorRepublicado.MarcarComoValidado();
+                var activaRepublicar = await _db.MisionesActivas
+                    .FirstOrDefaultAsync(m => m.MisionId == e.MisionId, ct);
+                activaRepublicar?.Republicar();
                 break;
 
             default:
@@ -100,11 +149,48 @@ public class RepositorioMisiones : IRepositorioMisiones
         }
     }
 
+    private static List<string> ExtraerConceptosClave(string temaCurricular, string tipoPlantilla, string payloadJson)
+    {
+        var conceptos = new List<string> { temaCurricular };
+        try
+        {
+            using var doc = JsonDocument.Parse(payloadJson);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("preguntas", out var preguntas) && preguntas.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var p in preguntas.EnumerateArray())
+                {
+                    if (p.TryGetProperty("explicacion", out var exp) && !string.IsNullOrWhiteSpace(exp.GetString()))
+                    {
+                        conceptos.Add(exp.GetString()!);
+                    }
+                }
+            }
+            else if (root.TryGetProperty("fases", out var fases) && fases.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var f in fases.EnumerateArray())
+                {
+                    if (f.TryGetProperty("explicacion", out var exp) && !string.IsNullOrWhiteSpace(exp.GetString()))
+                    {
+                        conceptos.Add(exp.GetString()!);
+                    }
+                }
+            }
+            else if (root.TryGetProperty("explicacion", out var expGeneral) && !string.IsNullOrWhiteSpace(expGeneral.GetString()))
+            {
+                conceptos.Add(expGeneral.GetString()!);
+            }
+        }
+        catch
+        {
+            // Si el JSON falla en parsear, retornamos al menos el tema curricular
+        }
+
+        return conceptos.Distinct().Take(5).ToList();
+    }
+
     private async Task<BorradorIA> ObtenerBorradorOLanzar(Guid misionId, CancellationToken ct)
     {
-        // find local primero: si este MISMO GuardarAsync ya agrego el borrador
-        // en un evento anterior del lote (poco comun, pero posible), evita ir
-        // a la base de datos por algo que ya esta trackeado en memoria.
         return _db.ChangeTracker.Entries<BorradorIA>()
                 .Select(e => e.Entity)
                 .FirstOrDefault(b => b.MisionId == misionId)
@@ -117,7 +203,6 @@ public class RepositorioMisiones : IRepositorioMisiones
     {
         if (!TiposDeEvento.TryGetValue(fila.TipoEvento, out var tipo))
             throw new InvalidOperationException($"Tipo de evento desconocido en el Ledger: {fila.TipoEvento}");
-
         return (IEventoDominio)JsonSerializer.Deserialize(fila.Payload, tipo)!;
     }
 }

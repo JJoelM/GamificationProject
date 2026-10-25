@@ -120,6 +120,22 @@ public sealed class Mision : AgregadoRaiz
         RegistrarEvento(new MisionRechazada(Id, docenteId, motivo, DateTime.UtcNow));
     }
 
+    public void Ocultar(Guid docenteId)
+    {
+        if (Estado != EstadoMision.Validada)
+            throw new InvalidOperationException($"Solo se puede ocultar una mision validada. Estado actual: {Estado}.");
+
+        RegistrarEvento(new MisionOcultada(Id, docenteId, DateTime.UtcNow));
+    }
+
+    public void Republicar(Guid docenteId)
+    {
+        if (Estado != EstadoMision.Oculta)
+            throw new InvalidOperationException($"Solo se puede republicar una mision oculta. Estado actual: {Estado}.");
+
+        RegistrarEvento(new MisionRepublicada(Id, docenteId, DateTime.UtcNow));
+    }
+
     // Consulta de solo lectura -- no genera evento ni cambia Version.
     // OpcionMultiple y BatallaDeJefe comparten esta rama -- misma forma de
     // respuesta, solo cambia el nombre del campo contenedor en el payload.
@@ -241,6 +257,14 @@ public sealed class Mision : AgregadoRaiz
 
             case MisionRechazada:
                 Estado = EstadoMision.Rechazada;
+                break;
+
+            case MisionOcultada:
+                Estado = EstadoMision.Oculta;
+                break;
+
+            case MisionRepublicada:
+                Estado = EstadoMision.Validada;
                 break;
 
             default:
