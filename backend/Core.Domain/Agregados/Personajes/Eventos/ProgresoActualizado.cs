@@ -15,5 +15,7 @@ public sealed record ProgresoActualizado(
     int ExperienciaTotal,
     int PuntosAccionTotal,
     int RachaDiasActivos,
+    int EscudosRachaRestantes,
+    int MisionesCompletadas,
     DateOnly Fecha,
     DateTime OcurridoEn) : IEventoDominio;

@@ -81,6 +81,74 @@ namespace Infrastructure.Migrations
                     b.ToTable("borradores_ia", (string)null);
                 });
 
+            modelBuilder.Entity("Core.Application.Misiones.Proyecciones.FichaGrimorio", b =>
+                {
+                    b.Property<Guid>("FichaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("ficha_id");
+
+                    b.Property<Guid>("AulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("aula_id");
+
+                    b.Property<string>("ConceptosClave")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("conceptos_clave");
+
+                    b.Property<DateTime>("CreadaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creada_en");
+
+                    b.Property<Guid>("MisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_id");
+
+                    b.Property<string>("Narrativa")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("narrativa");
+
+                    b.Property<string>("TemaCurricular")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("tema_curricular");
+
+                    b.HasKey("FichaId")
+                        .HasName("pk_fichas_grimorio");
+
+                    b.HasIndex("AulaId")
+                        .HasDatabaseName("ix_fichas_grimorio_aula_id");
+
+                    b.HasIndex("MisionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_fichas_grimorio_mision_id");
+
+                    b.ToTable("fichas_grimorio", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Application.Misiones.Proyecciones.FichaGrimorioDesbloqueada", b =>
+                {
+                    b.Property<Guid>("FichaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ficha_id");
+
+                    b.Property<Guid>("AlumnoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("alumno_id");
+
+                    b.Property<DateTime>("DesbloquedaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("desbloqueda_en");
+
+                    b.HasKey("FichaId", "AlumnoId")
+                        .HasName("pk_fichas_grimorio_desbloqueadas");
+
+                    b.ToTable("fichas_grimorio_desbloqueadas", (string)null);
+                });
+
             modelBuilder.Entity("Core.Application.Misiones.Proyecciones.MisionActiva", b =>
                 {
                     b.Property<Guid>("MisionId")
@@ -95,6 +163,10 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("DocenteId")
                         .HasColumnType("uuid")
                         .HasColumnName("docente_id");
+
+                    b.Property<bool>("EstaVisible")
+                        .HasColumnType("boolean")
+                        .HasColumnName("esta_visible");
 
                     b.Property<string>("Narrativa")
                         .IsRequired()
@@ -119,6 +191,129 @@ namespace Infrastructure.Migrations
                         .HasName("pk_misiones_activas");
 
                     b.ToTable("misiones_activas", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Application.Personajes.Proyecciones.PersonajeResumen", b =>
+                {
+                    b.Property<Guid>("PersonajeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("personaje_id");
+
+                    b.Property<Guid>("AlumnoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("alumno_id");
+
+                    b.Property<Guid>("AulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("aula_id");
+
+                    b.Property<string>("AvatarEquipado")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("avatar_equipado");
+
+                    b.Property<int>("ExperienciaXP")
+                        .HasColumnType("integer")
+                        .HasColumnName("experiencia_xp");
+
+                    b.Property<string>("MarcoEquipado")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("marco_equipado");
+
+                    b.Property<string>("MascotaEquipada")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("mascota_equipada");
+
+                    b.Property<int>("MisionesCompletadas")
+                        .HasColumnType("integer")
+                        .HasColumnName("misiones_completadas");
+
+                    b.Property<int>("PuntosAccionAP")
+                        .HasColumnType("integer")
+                        .HasColumnName("puntos_accion_ap");
+
+                    b.Property<int>("RachaDiasActivos")
+                        .HasColumnType("integer")
+                        .HasColumnName("racha_dias_activos");
+
+                    b.Property<string>("TituloEquipado")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("titulo_equipado");
+
+                    b.HasKey("PersonajeId")
+                        .HasName("pk_personajes_resumen");
+
+                    b.HasIndex("AulaId")
+                        .HasDatabaseName("ix_personajes_resumen_aula_id");
+
+                    b.HasIndex("AulaId", "ExperienciaXP")
+                        .HasDatabaseName("ix_personajes_resumen_aula_id_experiencia_xp");
+
+                    b.ToTable("personajes_resumen", (string)null);
+                });
+
+            modelBuilder.Entity("Core.Application.Personajes.Proyecciones.ResolucionRegistrada", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AlumnoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("alumno_id");
+
+                    b.Property<Guid>("AulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("aula_id");
+
+                    b.Property<bool>("EsRepaso")
+                        .HasColumnType("boolean")
+                        .HasColumnName("es_repaso");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<string>("FeedbackJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("feedback_json");
+
+                    b.Property<Guid>("MisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_id");
+
+                    b.Property<int>("NumeroDeIntento")
+                        .HasColumnType("integer")
+                        .HasColumnName("numero_de_intento");
+
+                    b.Property<DateTime>("OcurridoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ocurrido_en");
+
+                    b.Property<Guid>("PersonajeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("personaje_id");
+
+                    b.Property<int>("PorcentajeCorrecto")
+                        .HasColumnType("integer")
+                        .HasColumnName("porcentaje_correcto");
+
+                    b.HasKey("Id")
+                        .HasName("pk_resoluciones_registradas");
+
+                    b.HasIndex("AulaId", "MisionId")
+                        .HasDatabaseName("ix_resoluciones_registradas_aula_id_mision_id");
+
+                    b.HasIndex("PersonajeId", "Fecha")
+                        .HasDatabaseName("ix_resoluciones_registradas_personaje_id_fecha");
+
+                    b.ToTable("resoluciones_registradas", (string)null);
                 });
 
             modelBuilder.Entity("Core.Domain.Entidades.Aula", b =>

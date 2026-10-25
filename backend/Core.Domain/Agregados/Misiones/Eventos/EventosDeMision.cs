@@ -45,3 +45,13 @@ public sealed record MisionRechazada(
     Guid DocenteId,
     string Motivo,
     DateTime OcurridoEn) : IEventoDominio;
+
+public sealed record MisionOcultada(
+    Guid MisionId,
+    Guid DocenteId,
+    DateTime OcurridoEn) : IEventoDominio;
+
+public sealed record MisionRepublicada(
+    Guid MisionId,
+    Guid DocenteId,
+    DateTime OcurridoEn) : IEventoDominio;

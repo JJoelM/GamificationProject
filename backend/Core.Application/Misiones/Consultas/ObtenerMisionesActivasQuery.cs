@@ -1,4 +1,5 @@
 using Core.Application.Common;
+using Core.Domain.Agregados.Misiones;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,9 +23,18 @@ public sealed class ObtenerMisionesActivasQueryHandler : IRequestHandler<Obtener
         if (!estaInscripto)
             throw new UnauthorizedAccessException("No estás inscripto en esta Aula.");
 
-        return await _db.MisionesActivas
+        var misiones = await _db.MisionesActivas
             .Where(m => m.AulaId == request.AulaId)
-            .Select(m => new MisionDisponibleDto(m.MisionId, m.Narrativa, m.TipoPlantilla, m.PayloadJson, m.RecompensaXp))
             .ToListAsync(cancellationToken);
+
+        // Previene exploits/trampas: el alumno nunca recibe respuestasCorrectas, ordenes o culpables
+        return misiones
+            .Select(m => new MisionDisponibleDto(
+                m.MisionId,
+                m.Narrativa,
+                m.TipoPlantilla,
+                SanitizadorPayloadMision.SanitizarParaAlumno(m.TipoPlantilla, m.PayloadJson),
+                m.RecompensaXp))
+            .ToList();
     }
 }

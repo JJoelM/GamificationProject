@@ -3,15 +3,14 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { MOCK_IDS } from '../config/env';
 
 /**
- * useSessionStore — Estado global de sesión, tema, audio, progresión RPG y Bazar
+ * useSessionStore — Estado global de sesión, tema, audio y progresión RPG en memoria.
  *
- * ESPECIFICACIÓN DE PERSISTENCIA Y MULTI-USUARIO:
- * · Sin guardar tokens en storage — el navegador maneja la cookie HttpOnly.
- * · El progreso de juego (XP, AP, logros, avatar, bazar) se almacena particionado
- *   por usuario en `progresosPorUsuario[usuarioId]`.
- * · Al cerrar sesión, la pantalla se limpia para el siguiente usuario, pero los
- *   datos del alumno NO se pierden. Al volver a iniciar sesión, se restaura su XP y AP.
- * · Si el backend está disponible, se hidrata además desde `GET /api/alumnos/personaje/{aulaId}`.
+ * CUMPLIMIENTO ESTRICTO DE AGENTS_SKILL_state-persistence-rules.MD:
+ * · Lo ÚNICO que persiste en localStorage es la sesión de autenticación (usuarioId, nombre, rol),
+ *   aula activa y preferencias cosméticas de UI (tema claro/oscuro y sonido).
+ * · NUNCA se persiste progreso de juego en localStorage (XP, AP, racha, logros, misiones resueltas, inventario).
+ * · El backend es la única fuente de verdad; los datos se hidratan vía React Query (usePersonaje / ranking).
+ * · Al cerrar sesión, useSessionStore.persist.clearStorage() limpia el storage completo.
  */
 
 // Rangos de nivel y títulos pedagógicos
@@ -28,7 +27,7 @@ export function calcularNivel(xp) {
   return current || NIVELES_RPG[NIVELES_RPG.length - 1];
 }
 
-/** Estado base inicial de progresión RPG para un nuevo usuario */
+/** Estado base inicial de progresión RPG en memoria */
 const PROGRESION_BASE = {
   xpTotal: 0,
   apTotal: 0,
@@ -52,39 +51,18 @@ const PROGRESION_BASE = {
   misionesResueltas: {},
 };
 
-function extraerProgresoDeState(state) {
-  return {
-    xpTotal: state.xpTotal ?? 0,
-    apTotal: state.apTotal ?? 0,
-    rachaDias: state.rachaDias ?? 0,
-    escudosRacha: state.escudosRacha ?? 0,
-    mejoraSemanal: state.mejoraSemanal ?? 0,
-    tituloEquipado: state.tituloEquipado ?? 'Iniciado del Saber',
-    logrosDesbloqueados: state.logrosDesbloqueados ?? [],
-    avatarEquipado: state.avatarEquipado ?? 'erudito_arcano',
-    auraColor: state.auraColor ?? '#2563EB',
-    marcoEstilo: state.marcoEstilo ?? 'scroll',
-    mascotaEquipada: state.mascotaEquipada ?? 'buho_erudito',
-    articulosComprados: state.articulosComprados ?? [],
-    misionesResueltas: state.misionesResueltas ?? {},
-  };
-}
-
 const useSessionStore = create(
   persist(
     (set, get) => ({
-      // ── Sesión y Preferencias ──
+      // ── Sesión y Preferencias Persistidas ──
       usuario: null,
       aulaActivaId: MOCK_IDS.aulaId || '33333333-3333-3333-3333-333333333333',
       codigoInvitacionAula: null,
       theme: 'light',
       soundEnabled: true,
 
-      // ── Progreso del usuario activo ──
+      // ── Progreso en memoria del usuario activo (no persistido) ──
       ...PROGRESION_BASE,
-
-      // ── Diccionario de progresos por usuario (persiste entre sesiones sin leaking) ──
-      progresosPorUsuario: {},
 
       // ── Acciones de autenticación y sesión ──
       setUsuario: (usuario) => {
@@ -92,107 +70,63 @@ const useSessionStore = create(
           set({ usuario: null, ...PROGRESION_BASE });
           return;
         }
-
-        const uId = usuario.usuarioId;
-        const historial = get().progresosPorUsuario?.[uId];
-
-        if (historial) {
-          // Restaurar progreso guardado del alumno
-          set({
-            usuario,
-            ...historial,
-            levelUpPendiente: null,
-          });
-        } else {
-          // Inicializar progreso nuevo y registrarlo
-          const nuevoProgreso = { ...PROGRESION_BASE };
-          set((s) => ({
-            usuario,
-            ...nuevoProgreso,
-            progresosPorUsuario: {
-              ...(s.progresosPorUsuario || {}),
-              [uId]: nuevoProgreso,
-            },
-          }));
-        }
+        set({
+          usuario,
+          ...PROGRESION_BASE,
+          levelUpPendiente: null,
+        });
       },
 
       clearUsuario: () => {
-        // Guarda el estado del usuario saliente en el mapa antes de desloguear
-        const usuarioActual = get().usuario;
-        if (usuarioActual?.usuarioId) {
-          const uId = usuarioActual.usuarioId;
-          const dataActual = extraerProgresoDeState(get());
-          set((s) => ({
-            usuario: null,
-            ...PROGRESION_BASE,
-            progresosPorUsuario: {
-              ...(s.progresosPorUsuario || {}),
-              [uId]: dataActual,
-            },
-          }));
-        } else {
-          set({ usuario: null, ...PROGRESION_BASE });
+        set({ usuario: null, ...PROGRESION_BASE });
+      },
+
+      logout: () => {
+        try {
+          useSessionStore.persist.clearStorage();
+        } catch {
+          /* ignore */
         }
+        set({
+          usuario: null,
+          codigoInvitacionAula: null,
+          ...PROGRESION_BASE,
+        });
       },
 
       /**
        * Hidrata el progreso del alumno desde la respuesta del backend
+       * (GET /api/alumnos/personaje/{aulaId})
        */
-      hidratarProgreso: (datos) => {
-        const uId = get().usuario?.usuarioId;
-        const actual = get();
-
-        const xp = Math.max(datos.experienciaXP ?? 0, actual.xpTotal ?? 0);
-        const ap = Math.max(datos.puntosAccionAP ?? 0, actual.apTotal ?? 0);
-        const racha = Math.max(datos.rachaDiasActivos ?? 0, actual.rachaDias ?? 0);
-
-        const update = {
-          xpTotal: xp,
-          apTotal: ap,
-          rachaDias: racha,
-          escudosRacha: datos.escudosRachaDisponibles ?? actual.escudosRacha,
-          avatarEquipado: datos.avatarEquipado ?? actual.avatarEquipado,
-          auraColor: datos.auraColor ?? actual.auraColor,
-          marcoEstilo: datos.marcoEstilo ?? actual.marcoEstilo,
-          mascotaEquipada: datos.mascotaEquipada ?? actual.mascotaEquipada,
-          tituloEquipado: datos.tituloEquipado ?? calcularNivel(xp).titulo,
-          logrosDesbloqueados: datos.logrosDesbloqueados ?? actual.logrosDesbloqueados,
-          articulosComprados: datos.articulosComprados ?? actual.articulosComprados,
-        };
+      hidratarProgreso: (datosBackend) => {
+        if (!datosBackend) return;
 
         set((s) => ({
-          ...update,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  ...update,
-                },
-              }
-            : s.progresosPorUsuario,
+          xpTotal: datosBackend.experienciaXP ?? s.xpTotal,
+          apTotal: datosBackend.puntosAccionAP ?? s.apTotal,
+          rachaDias: datosBackend.rachaDiasActivos ?? s.rachaDias,
+          avatarEquipado: datosBackend.avatarEquipado || s.avatarEquipado,
+          marcoEstilo: datosBackend.marcoEquipado || s.marcoEstilo,
+          mascotaEquipada: datosBackend.mascotaEquipada || s.mascotaEquipada,
         }));
       },
 
-      resetearProgreso: () => {
-        const uId = get().usuario?.usuarioId;
-        set((s) => ({
-          ...PROGRESION_BASE,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: { ...PROGRESION_BASE },
-              }
-            : s.progresosPorUsuario,
-        }));
-      },
+      setAulaActiva: (aulaId) => set({ aulaActivaId: aulaId }),
 
-      // Aula
-      setAulaActivaId: (aulaActivaId) => set({ aulaActivaId }),
       setCodigoInvitacion: (codigo) => set({ codigoInvitacionAula: codigo }),
 
-      // Tema
+      // Tema claro / oscuro
+      setTheme: (theme) => {
+        if (typeof document !== 'undefined') {
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+        set({ theme });
+      },
+
       toggleTheme: () => {
         const next = get().theme === 'dark' ? 'light' : 'dark';
         if (typeof document !== 'undefined') {
@@ -208,75 +142,15 @@ const useSessionStore = create(
       // Audio
       toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
 
-      // Personalización de avatar y cosméticos
-      setAvatarEquipado: (avatarId) => {
-        const uId = get().usuario?.usuarioId;
-        set((s) => ({
-          avatarEquipado: avatarId,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  avatarEquipado: avatarId,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
-      },
-
-      setAuraColor: (auraColor) => {
-        const uId = get().usuario?.usuarioId;
-        set((s) => ({
-          auraColor,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  auraColor,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
-      },
-
-      setMarcoEstilo: (marcoEstilo) => {
-        const uId = get().usuario?.usuarioId;
-        set((s) => ({
-          marcoEstilo,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  marcoEstilo,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
-      },
-
-      setMascotaEquipada: (mascotaId) => {
-        const uId = get().usuario?.usuarioId;
-        set((s) => ({
-          mascotaEquipada: mascotaId,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  mascotaEquipada: mascotaId,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
-      },
+      // Personalización de avatar y cosméticos en memoria
+      setAvatarEquipado: (avatarId) => set({ avatarEquipado: avatarId }),
+      setAuraColor: (auraColor) => set({ auraColor }),
+      setMarcoEstilo: (marcoEstilo) => set({ marcoEstilo }),
+      setMascotaEquipada: (mascotaId) => set({ mascotaEquipada: mascotaId }),
 
       // Bazar: comprar y equipar artículos con AP
       comprarArticulo: ({ id, costoAp, tipo, valor }) => {
         const state = get();
-        const uId = state.usuario?.usuarioId;
         if (state.apTotal < costoAp && !state.articulosComprados.includes(id)) {
           return { exito: false, motivo: 'AP insuficientes' };
         }
@@ -302,41 +176,15 @@ const useSessionStore = create(
           update.auraColor = valor;
         }
 
-        set((s) => ({
-          ...update,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  ...update,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
-
+        set(update);
         return { exito: true };
       },
 
       // Uso del escudo de constancia
       usarEscudoRacha: () => {
-        const state = get();
-        const cant = state.escudosRacha || 0;
-        const uId = state.usuario?.usuarioId;
+        const cant = get().escudosRacha || 0;
         if (cant > 0) {
-          const nuevo = cant - 1;
-          set((s) => ({
-            escudosRacha: nuevo,
-            progresosPorUsuario: uId
-              ? {
-                  ...(s.progresosPorUsuario || {}),
-                  [uId]: {
-                    ...((s.progresosPorUsuario || {})[uId] || {}),
-                    escudosRacha: nuevo,
-                  },
-                }
-              : s.progresosPorUsuario,
-          }));
+          set({ escudosRacha: cant - 1 });
           return true;
         }
         return false;
@@ -344,27 +192,12 @@ const useSessionStore = create(
 
       // Sumar AP de habilidad
       sumarAp: (cantidad) => {
-        const state = get();
-        const uId = state.usuario?.usuarioId;
-        const nuevoAp = (state.apTotal || 0) + cantidad;
-        set((s) => ({
-          apTotal: nuevoAp,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  apTotal: nuevoAp,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
+        set((s) => ({ apTotal: (s.apTotal || 0) + cantidad }));
       },
 
-      // Registro de resolución y control de repaso
+      // Registro de resolución en memoria
       registrarMisionResuelta: ({ misionId, porcentaje, xpGanado, apGanado = 0 }) => {
         const state = get();
-        const uId = state.usuario?.usuarioId;
         const actual = state.misionesResueltas || {};
         const anterior = actual[misionId] || { intentos: 0, mejorPuntaje: 0 };
 
@@ -376,126 +209,75 @@ const useSessionStore = create(
           ultimaFecha: new Date().toISOString(),
         };
 
-        const nuevoAp = (state.apTotal || 0) + apGanado;
-        const nuevasResueltas = {
-          ...actual,
-          [misionId]: nuevaData,
-        };
-
-        set((s) => ({
-          apTotal: nuevoAp,
-          misionesResueltas: nuevasResueltas,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  apTotal: nuevoAp,
-                  misionesResueltas: nuevasResueltas,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
+        set({
+          apTotal: (state.apTotal || 0) + apGanado,
+          misionesResueltas: {
+            ...actual,
+            [misionId]: nuevaData,
+          },
+        });
       },
 
       esMisionResuelta: (misionId) => {
-        const resueltas = get().misionesResueltas || {};
-        return Boolean(resueltas[misionId]?.completada);
+        return Boolean(get().misionesResueltas?.[misionId]?.completada);
       },
 
-      // Progresión XP y Level Up
+      obtenerDatosMisionResuelta: (misionId) => {
+        return get().misionesResueltas?.[misionId] || null;
+      },
+
+      // Sumar XP y verificar subida de nivel
       sumarXp: (cantidad) => {
-        const state = get();
-        const uId = state.usuario?.usuarioId;
-        const anteriorXp = state.xpTotal || 0;
-        const nuevaXp = anteriorXp + cantidad;
-        const nivelAnterior = calcularNivel(anteriorXp).nivel;
-        const nivelNuevo = calcularNivel(nuevaXp).nivel;
+        const prevXp = get().xpTotal;
+        const nextXp = prevXp + cantidad;
+        const nivelPrevio = calcularNivel(prevXp);
+        const nivelNuevo = calcularNivel(nextXp);
 
-        const stateUpdate = { xpTotal: nuevaXp };
+        let update = { xpTotal: nextXp };
 
-        if (nivelNuevo > nivelAnterior) {
-          stateUpdate.levelUpPendiente = calcularNivel(nuevaXp);
-          stateUpdate.tituloEquipado = calcularNivel(nuevaXp).titulo;
+        if (nivelNuevo.nivel > nivelPrevio.nivel) {
+          update = {
+            ...update,
+            levelUpPendiente: {
+              nivelAnterior: nivelPrevio.nivel,
+              nivelNuevo: nivelNuevo.nivel,
+              tituloNuevo: nivelNuevo.titulo,
+              rangoNuevo: nivelNuevo.rango,
+            },
+            tituloEquipado: nivelNuevo.titulo,
+          };
         }
 
-        set((s) => ({
-          ...stateUpdate,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  ...stateUpdate,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
-
-        return { nivelSubido: nivelNuevo > nivelAnterior, nivelNuevo };
+        set(update);
       },
 
-      cerrarLevelUp: () => set({ levelUpPendiente: null }),
+      limpiarLevelUp: () => set({ levelUpPendiente: null }),
 
-      setTituloEquipado: (titulo) => {
-        const uId = get().usuario?.usuarioId;
-        set((s) => ({
-          tituloEquipado: titulo,
-          progresosPorUsuario: uId
-            ? {
-                ...(s.progresosPorUsuario || {}),
-                [uId]: {
-                  ...((s.progresosPorUsuario || {})[uId] || {}),
-                  tituloEquipado: titulo,
-                },
-              }
-            : s.progresosPorUsuario,
-        }));
+      resetearProgreso: () => {
+        set({ ...PROGRESION_BASE });
       },
 
       desbloquearLogro: (logroId) => {
-        const state = get();
-        const uId = state.usuario?.usuarioId;
-        const actual = state.logrosDesbloqueados || [];
+        const actual = get().logrosDesbloqueados || [];
         if (!actual.includes(logroId)) {
-          const nuevosLogros = [...actual, logroId];
-          set((s) => ({
-            logrosDesbloqueados: nuevosLogros,
-            progresosPorUsuario: uId
-              ? {
-                  ...(s.progresosPorUsuario || {}),
-                  [uId]: {
-                    ...((s.progresosPorUsuario || {})[uId] || {}),
-                    logrosDesbloqueados: nuevosLogros,
-                  },
-                }
-              : s.progresosPorUsuario,
-          }));
+          set({ logrosDesbloqueados: [...actual, logroId] });
         }
       },
     }),
     {
       name: 'eduquest_session_storage',
       storage: createJSONStorage(() => localStorage),
+      // SOLO persistir autenticación y preferencias de UI
       partialize: (state) => ({
         usuario: state.usuario,
         aulaActivaId: state.aulaActivaId,
         codigoInvitacionAula: state.codigoInvitacionAula,
         theme: state.theme,
         soundEnabled: state.soundEnabled,
-        progresosPorUsuario: state.progresosPorUsuario,
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.theme === 'dark' && typeof document !== 'undefined') {
           document.documentElement.classList.add('dark');
-        }
-        // Si hay un usuario activo restaurado de la sesión, asegurar que su progreso esté cargado
-        if (state?.usuario?.usuarioId && state?.progresosPorUsuario) {
-          const uId = state.usuario.usuarioId;
-          const saved = state.progresosPorUsuario[uId];
-          if (saved) {
-            Object.assign(state, saved);
-          }
         }
       },
     }

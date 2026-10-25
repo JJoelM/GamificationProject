@@ -18,6 +18,8 @@ using WebApi.Endpoints.Misiones;
 using WebApi.Endpoints.Usuarios;
 using WebApi.Endpoints.Alumnos;
 using WebApi.Endpoints.Aulas;
+using WebApi.Endpoints.Docentes;
+using WebApi.Endpoints.Directivo;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -136,6 +138,8 @@ app.MapMisionesEndpoints();
 app.MapAlumnosEndpoints();
 app.MapUsuariosEndpoints();
 app.MapAulasEndpoints();
+app.MapDocentesEndpoints();
+app.MapDirectivoEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
