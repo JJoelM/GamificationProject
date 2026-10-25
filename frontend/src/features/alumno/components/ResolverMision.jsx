@@ -228,7 +228,7 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
                   >
                     <div className="flex items-start gap-2.5">
                       <span
-                        className="w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white text-xs font-display font-bold flex items-center justify-center shrink-0"
+                        className="w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white dark:text-slate-950 text-xs font-display font-black flex items-center justify-center shrink-0 shadow-xs"
                         aria-hidden="true"
                       >
                         {preguntaIdx + 1}
@@ -267,7 +267,7 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
                               className={[
                                 'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
                                 isSelected
-                                  ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white scale-110'
+                                  ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white dark:text-slate-950 scale-110'
                                   : 'border-[var(--border-muted)] bg-[var(--bg-panel)] text-transparent',
                               ].join(' ')}
                               aria-hidden="true"

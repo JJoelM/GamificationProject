@@ -194,6 +194,54 @@ if (app.Environment.IsDevelopment())
     }
 
     context.SaveChanges();
+
+    var repoMisiones = scope.ServiceProvider.GetRequiredService<IRepositorioMisiones>();
+
+    var misionOpcionMultipleId = Guid.Parse("a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d");
+    var misionBatallaJefeId = Guid.Parse("c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f");
+    var misionLineaTemporalId = Guid.Parse("d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a");
+
+    if (!context.MisionesActivas.Any(m => m.MisionId == misionOpcionMultipleId))
+    {
+        var m1 = Mision.Generar(
+            docenteId, aulaId,
+            "Historia: Revolución de Mayo",
+            "En mayo de 1810 en Buenos Aires se formó la Primera Junta tras el Cabildo Abierto.",
+            "El virrey Cisneros ha convocado al pueblo ante los rumores de España. Los patriotas se reúnen en la plaza para exigir un cabildo abierto que decida el futuro de la nación.",
+            "OpcionMultiple",
+            """{"preguntas":[{"enunciado":"¿En qué año se llevó a cabo el Cabildo Abierto de Mayo?","opciones":["1810","1816","1820","1806"],"respuestaCorrecta":"1810","explicacion":"El 25 de mayo de 1810 se formó el primer gobierno patrio en Buenos Aires."},{"enunciado":"¿Quién presidió la Primera Junta de Gobierno?","opciones":["Cornelio Saavedra","Mariano Moreno","Manuel Belgrano","Juan José Paso"],"respuestaCorrecta":"Cornelio Saavedra","explicacion":"Cornelio Saavedra fue electo presidente de la Junta Provisional Gubernativa."}]}""",
+            95, 150, misionOpcionMultipleId);
+        m1.Validar(docenteId);
+        repoMisiones.GuardarAsync(m1).GetAwaiter().GetResult();
+    }
+
+    if (!context.MisionesActivas.Any(m => m.MisionId == misionBatallaJefeId))
+    {
+        var m2 = Mision.Generar(
+            docenteId, aulaId,
+            "Algoritmos: Batalla de Jefe",
+            "Análisis de algoritmos, complejidades Big-O, concurrencia y estructuras de datos eficientes.",
+            "El Bug Ancestral ha despertado en las profundidades del código fuente. Desata ciclos infinitos y corrompe la memoria. ¡Enfréntalo con tus mejores tácticas de optimización!",
+            "BatallaDeJefe",
+            """{"nombreJefe":"El Bug Ancestral","hpMaximo":100,"fases":[{"enunciado":"El jefe invoca una búsqueda lineal sobre 1.000.000 de elementos desordenados. ¿Cuál es la complejidad temporal en el peor caso?","opciones":["O(N)","O(log N)","O(1)","O(N^2)"],"danioAlJefe":35,"penalizacionFallo":"temblor","respuestaCorrecta":"O(N)","explicacion":"En el peor caso de búsqueda lineal sin ordenar se debe examinar cada elemento hasta el final: O(N)."},{"enunciado":"El jefe intenta mutar un estado compartido entre múltiples hilos sin sincronización. ¿Qué problema crítico ocurre?","opciones":["Condición de carrera (Race Condition)","Stack Overflow","Segmentation Fault","Buffer Underrun"],"danioAlJefe":35,"penalizacionFallo":"destello","respuestaCorrecta":"Condición de carrera (Race Condition)","explicacion":"Múltiples accesos concurrentes de escritura no sincronizados causan condiciones de carrera."},{"enunciado":"Para el golpe de gracia: ¿Qué estructura de datos permite inserción y búsqueda en tiempo promedio O(1)?","opciones":["Tabla Hash (Hash Map)","Árbol Binario de Búsqueda","Lista Enlazada","Grafo no ponderado"],"danioAlJefe":30,"penalizacionFallo":"enfriamiento","respuestaCorrecta":"Tabla Hash (Hash Map)","explicacion":"Las tablas hash calculan el índice mediante función hash promediando tiempo constante O(1)."}]}""",
+            98, 220, misionBatallaJefeId);
+        m2.Validar(docenteId);
+        repoMisiones.GuardarAsync(m2).GetAwaiter().GetResult();
+    }
+
+    if (!context.MisionesActivas.Any(m => m.MisionId == misionLineaTemporalId))
+    {
+        var m3 = Mision.Generar(
+            docenteId, aulaId,
+            "Sistemas: Línea Temporal",
+            "Auditoría de transacciones bancarias, concurrencia en cajeros y validación de saldo.",
+            "Una inconsistencia temporal provocó que un cliente retirara más dinero del que poseía en su cuenta. Reconstruye el orden cronológico de los eventos y acusa a la causa raíz.",
+            "LineaTemporal",
+            """{"estadoErroneoDescripcion":"El saldo del usuario quedó en -$5.000 y el sistema permitió el retiro sin validación previa.","eventosDesordenados":[{"id":"ev-auth","descripcion":"El usuario inicia sesión exitosamente en el cajero automático","ordenCorrecto":1},{"id":"ev-deposito","descripcion":"Se acredita un depósito previo de $2.000 en su caja de ahorro","ordenCorrecto":2},{"id":"ev-retiro","descripcion":"El cajero entrega $7.000 en efectivo sin verificar el saldo disponible","ordenCorrecto":3},{"id":"ev-sync","descripcion":"El servidor central sincroniza el saldo negativo y genera una alerta","ordenCorrecto":4}],"eventoCulpableId":"ev-retiro","explicacion":"El cajero automático entregó efectivo antes de que el servidor validara si el saldo era suficiente para cubrir el retiro."}""",
+            96, 180, misionLineaTemporalId);
+        m3.Validar(docenteId);
+        repoMisiones.GuardarAsync(m3).GetAwaiter().GetResult();
+    }
 }
 
 

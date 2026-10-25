@@ -44,16 +44,18 @@ public sealed class Mision : AgregadoRaiz
         string tipoPlantilla,
         string payloadJson,
         int nivelConfianzaIA,
-        int recompensaXpSugerida)
+        int recompensaXpSugerida,
+        Guid? misionId = null)
     {
         if (nivelConfianzaIA is < 0 or > 100)
             throw new ArgumentOutOfRangeException(nameof(nivelConfianzaIA), "Debe estar entre 0 y 100.");
 
         ValidarLongitudes(temaCurricular, textoFuente, narrativa, payloadJson);
 
-        var mision = new Mision { Id = Guid.NewGuid() };
+        var id = misionId ?? Guid.NewGuid();
+        var mision = new Mision { Id = id };
         mision.RegistrarEvento(new MisionGenerada(
-            mision.Id, docenteId, aulaId, temaCurricular, textoFuente, narrativa,
+            id, docenteId, aulaId, temaCurricular, textoFuente, narrativa,
             tipoPlantilla, payloadJson, nivelConfianzaIA, recompensaXpSugerida,
             DateTime.UtcNow));
         return mision;

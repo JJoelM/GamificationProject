@@ -184,18 +184,22 @@ function LineaTemporal({ mision, isOpen, onClose }) {
               </p>
             </Card>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-muted)] flex items-center gap-2.5">
-                <span className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[var(--text-primary)]">
+              <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-muted)] flex items-center gap-2.5 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white dark:text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
                   1
                 </span>
-                <span>Arrastrá verticalmente las tarjetas para ordenar la secuencia cronológica.</span>
+                <span className="text-[var(--text-primary)] font-semibold leading-relaxed">
+                  Arrastrá verticalmente las tarjetas para ordenar la secuencia cronológica.
+                </span>
               </div>
-              <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-muted)] flex items-center gap-2.5">
-                <span className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="p-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-muted)] flex items-center gap-2.5 shadow-xs">
+                <span className="w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
                   2
                 </span>
-                <span>Tocá sobre la tarjeta que representa la causa raíz que desató la anomalía.</span>
+                <span className="text-[var(--text-primary)] font-semibold leading-relaxed">
+                  Tocá sobre la tarjeta que representa la causa raíz que desató la anomalía.
+                </span>
               </div>
             </div>
 
@@ -215,15 +219,15 @@ function LineaTemporal({ mision, isOpen, onClose }) {
         {fase === 'reordenar' && (
           <div className="flex flex-col gap-5">
             {/* Indicador de pasos */}
-            <div className="flex items-center justify-between text-xs font-display text-[var(--text-muted)] border-b border-[var(--border-muted)] pb-2">
+            <div className="flex items-center justify-between text-xs font-display text-[var(--text-secondary)] border-b border-[var(--border-muted)] pb-2 font-medium">
               <span>Arrastrá para ordenar ({totalEventos} eventos)</span>
               <span>
                 {culpableElegido ? (
-                  <span className="text-amber-500 font-bold flex items-center gap-1">
+                  <span className="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
                     <Target size={13} /> Causa raíz seleccionada
                   </span>
                 ) : (
-                  <span className="text-[var(--brand-crimson)]">Seleccioná la causa raíz</span>
+                  <span className="text-red-700 dark:text-red-400 font-bold">Seleccioná la causa raíz</span>
                 )}
               </span>
             </div>
@@ -259,10 +263,10 @@ function LineaTemporal({ mision, isOpen, onClose }) {
                   >
                     {/* Badge de orden cronológico */}
                     <div className="flex flex-col items-center gap-1 shrink-0">
-                      <span className="w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white text-xs font-display font-bold flex items-center justify-center">
+                      <span className="w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white dark:text-slate-950 text-xs font-display font-black flex items-center justify-center shadow-xs">
                         {index + 1}
                       </span>
-                      <span className="text-[9px] font-mono font-bold text-[var(--text-muted)] opacity-60">
+                      <span className="text-[9px] font-mono font-bold text-[var(--text-secondary)]">
                         Paso
                       </span>
                     </div>
@@ -284,8 +288,8 @@ function LineaTemporal({ mision, isOpen, onClose }) {
                       className={[
                         'px-2.5 py-1.5 rounded-lg text-xs font-display font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer',
                         esCulpable
-                          ? 'bg-amber-500 text-black shadow-sm ring-1 ring-amber-600'
-                          : 'bg-[var(--bg-muted)] text-[var(--text-muted)] hover:text-amber-500 hover:bg-[color-mix(in_oklch,var(--color-amber-500,#f59e0b)_15%,var(--bg-muted))]',
+                          ? 'bg-amber-500 text-black shadow-sm ring-2 ring-amber-600'
+                          : 'border border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-primary)] hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-500 hover:bg-[var(--bg-accent)]',
                       ].join(' ')}
                       title="Marcar este evento como la causa raíz del error"
                     >
@@ -361,7 +365,7 @@ function LineaTemporal({ mision, isOpen, onClose }) {
                 <span className="font-display font-black text-5xl text-[var(--text-primary)] block">
                   <AnimatedCounter value={resultadoData.porcentajeCorrecto} suffix="%" duration={1200} />
                 </span>
-                <p className="text-xs font-display text-[var(--text-muted)] mt-1">
+                <p className="text-xs font-display text-[var(--text-secondary)] mt-1 font-medium">
                   Precisión cronológica y diagnóstico forense
                 </p>
               </div>
@@ -387,7 +391,7 @@ function LineaTemporal({ mision, isOpen, onClose }) {
 
             {/* Secuencia Final Ordenada con Animación de Diff Framer Motion */}
             <div className="flex flex-col gap-2.5">
-              <div className="flex items-center justify-between text-xs font-display text-[var(--text-muted)]">
+              <div className="flex items-center justify-between text-xs font-display text-[var(--text-secondary)] font-medium">
                 <span className="font-bold text-[var(--text-primary)]">Secuencia Correcta Reconstruida:</span>
                 <span>(Los ítems migraron a su lugar correcto)</span>
               </div>
@@ -422,7 +426,7 @@ function LineaTemporal({ mision, isOpen, onClose }) {
                       ].join(' ')}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white text-xs font-display font-bold flex items-center justify-center shrink-0">
+                        <span className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white dark:text-slate-950 text-xs font-display font-black flex items-center justify-center shrink-0 shadow-xs">
                           {posFinal + 1}
                         </span>
                         <span className="font-semibold text-[var(--text-primary)] line-clamp-2">

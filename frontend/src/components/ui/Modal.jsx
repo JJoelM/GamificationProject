@@ -71,13 +71,13 @@ function Modal({
       aria-modal="true"
       aria-labelledby="modal-title"
       className={[
-        'p-0 m-auto w-full border-0 bg-transparent',
+        'p-0 m-auto w-full border-0 bg-transparent text-[var(--text-primary)]',
         'backdrop:bg-[color-mix(in_oklch,var(--color-dark-bg-base)_70%,transparent)]',
         'backdrop:backdrop-blur-sm',
         sizeStyles[size] ?? sizeStyles.md,
         'open:flex open:flex-col',
       ].join(' ')}
-      style={{ maxHeight: '90svh', overflow: 'visible' }}
+      style={{ maxHeight: '90svh', overflow: 'visible', color: 'var(--text-primary)' }}
     >
       <AnimatePresence>
         {isOpen && (
@@ -87,7 +87,7 @@ function Modal({
             exit={{ opacity: 0, scale: 0.94, y: 16 }}
             transition={{ type: 'spring', stiffness: 340, damping: 28 }}
             className={[
-              'w-full flex flex-col overflow-hidden',
+              'w-full flex flex-col overflow-hidden text-[var(--text-primary)]',
               'bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-base)]',
               'border-2 border-[var(--border)]',
               'rounded-[16px_22px_18px_20px]',
@@ -117,7 +117,7 @@ function Modal({
             </div>
 
             {/* Contenido scrolleable */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5 text-[var(--text-primary)]">
               {children}
             </div>
           </motion.div>

@@ -2,67 +2,149 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Zap, Shield, Check, ShoppingBag, ArrowLeft,
-  Crown, Heart, AlertCircle, Info, Lock
+  Crown, Info, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useSessionStore from '../../store/useSessionStore';
+import { usePersonaje } from '../../hooks/usePersonaje';
+import { useComprarArticulo, usePersonalizarPersonaje } from '../../hooks/useBazarMutations';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { ARTICULOS_BAZAR, CATEGORIAS_BAZAR } from './components/BazarData';
-import { playSuccess, playParchment, playChime } from '../../utils/audio';
+import { playSuccess, playParchment } from '../../utils/audio';
+
+const MAPEO_TIPO_BACKEND = {
+  escudo: 'EscudoRacha',
+  EscudoRacha: 'EscudoRacha',
+  mascota: 'Mascota',
+  Mascota: 'Mascota',
+  marco: 'Marco',
+  Marco: 'Marco',
+  titulo: 'Titulo',
+  Titulo: 'Titulo',
+  avatar: 'Avatar',
+  Avatar: 'Avatar',
+};
 
 function BazarRecompensas() {
   const navigate = useNavigate();
-  const apTotal = useSessionStore((s) => s.apTotal) || 0;
-  const escudosRacha = useSessionStore((s) => s.escudosRacha) || 0;
-  const articulosComprados = useSessionStore((s) => s.articulosComprados) || [];
-  const marcoEstilo = useSessionStore((s) => s.marcoEstilo);
-  const mascotaEquipada = useSessionStore((s) => s.mascotaEquipada);
-  const tituloEquipado = useSessionStore((s) => s.tituloEquipado);
+  const storeAp = useSessionStore((s) => s.apTotal);
+  const storeEscudosDisponibles = useSessionStore((s) => s.escudosRachaDisponibles);
+  const storeEscudos = useSessionStore((s) => s.escudosRacha);
+  const storeCosmeticos = useSessionStore((s) => s.cosmeticosComprados);
+  const storeArticulos = useSessionStore((s) => s.articulosComprados);
+  const storeMarco = useSessionStore((s) => s.marcoEstilo);
+  const storeMascota = useSessionStore((s) => s.mascotaEquipada);
+  const storeTitulo = useSessionStore((s) => s.tituloEquipado);
+  const storeAvatar = useSessionStore((s) => s.avatarEquipado);
 
-  const comprarArticulo = useSessionStore((s) => s.comprarArticulo);
+  const { data: personaje } = usePersonaje();
+  const { mutate: comprar, isPending: isComprando } = useComprarArticulo();
+  const { mutate: personalizar, isPending: isPersonalizando } = usePersonalizarPersonaje();
 
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todas');
   const [feedbackMensaje, setFeedbackMensaje] = useState(null);
+  const [articuloEnProcesoId, setArticuloEnProcesoId] = useState(null);
 
-  const articulosFiltrados = categoriaSeleccionada === 'todas'
-    ? ARTICULOS_BAZAR
-    : ARTICULOS_BAZAR.filter((a) => a.categoria === categoriaSeleccionada);
+  // Estados reactivos (combinando backend y sesión sin llamadas condicionales a hooks)
+  const apTotal = personaje?.puntosAccionAP ?? storeAp ?? 0;
+  const escudosRacha =
+    personaje?.escudosRachaDisponibles ??
+    storeEscudosDisponibles ??
+    storeEscudos ??
+    0;
+  const cosmeticosComprados =
+    personaje?.cosmeticosComprados ??
+    storeCosmeticos ??
+    storeArticulos ??
+    [];
+
+  const marcoEstilo = personaje?.marcoEquipado || storeMarco;
+  const mascotaEquipada = personaje?.mascotaEquipada || storeMascota;
+  const tituloEquipado = personaje?.tituloEquipado || storeTitulo;
+  const avatarEquipado = personaje?.avatarEquipado || storeAvatar;
+
+  const articulosFiltrados =
+    categoriaSeleccionada === 'todas'
+      ? ARTICULOS_BAZAR
+      : ARTICULOS_BAZAR.filter((a) => a.categoria === categoriaSeleccionada);
 
   const handleAccionArticulo = (articulo) => {
-    const yaComprado = articulosComprados.includes(articulo.id);
+    const yaComprado = cosmeticosComprados.includes(articulo.id);
 
-    if (!yaComprado && apTotal < articulo.costoAp) {
-      setFeedbackMensaje({
-        tipo: 'error',
-        texto: `Necesitas ${articulo.costoAp} AP para adquirir "${articulo.nombre}". ¡Resuelve misiones para ganar más AP!`,
+    // 1. Si ya fue comprado y no es consumible, la acción es EQUIPAR
+    if (yaComprado && articulo.tipo !== 'escudo') {
+      setArticuloEnProcesoId(articulo.id);
+      const payload = {
+        avatarId: avatarEquipado,
+        marco: marcoEstilo,
+        mascota: mascotaEquipada,
+        titulo: tituloEquipado,
+      };
+
+      if (articulo.tipo === 'marco') payload.marco = articulo.valor;
+      if (articulo.tipo === 'mascota') payload.mascota = articulo.valor;
+      if (articulo.tipo === 'titulo') payload.titulo = articulo.valor;
+      if (articulo.tipo === 'avatar') payload.avatarId = articulo.valor;
+
+      personalizar(payload, {
+        onSuccess: () => {
+          setArticuloEnProcesoId(null);
+          playParchment();
+          setFeedbackMensaje({
+            tipo: 'info',
+            texto: `¡Equipaste "${articulo.nombre}" con éxito!`,
+          });
+        },
+        onError: (err) => {
+          setArticuloEnProcesoId(null);
+          setFeedbackMensaje({
+            tipo: 'error',
+            texto: err.mensajeAmigable || 'No se pudo equipar el artículo.',
+          });
+        },
       });
       return;
     }
 
-    const res = comprarArticulo({
-      id: articulo.id,
-      costoAp: articulo.costoAp,
-      tipo: articulo.tipo,
-      valor: articulo.valor,
-    });
-
-    if (res.exito) {
-      if (yaComprado) {
-        playParchment();
-        setFeedbackMensaje({
-          tipo: 'info',
-          texto: `¡Equipaste "${articulo.nombre}" con éxito!`,
-        });
-      } else {
-        playSuccess();
-        setFeedbackMensaje({
-          tipo: 'exito',
-          texto: `¡Adquiriste "${articulo.nombre}"! Ya está disponible en tu inventario.`,
-        });
-      }
+    // 2. Si no ha sido comprado, la acción es COMPRAR con AP
+    if (apTotal < articulo.costoAp) {
+      setFeedbackMensaje({
+        tipo: 'error',
+        texto: `Necesitas ${articulo.costoAp} AP para adquirir "${articulo.nombre}". ¡Completa más misiones en el aula para ganar AP!`,
+      });
+      return;
     }
+
+    setArticuloEnProcesoId(articulo.id);
+    const tipoBackend = MAPEO_TIPO_BACKEND[articulo.tipo] || 'Mascota';
+
+    comprar(
+      {
+        articuloId: articulo.id,
+        costoAp: articulo.costoAp,
+        tipo: tipoBackend,
+        valor: articulo.valor,
+      },
+      {
+        onSuccess: () => {
+          setArticuloEnProcesoId(null);
+          playSuccess();
+          setFeedbackMensaje({
+            tipo: 'exito',
+            texto: `¡Adquiriste "${articulo.nombre}"! Ya está disponible en tu inventario.`,
+          });
+        },
+        onError: (err) => {
+          setArticuloEnProcesoId(null);
+          setFeedbackMensaje({
+            tipo: 'error',
+            texto: err.mensajeAmigable || 'No se pudo completar la compra.',
+          });
+        },
+      }
+    );
   };
 
   const getEstadoArticulo = (articulo) => {
@@ -70,12 +152,13 @@ function BazarRecompensas() {
       return { esEquipado: false, yaComprado: false, label: 'Adquirir Escudo' };
     }
 
-    const yaComprado = articulosComprados.includes(articulo.id);
+    const yaComprado = cosmeticosComprados.includes(articulo.id);
     let esEquipado = false;
 
     if (articulo.tipo === 'marco') esEquipado = marcoEstilo === articulo.valor;
     if (articulo.tipo === 'mascota') esEquipado = mascotaEquipada === articulo.valor;
     if (articulo.tipo === 'titulo') esEquipado = tituloEquipado === articulo.valor;
+    if (articulo.tipo === 'avatar') esEquipado = avatarEquipado === articulo.valor;
 
     return {
       yaComprado,
@@ -136,7 +219,7 @@ function BazarRecompensas() {
         </div>
       </div>
 
-      {/* ── Banner de Notificación de Compra / Info ── */}
+      {/* ── Banner de Notificación de Compra / Error ── */}
       <AnimatePresence>
         {feedbackMensaje && (
           <motion.div
@@ -144,7 +227,7 @@ function BazarRecompensas() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             className={[
-              'p-3.5 rounded-xl border-2 flex items-center justify-between text-xs font-semibold gap-3',
+              'p-3.5 rounded-xl border-2 flex items-center justify-between text-xs font-semibold gap-3 shadow-sm',
               feedbackMensaje.tipo === 'exito'
                 ? 'bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-[var(--brand-emerald)] text-[var(--brand-emerald)]'
                 : feedbackMensaje.tipo === 'error'
@@ -190,8 +273,10 @@ function BazarRecompensas() {
       {/* ── Cuadrícula de Artículos ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {articulosFiltrados.map((articulo, idx) => {
-          const { yaComprado, esEquipado, label } = getEstadoArticulo(articulo);
+          const { yaComprado, esEquipado } = getEstadoArticulo(articulo);
           const IconVisual = articulo.IconoVisual;
+          const isCurrentLoading =
+            (isComprando || isPersonalizando) && articuloEnProcesoId === articulo.id;
 
           return (
             <motion.div
@@ -204,8 +289,10 @@ function BazarRecompensas() {
                 className={[
                   'flex flex-col justify-between gap-4 h-full relative group transition-all',
                   esEquipado
-                    ? 'border-2 border-[var(--brand-violet)] bg-gradient-to-br from-[var(--bg-panel)] to-[color-mix(in_oklch,var(--brand-violet)_8%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-violet)]'
-                    : 'border-2 border-[var(--border)] bg-[var(--bg-panel)]',
+                    ? 'border-2 border-[var(--brand-violet)] bg-gradient-to-br from-[var(--bg-panel)] to-[color-mix(in_oklch,var(--brand-violet)_10%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-violet)]'
+                    : yaComprado
+                      ? 'border-2 border-[var(--brand-primary)] bg-[var(--bg-panel)] shadow-[3px_3px_0px_var(--border)]'
+                      : 'border-2 border-[var(--border-muted)] bg-[var(--bg-panel)]',
                 ].join(' ')}
               >
                 {/* Header de la tarjeta */}
@@ -213,7 +300,7 @@ function BazarRecompensas() {
                   <div className="flex items-center gap-3">
                     <IconVisual />
                     <div>
-                      <span className={`text-[10px] font-display font-bold uppercase tracking-wider ${articulo.colorRareza}`}>
+                      <span className={`text-[10px] font-display font-black uppercase tracking-wider ${articulo.colorRareza}`}>
                         ✦ {articulo.rareza}
                       </span>
                       <h3 className="font-display font-bold text-base text-[var(--text-primary)] leading-tight mt-0.5">
@@ -222,11 +309,15 @@ function BazarRecompensas() {
                     </div>
                   </div>
 
-                  {esEquipado && (
+                  {esEquipado ? (
                     <Badge variant="violet">
                       <Check size={10} /> Equipado
                     </Badge>
-                  )}
+                  ) : yaComprado && articulo.tipo !== 'escudo' ? (
+                    <Badge variant="racha">
+                      <Sparkles size={10} /> Adquirido
+                    </Badge>
+                  ) : null}
                 </div>
 
                 {/* Descripción */}
@@ -244,10 +335,15 @@ function BazarRecompensas() {
                   <Button
                     size="sm"
                     variant={esEquipado ? 'ghost' : yaComprado ? 'secondary' : 'primary'}
-                    disabled={esEquipado}
+                    disabled={esEquipado || isCurrentLoading}
                     onClick={() => handleAccionArticulo(articulo)}
                   >
-                    {esEquipado ? (
+                    {isCurrentLoading ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        <span>Procesando...</span>
+                      </>
+                    ) : esEquipado ? (
                       <>
                         <Check size={13} />
                         En Uso

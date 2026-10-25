@@ -32,6 +32,13 @@ async function apiFetch(endpoint, options = {}) {
         };
       }
 
+      if (response.status === 403) {
+        errorData.title = errorData.title || 'Acceso restringido (´• ω •`)ﾉ';
+        errorData.detail =
+          errorData.detail ||
+          'No estás inscripto en esta aula o tu sesión no tiene los permisos necesarios (っ- ‸ - ς).';
+      }
+
       const problemError = new Error(errorData.detail || errorData.title || `HTTP Error ${response.status}`);
       problemError.status = response.status;
       problemError.title = errorData.title || 'Error en la solicitud';
@@ -150,6 +157,39 @@ export const misionesApi = {
 export const alumnosApi = {
   // GET /api/alumnos/personaje/{aulaId} (Alumno vía JWT)
   getPersonaje: (aulaId) => apiFetch(`/api/alumnos/personaje/${aulaId}`),
+
+  // GET /api/alumnos/ranking/{aulaId} (Alumno vía JWT)
+  getRanking: (aulaId) => apiFetch(`/api/alumnos/ranking/${aulaId}`),
+
+  // GET /api/alumnos/grimorio/{aulaId} (Alumno vía JWT)
+  getGrimorio: (aulaId) => apiFetch(`/api/alumnos/grimorio/${aulaId}`),
+
+  // POST /api/alumnos/bazar/comprar?aulaId={aulaId}
+  // Body: { articuloId, costoAp, tipo, valor, aulaId }
+  comprarArticulo: (aulaId, { articuloId, costoAp, tipo, valor }) =>
+    apiFetch(`/api/alumnos/bazar/comprar?aulaId=${aulaId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        articuloId,
+        costoAp: Number(costoAp),
+        tipo,
+        valor: String(valor),
+        aulaId,
+      }),
+    }),
+
+  // PUT /api/alumnos/personaje/{aulaId}/personalizacion
+  // Body: { avatarId, marco, mascota, titulo }
+  personalizarPersonaje: (aulaId, { avatarId, marco, mascota, titulo }) =>
+    apiFetch(`/api/alumnos/personaje/${aulaId}/personalizacion`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        avatarId: avatarId ?? null,
+        marco: marco ?? null,
+        mascota: mascota ?? null,
+        titulo: titulo ?? null,
+      }),
+    }),
 
   // POST /api/alumnos/misiones/{misionId}/resolver (Alumno vía JWT)
   resolverMision: (misionId, { respuestas }) =>

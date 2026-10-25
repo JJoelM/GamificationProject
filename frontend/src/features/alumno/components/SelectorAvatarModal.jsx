@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Lock, Check, Wand2, Palette, Shield, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Lock, Check, Wand2, Palette, Shield, User, Loader2, AlertCircle } from 'lucide-react';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
 import { AVATARES_RPG, AURAS_DISPONIBLES, getAvatarPorId } from './AvataresData';
 import useSessionStore, { calcularNivel } from '../../../store/useSessionStore';
+import { usePersonalizarPersonaje } from '../../../hooks/useBazarMutations';
 import { playParchment, playSuccess } from '../../../utils/audio';
 
 function SelectorAvatarModal({ isOpen, onClose }) {
@@ -13,15 +14,29 @@ function SelectorAvatarModal({ isOpen, onClose }) {
   const avatarEquipado = useSessionStore((s) => s.avatarEquipado) || 'erudito_arcano';
   const auraColorActual = useSessionStore((s) => s.auraColor) || '#2563EB';
   const marcoEstiloActual = useSessionStore((s) => s.marcoEstilo) || 'scroll';
+  const mascotaEquipadaActual = useSessionStore((s) => s.mascotaEquipada) || 'buho_erudito';
+  const tituloEquipadoActual = useSessionStore((s) => s.tituloEquipado) || 'Iniciado del Saber';
 
   const setAvatarEquipado = useSessionStore((s) => s.setAvatarEquipado);
   const setAuraColor = useSessionStore((s) => s.setAuraColor);
   const setMarcoEstilo = useSessionStore((s) => s.setMarcoEstilo);
 
+  const { mutate: personalizar, isPending: isGuardando } = usePersonalizarPersonaje();
+
   const nivelInfo = calcularNivel(xpTotal);
   const [selectedAvatarId, setSelectedAvatarId] = useState(avatarEquipado);
   const [selectedAura, setSelectedAura] = useState(auraColorActual);
   const [selectedMarco, setSelectedMarco] = useState(marcoEstiloActual);
+  const [guardarError, setGuardarError] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedAvatarId(avatarEquipado);
+      setSelectedAura(auraColorActual);
+      setSelectedMarco(marcoEstiloActual);
+      setGuardarError(null);
+    }
+  }, [isOpen, avatarEquipado, auraColorActual, marcoEstiloActual]);
 
   const avatarSeleccionado = getAvatarPorId(selectedAvatarId);
   const AvatarIcon = avatarSeleccionado.IconoPreview;
@@ -37,17 +52,29 @@ function SelectorAvatarModal({ isOpen, onClose }) {
     setSelectedAura(hex);
   };
 
-  const handleSelectMarco = (shape) => {
-    playParchment();
-    setSelectedMarco(shape);
-  };
-
   const handleGuardar = () => {
-    setAvatarEquipado(selectedAvatarId);
+    setGuardarError(null);
     setAuraColor(selectedAura);
     setMarcoEstilo(selectedMarco);
-    playSuccess();
-    onClose();
+
+    personalizar(
+      {
+        avatarId: selectedAvatarId,
+        marco: selectedMarco,
+        mascota: mascotaEquipadaActual,
+        titulo: tituloEquipadoActual,
+      },
+      {
+        onSuccess: () => {
+          setAvatarEquipado(selectedAvatarId);
+          playSuccess();
+          onClose();
+        },
+        onError: (err) => {
+          setGuardarError(err.mensajeAmigable || 'No se pudo equipar el retrato seleccionado.');
+        },
+      }
+    );
   };
 
   return (
@@ -58,6 +85,21 @@ function SelectorAvatarModal({ isOpen, onClose }) {
       size="lg"
     >
       <div className="flex flex-col gap-6 pb-2">
+        {/* Error de guardado */}
+        <AnimatePresence>
+          {guardarError && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="p-3 rounded-xl border-2 border-[var(--brand-crimson)] bg-[color-mix(in_oklch,var(--brand-crimson)_12%,var(--bg-panel))] text-[var(--brand-crimson)] text-xs font-semibold flex items-center gap-2"
+            >
+              <AlertCircle size={16} />
+              <span>{guardarError}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Vista previa en vivo */}
         <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-[16px_22px_18px_20px] bg-gradient-to-br from-[var(--bg-accent)] to-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-c)]">
           <div className="relative shrink-0">
@@ -98,8 +140,8 @@ function SelectorAvatarModal({ isOpen, onClose }) {
               <User size={14} className="text-[var(--brand-primary)]" />
               Elige tu Arquetipo
             </span>
-            <span className="text-[11px] text-[var(--text-muted)]">
-              Tu nivel actual: <strong>Nivel {nivelInfo.nivel}</strong>
+            <span className="text-[11px] text-[var(--text-secondary)] font-medium">
+              Tu nivel actual: <strong className="text-[var(--text-primary)]">Nivel {nivelInfo.nivel}</strong>
             </span>
           </div>
 
@@ -113,7 +155,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                 <button
                   key={avatar.id}
                   type="button"
-                  disabled={!isUnlocked}
+                  disabled={!isUnlocked || isGuardando}
                   onClick={() => handleSelectAvatar(avatar)}
                   className={[
                     'relative p-3 rounded-[12px_16px_14px_14px] border-2 flex flex-col items-center gap-2 text-center transition-all cursor-pointer text-left',
@@ -145,7 +187,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                     <h4 className="font-display font-bold text-xs text-[var(--text-primary)] leading-tight">
                       {avatar.nombre}
                     </h4>
-                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                    <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">
                       {isUnlocked ? avatar.clase : `Desbloquea en Nv. ${avatar.nivelRequerido}`}
                     </p>
                   </div>
@@ -169,6 +211,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                 <button
                   key={aura.id}
                   type="button"
+                  disabled={isGuardando}
                   onClick={() => handleSelectAura(aura.hex)}
                   className={[
                     'flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-xs font-display font-semibold transition-all cursor-pointer',
@@ -190,12 +233,21 @@ function SelectorAvatarModal({ isOpen, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-muted)]">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={isGuardando}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleGuardar}>
-            <Wand2 size={15} />
-            Equipar Retrato
+          <Button variant="primary" onClick={handleGuardar} disabled={isGuardando}>
+            {isGuardando ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                <span>Guardando...</span>
+              </>
+            ) : (
+              <>
+                <Wand2 size={15} />
+                <span>Confirmar Retrato</span>
+              </>
+            )}
           </Button>
         </div>
       </div>

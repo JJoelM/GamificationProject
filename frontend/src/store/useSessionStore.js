@@ -33,6 +33,7 @@ const PROGRESION_BASE = {
   apTotal: 0,
   rachaDias: 0,
   escudosRacha: 0,
+  escudosRachaDisponibles: 0,
   mejoraSemanal: 0,
   tituloEquipado: 'Iniciado del Saber',
   logrosDesbloqueados: [],
@@ -46,6 +47,7 @@ const PROGRESION_BASE = {
 
   // Inventario de artículos comprados en el Bazar
   articulosComprados: [],
+  cosmeticosComprados: [],
 
   // Historial de misiones resueltas: { [misionId]: { completada, intentos, mejorPuntaje, ultimaFecha } }
   misionesResueltas: {},
@@ -105,9 +107,14 @@ const useSessionStore = create(
           xpTotal: datosBackend.experienciaXP ?? s.xpTotal,
           apTotal: datosBackend.puntosAccionAP ?? s.apTotal,
           rachaDias: datosBackend.rachaDiasActivos ?? s.rachaDias,
+          escudosRacha: datosBackend.escudosRachaDisponibles ?? s.escudosRacha,
+          escudosRachaDisponibles: datosBackend.escudosRachaDisponibles ?? s.escudosRachaDisponibles,
           avatarEquipado: datosBackend.avatarEquipado || s.avatarEquipado,
           marcoEstilo: datosBackend.marcoEquipado || s.marcoEstilo,
           mascotaEquipada: datosBackend.mascotaEquipada || s.mascotaEquipada,
+          tituloEquipado: datosBackend.tituloEquipado || s.tituloEquipado,
+          cosmeticosComprados: datosBackend.cosmeticosComprados ?? s.cosmeticosComprados,
+          articulosComprados: datosBackend.cosmeticosComprados ?? s.articulosComprados,
         }));
       },
 
@@ -147,6 +154,7 @@ const useSessionStore = create(
       setAuraColor: (auraColor) => set({ auraColor }),
       setMarcoEstilo: (marcoEstilo) => set({ marcoEstilo }),
       setMascotaEquipada: (mascotaId) => set({ mascotaEquipada: mascotaId }),
+      setTituloEquipado: (titulo) => set({ tituloEquipado: titulo }),
 
       // Bazar: comprar y equipar artículos con AP
       comprarArticulo: ({ id, costoAp, tipo, valor }) => {
