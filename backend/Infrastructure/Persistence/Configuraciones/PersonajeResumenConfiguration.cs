@@ -15,5 +15,6 @@ public class PersonajeResumenConfiguration : IEntityTypeConfiguration<PersonajeR
         builder.Property(p => p.AvatarEquipado).HasMaxLength(100);
         builder.Property(p => p.MarcoEquipado).HasMaxLength(100);
         builder.Property(p => p.MascotaEquipada).HasMaxLength(100);
+        builder.Property(p => p.TituloEquipado).HasMaxLength(100);
     }
 }

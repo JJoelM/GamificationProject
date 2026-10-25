@@ -239,6 +239,11 @@ namespace Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("racha_dias_activos");
 
+                    b.Property<string>("TituloEquipado")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("titulo_equipado");
+
                     b.HasKey("PersonajeId")
                         .HasName("pk_personajes_resumen");
 

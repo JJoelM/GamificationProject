@@ -13,4 +13,4 @@ public sealed record ResolverOrdenTemporalRequest(List<string> OrdenPropuesto, s
 
 public sealed record ComprarArticuloRequest(string ArticuloId, int CostoAp, TipoArticulo Tipo, string Valor, Guid? AulaId = null);
 
-public sealed record PersonalizarPersonajeRequest(string? AvatarId, string? Marco, string? Mascota);
+public sealed record PersonalizarPersonajeRequest(string? AvatarId, string? Marco, string? Mascota, string? Titulo = null);

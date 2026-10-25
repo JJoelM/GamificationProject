@@ -108,7 +108,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
                 var resumenBazar = await _db.PersonajesResumen
                     .FirstOrDefaultAsync(p => p.PersonajeId == personaje.Id, ct);
                 resumenBazar?.ActualizarPersonalizacion(
-                    personaje.AvatarEquipado, personaje.MarcoEquipado, personaje.MascotaEquipada);
+                    personaje.AvatarEquipado, personaje.MarcoEquipado, personaje.MascotaEquipada, personaje.TituloEquipado);
                 break;
         }
     }

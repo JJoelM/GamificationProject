@@ -60,6 +60,7 @@ public static class AlumnosEndpoints
                     avatarEquipado = (string?)null,
                     marcoEquipado = (string?)null,
                     mascotaEquipada = (string?)null,
+                    tituloEquipado = (string?)null,
                     cosmeticosComprados = Array.Empty<string>(),
                     aulaId,
                     alumnoId,
@@ -75,6 +76,7 @@ public static class AlumnosEndpoints
                 avatarEquipado = personaje.AvatarEquipado,
                 marcoEquipado = personaje.MarcoEquipado,
                 mascotaEquipada = personaje.MascotaEquipada,
+                tituloEquipado = personaje.TituloEquipado,
                 cosmeticosComprados = personaje.CosmeticosComprados,
                 aulaId,
                 alumnoId,
@@ -110,7 +112,7 @@ public static class AlumnosEndpoints
             Guid aulaId, PersonalizarPersonajeRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
             await mediator.Send(new PersonalizarPersonajeCommand(
-                usuario.ObtenerUsuarioId(), aulaId, request.AvatarId, request.Marco, request.Mascota));
+                usuario.ObtenerUsuarioId(), aulaId, request.AvatarId, request.Marco, request.Mascota, request.Titulo));
             return Results.NoContent();
         })
         .WithName("PersonalizarPersonaje");

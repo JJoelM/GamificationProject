@@ -147,6 +147,19 @@ public class PersonajeTests
     }
 
     [Fact]
+    public void ComprarArticulo_Titulo_DeduceApYEquipaTitulo()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 100, 300, 100, Hoy);
+
+        personaje.ComprarArticulo("titulo_centinela", 140, TipoArticulo.Titulo, "Centinela del Saber");
+
+        Assert.Equal(160, personaje.PuntosAccionAP);
+        Assert.Equal("Centinela del Saber", personaje.TituloEquipado);
+        Assert.Contains("titulo_centinela", personaje.CosmeticosComprados);
+    }
+
+    [Fact]
     public void CargarDesdeHistorial_ReconstruyeIdAlumnoIdYAulaId()
     {
         var alumnoId = Guid.NewGuid();

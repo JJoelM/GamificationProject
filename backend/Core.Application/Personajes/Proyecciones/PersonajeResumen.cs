@@ -2,9 +2,7 @@ namespace Core.Application.Personajes.Proyecciones;
 
 // Proyeccion de lectura del Personaje: existe para que el ranking y las
 // metricas del docente puedan consultar XP/racha sin reconstruir el agregado
-// completo desde el Ledger por cada alumno del aula. El mismo patron que
-// BorradorIA/MisionActiva -- escribe el RepositorioPersonajes al guardar,
-// lee IApplicationDbContext desde los query handlers.
+// completo desde el Ledger por cada alumno del aula.
 public class PersonajeResumen
 {
     public Guid PersonajeId { get; private set; }
@@ -17,6 +15,7 @@ public class PersonajeResumen
     public string? AvatarEquipado { get; private set; }
     public string? MarcoEquipado { get; private set; }
     public string? MascotaEquipada { get; private set; }
+    public string? TituloEquipado { get; private set; }
 
     private PersonajeResumen() { }
 
@@ -35,10 +34,11 @@ public class PersonajeResumen
         MisionesCompletadas = misionesCompletadas;
     }
 
-    public void ActualizarPersonalizacion(string? avatar, string? marco, string? mascota)
+    public void ActualizarPersonalizacion(string? avatar, string? marco, string? mascota, string? titulo = null)
     {
         AvatarEquipado = avatar;
         MarcoEquipado = marco;
         MascotaEquipada = mascota;
+        TituloEquipado = titulo;
     }
 }

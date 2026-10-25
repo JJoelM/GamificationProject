@@ -15,6 +15,7 @@ public sealed class Personaje : AgregadoRaiz
     public string? AvatarEquipado { get; private set; }
     public string? MarcoEquipado { get; private set; }
     public string? MascotaEquipada { get; private set; }
+    public string? TituloEquipado { get; private set; }
 
     private readonly HashSet<string> _cosmeticosComprados = new();
     public IReadOnlyCollection<string> CosmeticosComprados => _cosmeticosComprados;
@@ -81,8 +82,7 @@ public sealed class Personaje : AgregadoRaiz
     }
 
     // Equipar no cuesta AP y no requiere que el artículo no exista previamente
-    // -- solo requiere que ya haya sido comprado. Separar compra de equipamiento
-    // permite cambiar libremente qué se muestra sin generar transacciones de AP.
+    // -- solo requiere que ya haya sido comprado.
     public void EquiparArticulo(string articuloId, TipoArticulo tipo, string valor)
     {
         if (tipo != TipoArticulo.EscudoRacha && !_cosmeticosComprados.Contains(articuloId))
@@ -143,6 +143,7 @@ public sealed class Personaje : AgregadoRaiz
             case TipoArticulo.Avatar: AvatarEquipado = valor; break;
             case TipoArticulo.Marco: MarcoEquipado = valor; break;
             case TipoArticulo.Mascota: MascotaEquipada = valor; break;
+            case TipoArticulo.Titulo: TituloEquipado = valor; break;
             case TipoArticulo.EscudoRacha: EscudosRachaDisponibles += 1; break;
         }
     }
