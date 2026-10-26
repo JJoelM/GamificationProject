@@ -20,6 +20,7 @@ public class RepositorioMisiones : IRepositorioMisiones
         [nameof(MisionRechazada)] = typeof(MisionRechazada),
         [nameof(MisionOcultada)] = typeof(MisionOcultada),
         [nameof(MisionRepublicada)] = typeof(MisionRepublicada),
+        [nameof(MisionesSugeridasDefinidas)] = typeof(MisionesSugeridasDefinidas),
     };
 
     private readonly ApplicationDbContext _db;
@@ -141,6 +142,23 @@ public class RepositorioMisiones : IRepositorioMisiones
                 var activaRepublicar = await _db.MisionesActivas
                     .FirstOrDefaultAsync(m => m.MisionId == e.MisionId, ct);
                 activaRepublicar?.Republicar();
+                break;
+
+            case MisionesSugeridasDefinidas e:
+                var origen = await ObtenerBorradorOLanzar(e.MisionId, ct);
+                var actuales = await _db.ConexionesMision
+                    .Where(c => c.MisionOrigenId == e.MisionId)
+                    .ToListAsync(ct);
+
+                // Se aplica la diferencia, no "borrar todo y reinsertar": EF no tolera
+                // un Delete y un Add con la misma clave compuesta en un mismo SaveChanges.
+                var nuevos = e.MisionesSugeridas.ToHashSet();
+                foreach (var c in actuales.Where(c => !nuevos.Contains(c.MisionDestinoId)))
+                    _db.ConexionesMision.Remove(c);
+
+                var yaExisten = actuales.Select(c => c.MisionDestinoId).ToHashSet();
+                foreach (var destino in nuevos.Where(d => !yaExisten.Contains(d)))
+                    _db.ConexionesMision.Add(new ConexionMision(e.MisionId, destino, origen.AulaId));
                 break;
 
             default:

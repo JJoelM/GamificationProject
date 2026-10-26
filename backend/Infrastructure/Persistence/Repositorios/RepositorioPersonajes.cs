@@ -18,6 +18,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
         [nameof(ProgresoActualizado)] = typeof(ProgresoActualizado),
         [nameof(ArticuloComprado)] = typeof(ArticuloComprado),
         [nameof(ArticuloEquipado)] = typeof(ArticuloEquipado),
+        [nameof(PistaUsada)] = typeof(PistaUsada),
     };
 
     private readonly ApplicationDbContext _db;

@@ -81,6 +81,26 @@ namespace Infrastructure.Migrations
                     b.ToTable("borradores_ia", (string)null);
                 });
 
+            modelBuilder.Entity("Core.Application.Misiones.Proyecciones.ConexionMision", b =>
+                {
+                    b.Property<Guid>("MisionOrigenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_origen_id");
+
+                    b.Property<Guid>("MisionDestinoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_destino_id");
+
+                    b.Property<Guid>("AulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("aula_id");
+
+                    b.HasKey("MisionOrigenId", "MisionDestinoId")
+                        .HasName("pk_conexiones_mision");
+
+                    b.ToTable("conexiones_mision", (string)null);
+                });
+
             modelBuilder.Entity("Core.Application.Misiones.Proyecciones.FichaGrimorio", b =>
                 {
                     b.Property<Guid>("FichaId")

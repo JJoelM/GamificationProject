@@ -55,3 +55,11 @@ public sealed record MisionRepublicada(
     Guid MisionId,
     Guid DocenteId,
     DateTime OcurridoEn) : IEventoDominio;
+
+// Reemplaza el conjunto completo de misiones sugeridas a continuacion de esta
+// (sugerencia, nunca bloqueo: ocultar la mision sigue siendo la forma de bloquear).
+public sealed record MisionesSugeridasDefinidas(
+    Guid MisionId,
+    Guid DocenteId,
+    List<Guid> MisionesSugeridas,
+    DateTime OcurridoEn) : IEventoDominio;

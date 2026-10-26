@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Core.Application.Grimorio;
+using Core.Application.Misiones.Consultas;
 using Core.Application.Personajes.Comandos;
 using Core.Application.Personajes.Consultas;
 using Core.Domain.Agregados.Misiones;
+using Core.Domain.Agregados.Personajes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,8 +44,22 @@ public static class AlumnosEndpoints
         })
         .WithName("ResolverMisionOrdenTemporal");
 
+        grupo.MapPost("/misiones/{misionId:guid}/pista", async (
+            Guid misionId, UsarPistaRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
+        {
+            var cmd = new UsarPistaCommand(
+                misionId, usuario.ObtenerUsuarioId(), request.IndicePregunta,
+                request.OpcionesYaDescartadas ?? new List<string>());
+            return Results.Ok(await mediator.Send(cmd));
+        })
+        .WithName("UsarPista");
+
+        grupo.MapGet("/camino/{aulaId:guid}", async (Guid aulaId, ClaimsPrincipal usuario, IMediator mediator) =>
+            Results.Ok(await mediator.Send(new ObtenerCaminoParaAlumnoQuery(aulaId, usuario.ObtenerUsuarioId()))))
+            .WithName("ObtenerCaminoAlumno");
+
         grupo.MapGet("/personaje/{aulaId:guid}", async (
-            Guid aulaId, ClaimsPrincipal usuario, Core.Domain.Agregados.Personajes.IRepositorioPersonajes repositorio) =>
+            Guid aulaId, ClaimsPrincipal usuario, IRepositorioPersonajes repositorio) =>
         {
             var alumnoId = usuario.ObtenerUsuarioId();
             var personajeId = Core.Domain.SeedWork.IdentidadCompuesta.Combinar(alumnoId, aulaId);
@@ -57,6 +73,7 @@ public static class AlumnosEndpoints
                     puntosAccionAP = 0,
                     rachaDiasActivos = 0,
                     escudosRachaDisponibles = 0,
+                    pistasDisponibles = 0,
                     avatarEquipado = (string?)null,
                     marcoEquipado = (string?)null,
                     mascotaEquipada = (string?)null,
@@ -73,6 +90,7 @@ public static class AlumnosEndpoints
                 puntosAccionAP = personaje.PuntosAccionAP,
                 rachaDiasActivos = personaje.RachaDiasActivos,
                 escudosRachaDisponibles = personaje.EscudosRachaDisponibles,
+                pistasDisponibles = personaje.PistasDisponibles,
                 avatarEquipado = personaje.AvatarEquipado,
                 marcoEquipado = personaje.MarcoEquipado,
                 mascotaEquipada = personaje.MascotaEquipada,
@@ -92,18 +110,29 @@ public static class AlumnosEndpoints
             Results.Ok(await mediator.Send(new ObtenerGrimorioAulaQuery(aulaId, usuario.ObtenerUsuarioId()))))
             .WithName("ObtenerGrimorio");
 
+        // El enum sale como texto: el frontend no tiene que conocer los numeros del Ledger.
+        grupo.MapGet("/bazar/catalogo", () =>
+            Results.Ok(CatalogoBazar.Todos.Select(a => new { a.Id, a.Nombre, Tipo = a.Tipo.ToString(), a.CostoAp })))
+            .WithName("ObtenerCatalogoBazar");
+
+        grupo.MapPost("/bazar/{aulaId:guid}/comprar", async (
+            Guid aulaId, ComprarArticuloRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
+        {
+            await mediator.Send(new ComprarArticuloBazarCommand(usuario.ObtenerUsuarioId(), aulaId, request.ArticuloId));
+            return Results.NoContent();
+        })
+        .WithName("ComprarArticuloBazarPorAula");
+
         grupo.MapPost("/bazar/comprar", async (
             [FromBody] ComprarArticuloRequest request,
             ClaimsPrincipal usuario,
             IMediator mediator,
             [FromQuery] Guid? aulaId = null) =>
         {
-            var targetAulaId = request.AulaId ?? aulaId
-                ?? throw new ArgumentException("Se requiere aulaId en la consulta o en el cuerpo de la solicitud.", nameof(aulaId));
+            var targetAulaId = aulaId
+                ?? throw new ArgumentException("Se requiere aulaId en la consulta de la solicitud.", nameof(aulaId));
 
-            await mediator.Send(new ComprarArticuloBazarCommand(
-                usuario.ObtenerUsuarioId(), targetAulaId, request.ArticuloId, request.CostoAp, request.Tipo, request.Valor));
-
+            await mediator.Send(new ComprarArticuloBazarCommand(usuario.ObtenerUsuarioId(), targetAulaId, request.ArticuloId));
             return Results.NoContent();
         })
         .WithName("ComprarArticuloBazar");

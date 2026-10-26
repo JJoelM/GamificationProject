@@ -1,6 +1,5 @@
 using Core.Application.Common;
 using Core.Domain.Agregados.Personajes;
-using Core.Domain.Agregados.Personajes.Eventos;
 using Core.Domain.SeedWork;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Core.Application.Personajes.Comandos;
 
 public sealed record ComprarArticuloBazarCommand(
-    Guid AlumnoId, Guid AulaId, string ArticuloId, int CostoAp, TipoArticulo Tipo, string Valor) : IRequest;
+    Guid AlumnoId, Guid AulaId, string ArticuloId) : IRequest;
 
 public sealed class ComprarArticuloBazarCommandHandler : IRequestHandler<ComprarArticuloBazarCommand>
 {
@@ -28,11 +27,14 @@ public sealed class ComprarArticuloBazarCommandHandler : IRequestHandler<Comprar
         if (!estaInscripto)
             throw new UnauthorizedAccessException("No estás inscripto en esta Aula.");
 
+        var articulo = CatalogoBazar.Buscar(request.ArticuloId)
+            ?? throw new ArgumentException($"Artículo inexistente en el catálogo del bazar: '{request.ArticuloId}'.");
+
         var personajeId = IdentidadCompuesta.Combinar(request.AlumnoId, request.AulaId);
         var personaje = await _repositorio.ObtenerPorIdAsync(personajeId, cancellationToken)
             ?? Personaje.Iniciar(request.AlumnoId, request.AulaId);
 
-        personaje.ComprarArticulo(request.ArticuloId, request.CostoAp, request.Tipo, request.Valor);
+        personaje.ComprarArticulo(articulo.Id, articulo.CostoAp, articulo.Tipo, articulo.Id);
 
         await _repositorio.GuardarAsync(personaje, cancellationToken);
     }

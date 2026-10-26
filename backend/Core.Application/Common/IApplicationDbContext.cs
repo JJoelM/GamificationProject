@@ -16,6 +16,7 @@ public interface IApplicationDbContext
     IQueryable<FichaGrimorioDesbloqueada> FichasGrimorioDesbloqueadas { get; }
     IQueryable<PersonajeResumen> PersonajesResumen { get; }
     IQueryable<ResolucionRegistrada> ResolucionesRegistradas { get; }
+    IQueryable<ConexionMision> ConexionesMision { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken ct = default);

@@ -155,6 +155,7 @@ if (app.Environment.IsDevelopment())
     var alumnoId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     var aulaId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     var administradorId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    var directivoId = Guid.Parse("55555555-5555-5555-5555-555555555555");
 
     if (!context.Roles.Any(r => r.Id == rolDocenteId))
         context.Roles.Add(new Rol(rolDocenteId, "Docente"));
@@ -185,6 +186,13 @@ if (app.Environment.IsDevelopment())
         var admin = new Usuario(administradorId, "admin@unne.edu.ar", "Administrador", rolAdministradorId);
         admin.EstablecerContrasena(hasher.HashPassword(admin, "Cambiar123!"));
         context.Usuarios.Add(admin);
+    }
+
+    if (!context.Usuarios.Any(u => u.Id == directivoId))
+    {
+        var directivo = new Usuario(directivoId, "directivo@unne.edu.ar", "Directivo de Escuela", rolDirectivoId);
+        directivo.EstablecerContrasena(hasher.HashPassword(directivo, "Cambiar123!"));
+        context.Usuarios.Add(directivo);
     }
 
     if (!context.Aulas.Any(a => a.Id == aulaId))

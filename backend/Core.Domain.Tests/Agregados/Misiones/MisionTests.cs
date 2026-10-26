@@ -1,5 +1,6 @@
 using Core.Domain.Agregados.Misiones;
 using Core.Domain.Agregados.Misiones.Eventos;
+using Core.Domain.SeedWork;
 using Xunit;
 
 namespace Core.Domain.Tests.Agregados.Misiones;
@@ -61,12 +62,12 @@ public class MisionTests
     }
 
     [Fact]
-    public void Editar_UnaMisionYaValidada_Lanza()
+    public void Editar_UnaMisionRechazada_Lanza()
     {
         var mision = CrearMisionValida();
-        mision.Validar(Guid.NewGuid());
+        mision.Rechazar(Guid.NewGuid(), "No cumple requisitos");
 
-        Assert.Throws<InvalidOperationException>(() =>
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
             mision.Editar(Guid.NewGuid(), "Otra narrativa", "{}", 50));
     }
 
@@ -76,7 +77,7 @@ public class MisionTests
         var mision = CrearMisionValida();
         mision.Validar(Guid.NewGuid());
 
-        Assert.Throws<InvalidOperationException>(() => mision.Validar(Guid.NewGuid()));
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() => mision.Validar(Guid.NewGuid()));
     }
 
     [Fact]
@@ -330,6 +331,6 @@ public class MisionTests
     public void Ocultar_UnaMisionNoValidada_LanzaInvalidOperationException()
     {
         var mision = CrearMisionValida(); // Generada
-        Assert.Throws<InvalidOperationException>(() => mision.Ocultar(Guid.NewGuid()));
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() => mision.Ocultar(Guid.NewGuid()));
     }
 }
