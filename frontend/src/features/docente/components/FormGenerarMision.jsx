@@ -1,11 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, BrainCircuit, Zap, BookOpen, Loader2 } from 'lucide-react';
+import { Sparkles, BrainCircuit, Zap, BookOpen, Loader2, Compass, Swords, Clock, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
+import Badge from '../../../components/ui/Badge';
 import ErrorBanner from '../../../components/ui/ErrorBanner';
 import { useGenerarMisionIa } from '../../../hooks/useMisionMutations';
-import { playChime } from '../../../utils/audio';
+import { playChime, playParchment } from '../../../utils/audio';
+
+/**
+ * Plantillas disponibles para la invocación de la IA
+ */
+const PLANTILLAS = [
+  {
+    id: 'OpcionMultiple',
+    titulo: 'Opción Múltiple',
+    badge: 'Quiz Clásico',
+    descripcion: 'Preguntas conceptuales directas con retroalimentación didáctica inmediata.',
+    Icono: Compass,
+    colorBorde: 'border-[var(--brand-primary)]',
+    bgActivo: 'bg-[color-mix(in_oklch,var(--brand-primary)_12%,var(--bg-panel))]',
+    textColor: 'text-[var(--brand-primary)]',
+  },
+  {
+    id: 'BatallaDeJefe',
+    titulo: 'Batalla de Jefe',
+    badge: 'Combate Épico',
+    descripcion: 'Enfrentamiento táctico por turnos contra una criatura con 100 HP y fases de daño.',
+    Icono: Swords,
+    colorBorde: 'border-[var(--brand-crimson)]',
+    bgActivo: 'bg-[color-mix(in_oklch,var(--brand-crimson)_12%,var(--bg-panel))]',
+    textColor: 'text-[var(--brand-crimson)]',
+  },
+  {
+    id: 'LineaTemporal',
+    titulo: 'Línea Temporal',
+    badge: 'Orden Forense',
+    descripcion: 'Reconstrucción cronológica de hitos históricos y deducción de la anomalía.',
+    Icono: Clock,
+    colorBorde: 'border-[var(--brand-violet)]',
+    bgActivo: 'bg-[color-mix(in_oklch,var(--brand-violet)_12%,var(--bg-panel))]',
+    textColor: 'text-[var(--brand-violet)]',
+  },
+];
 
 /**
  * Mensajes animados mientras la IA trabaja — agregan vida al estado de espera
@@ -104,6 +141,7 @@ function PantallaGenerando() {
 function FormGenerarMision({ isOpen, onClose }) {
   const [temaCurricular, setTemaCurricular] = useState('');
   const [textoFuente, setTextoFuente] = useState('');
+  const [tipoPlantilla, setTipoPlantilla] = useState('OpcionMultiple');
   const [misionGeneradaId, setMisionGeneradaId] = useState(null);
 
   const { mutate: generarMision, isPending, error, reset } = useGenerarMisionIa();
@@ -112,6 +150,7 @@ function FormGenerarMision({ isOpen, onClose }) {
     reset();
     setTemaCurricular('');
     setTextoFuente('');
+    setTipoPlantilla('OpcionMultiple');
     setMisionGeneradaId(null);
     onClose();
   };
@@ -121,7 +160,11 @@ function FormGenerarMision({ isOpen, onClose }) {
     if (!temaCurricular.trim() || !textoFuente.trim()) return;
 
     generarMision(
-      { temaCurricular: temaCurricular.trim(), textoFuente: textoFuente.trim() },
+      {
+        temaCurricular: temaCurricular.trim(),
+        textoFuente: textoFuente.trim(),
+        tipoPlantilla,
+      },
       {
         onSuccess: (data) => {
           playChime();
@@ -168,7 +211,7 @@ function FormGenerarMision({ isOpen, onClose }) {
               ¡Borrador listo para revisión!
             </h3>
             <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-xs">
-              La IA generó una misión con narrativa y preguntas. Ahora es tu turno de validarla y calibrarla antes de publicarla.
+              La IA generó el desafío pedagógico. Ahora es tu turno de validarlo, editarlo y calibrarlo en tu Inbox antes de publicarlo al aula.
             </p>
           </div>
 
@@ -181,7 +224,6 @@ function FormGenerarMision({ isOpen, onClose }) {
                 variant="primary"
                 onClick={() => {
                   handleClose();
-                  // Navigate handled by parent via invalidation → user can click from inbox
                 }}
                 className="flex-1"
               >
@@ -200,11 +242,62 @@ function FormGenerarMision({ isOpen, onClose }) {
           <div className="flex items-start gap-3 p-3 rounded-lg bg-[color-mix(in_oklch,var(--brand-primary)_8%,var(--bg-panel))] border border-[color-mix(in_oklch,var(--brand-primary)_20%,transparent)]">
             <BookOpen size={16} className="text-[var(--brand-primary)] shrink-0 mt-0.5" />
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              La IA leerá tu texto fuente y construirá una narrativa inmersiva + preguntas de opción múltiple. El resultado queda en tu <strong>Inbox como borrador</strong> — tú decides si lo publicás o lo ajustás.
+              La IA analizará el material curricular y diseñará la narrativa y desafíos lúdicos correspondientes. El resultado quedará en tu <strong>Inbox como borrador (HITL)</strong> para que lo calibres antes de activarlo.
             </p>
           </div>
 
           {error && <ErrorBanner error={error} onDismiss={reset} />}
+
+          {/* Selector de Tipo de Plantilla */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-display font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+              Tipo de Desafío Lúdico
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {PLANTILLAS.map((p) => {
+                const isSelected = tipoPlantilla === p.id;
+                const Icon = p.Icono;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      playParchment();
+                      setTipoPlantilla(p.id);
+                    }}
+                    disabled={isPending}
+                    className={[
+                      'relative flex flex-col items-start text-left p-3 rounded-xl border-2 transition-all cursor-pointer',
+                      isSelected
+                        ? `${p.colorBorde} ${p.bgActivo} shadow-md scale-[1.01]`
+                        : 'border-[var(--border)] bg-[var(--bg-base)] hover:border-[var(--border-hover)] hover:bg-[var(--bg-panel)] opacity-85 hover:opacity-100',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center justify-between w-full mb-1.5">
+                      <div className={`p-1.5 rounded-lg bg-[var(--bg-panel)] border border-[var(--border-muted)] ${p.textColor}`}>
+                        <Icon size={16} />
+                      </div>
+                      {isSelected ? (
+                        <span className={`w-5 h-5 rounded-full ${p.textColor} bg-[var(--bg-panel)] flex items-center justify-center border border-current`}>
+                          <Check size={12} strokeWidth={3} />
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-display font-bold px-1.5 py-0.5 rounded bg-[var(--bg-accent)] text-[var(--text-muted)]">
+                          {p.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-display font-bold text-sm text-[var(--text-primary)] leading-tight">
+                      {p.titulo}
+                    </span>
+                    <p className="text-[11px] text-[var(--text-secondary)] mt-1 line-clamp-2 leading-relaxed">
+                      {p.descripcion}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <label

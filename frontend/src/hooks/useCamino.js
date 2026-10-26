@@ -69,6 +69,7 @@ export function useOcultarMision() {
       queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
       queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
       queryClient.invalidateQueries({ queryKey: ['misiones-activas'] });
+      queryClient.invalidateQueries({ queryKey: ['misiones', 'borradores'] });
     },
   });
 }
@@ -88,6 +89,7 @@ export function useRepublicarMision() {
       queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
       queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
       queryClient.invalidateQueries({ queryKey: ['misiones-activas'] });
+      queryClient.invalidateQueries({ queryKey: ['misiones', 'borradores'] });
     },
   });
 }

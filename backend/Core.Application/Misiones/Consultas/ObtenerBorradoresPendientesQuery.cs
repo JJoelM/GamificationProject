@@ -14,7 +14,8 @@ public sealed record BorradorPendienteDto(
     string TipoPlantilla,
     string PayloadJson,
     int NivelConfianzaIA,
-    int RecompensaXpSugerida);
+    int RecompensaXpSugerida,
+    string EstadoValidacion);
 
 public sealed class ObtenerBorradoresPendientesQueryHandler
     : IRequestHandler<ObtenerBorradoresPendientesQuery, List<BorradorPendienteDto>>
@@ -27,10 +28,11 @@ public sealed class ObtenerBorradoresPendientesQueryHandler
         ObtenerBorradoresPendientesQuery request, CancellationToken cancellationToken)
     {
         return _db.BorradoresIA
-            .Where(b => b.DocenteId == request.DocenteId && b.EstadoValidacion == "Pendiente")
+            .Where(b => b.DocenteId == request.DocenteId && b.EstadoValidacion != "Rechazado")
             .Select(b => new BorradorPendienteDto(
                 b.MisionId, b.AulaId, b.TemaCurricular, b.Narrativa,
-                b.TipoPlantilla, b.PayloadJson, b.NivelConfianzaIA, b.RecompensaXpSugerida))
+                b.TipoPlantilla, b.PayloadJson, b.NivelConfianzaIA, b.RecompensaXpSugerida,
+                b.EstadoValidacion))
             .ToListAsync(cancellationToken);
     }
 }

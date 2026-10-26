@@ -12,12 +12,13 @@ export function useGenerarMisionIa() {
   const aulaId = useSessionStore((s) => s.aulaActivaId);
 
   return useMutation({
-    mutationFn: async ({ temaCurricular, textoFuente }) => {
+    mutationFn: async ({ temaCurricular, textoFuente, tipoPlantilla }) => {
       try {
         return await misionesApi.generarConIa({
           aulaId,
           temaCurricular,
           textoFuente,
+          tipoPlantilla,
         });
       } catch (err) {
         if (!err.isApiError) {

@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Compass, Map, ArrowLeft, Sparkles, RefreshCw, CheckCircle2, LayoutGrid, GitFork } from 'lucide-react';
+import {
+  Swords, Compass, Map, ArrowLeft, Sparkles, RefreshCw, CheckCircle2,
+  LayoutGrid, GitFork, HelpCircle, Clock, Layers
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMisionesActivas } from '../../hooks/useMisiones';
 import useSessionStore from '../../store/useSessionStore';
@@ -17,7 +20,7 @@ import { playParchment } from '../../utils/audio';
 
 /**
  * TableroMisiones v4 — Soporta toggle dual:
- * - Vista Cartas (grid con filtros Todas / Nuevas / Repaso)
+ * - Vista Cartas (grid con filtros pedagógicos Todas/Nuevas/Repaso + filtro por Tipo de Minijuego)
  * - Mapa de Aventura (Grafo Acíclico Dirigido DAG con Bézier SVG)
  */
 function TableroMisiones() {
@@ -26,6 +29,7 @@ function TableroMisiones() {
   const [misionSeleccionada, setMisionSeleccionada] = useState(null);
   const [modoVista, setModoVista] = useState('cartas'); // 'cartas' | 'mapa'
   const [tabFiltro, setTabFiltro] = useState('todas'); // 'todas' | 'nuevas' | 'repaso'
+  const [tipoFiltro, setTipoFiltro] = useState('todos'); // 'todos' | 'OpcionMultiple' | 'BatallaDeJefe' | 'LineaTemporal'
 
   const misionesResueltas = useSessionStore((s) => s.misionesResueltas) || {};
 
@@ -45,7 +49,12 @@ function TableroMisiones() {
     return { todas: misiones, nuevas: n, repaso: r };
   }, [misiones, misionesResueltas]);
 
-  const misionesAMostrar = tabFiltro === 'nuevas' ? nuevas : tabFiltro === 'repaso' ? repaso : todas;
+  const misionesPorEstado = tabFiltro === 'nuevas' ? nuevas : tabFiltro === 'repaso' ? repaso : todas;
+
+  const misionesAMostrar = useMemo(() => {
+    if (tipoFiltro === 'todos') return misionesPorEstado;
+    return misionesPorEstado.filter((m) => (m.tipoPlantilla || 'OpcionMultiple') === tipoFiltro);
+  }, [misionesPorEstado, tipoFiltro]);
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto pb-12">
@@ -120,61 +129,108 @@ function TableroMisiones() {
         />
       ) : (
         <>
-          {/* ── Tabs de Filtro de Misiones (Todas / Nuevas / Repaso) ── */}
+          {/* ── Tabs de Filtro de Misiones (Todas / Nuevas / Repaso + Formato) ── */}
           {!isLoading && todas.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-2xl bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-c)]">
-              <div className="flex p-1 rounded-xl bg-[var(--bg-muted)] border border-[var(--border-muted)] gap-1">
-                <button
-                  type="button"
-                  onClick={() => setTabFiltro('todas')}
-                  className={[
-                    'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
-                    tabFiltro === 'todas'
-                      ? 'bg-[var(--brand-primary)] text-white shadow-sm'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)]',
-                  ].join(' ')}
-                >
-                  <Compass size={13} />
-                  Todas ({todas.length})
-                </button>
+            <div className="flex flex-col gap-2.5 p-3 rounded-2xl bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-c)]">
+              {/* Fila 1: Filtro de Progreso Pedagógico */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex p-1 rounded-xl bg-[var(--bg-muted)] border border-[var(--border-muted)] gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playParchment();
+                      setTabFiltro('todas');
+                    }}
+                    className={[
+                      'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
+                      tabFiltro === 'todas'
+                        ? 'bg-[var(--brand-primary)] text-white shadow-sm'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)]',
+                    ].join(' ')}
+                  >
+                    <Compass size={13} />
+                    Todas ({todas.length})
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setTabFiltro('nuevas')}
-                  className={[
-                    'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
-                    tabFiltro === 'nuevas'
-                      ? 'bg-[var(--brand-violet)] text-white shadow-sm'
-                      : 'text-[var(--brand-violet)] hover:bg-[color-mix(in_oklch,var(--brand-violet)_10%,transparent)]',
-                  ].join(' ')}
-                >
-                  <Sparkles size={13} />
-                  Nuevas ({nuevas.length})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playParchment();
+                      setTabFiltro('nuevas');
+                    }}
+                    className={[
+                      'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
+                      tabFiltro === 'nuevas'
+                        ? 'bg-[var(--brand-violet)] text-white shadow-sm'
+                        : 'text-[var(--brand-violet)] hover:bg-[color-mix(in_oklch,var(--brand-violet)_10%,transparent)]',
+                    ].join(' ')}
+                  >
+                    <Sparkles size={13} />
+                    Nuevas ({nuevas.length})
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setTabFiltro('repaso')}
-                  className={[
-                    'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
-                    tabFiltro === 'repaso'
-                      ? 'bg-[var(--brand-sky)] text-white shadow-sm'
-                      : 'text-[var(--brand-sky)] hover:bg-[color-mix(in_oklch,var(--brand-sky)_10%,transparent)]',
-                  ].join(' ')}
-                >
-                  <RefreshCw size={13} />
-                  De Repaso ({repaso.length})
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playParchment();
+                      setTabFiltro('repaso');
+                    }}
+                    className={[
+                      'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
+                      tabFiltro === 'repaso'
+                        ? 'bg-[var(--brand-sky)] text-white shadow-sm'
+                        : 'text-[var(--brand-sky)] hover:bg-[color-mix(in_oklch,var(--brand-sky)_10%,transparent)]',
+                    ].join(' ')}
+                  >
+                    <RefreshCw size={13} />
+                    De Repaso ({repaso.length})
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 px-3 text-xs font-display text-[var(--text-muted)]">
+                  <span>
+                    {nuevas.length > 0 ? (
+                      <strong className="text-[var(--brand-violet)] font-bold">✨ {nuevas.length} {nuevas.length === 1 ? 'misión nueva' : 'misiones nuevas'}</strong>
+                    ) : (
+                      <span className="text-[var(--brand-emerald)] font-bold">¡Estás al día con tus misiones nuevas!</span>
+                    )}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 px-3 text-xs font-display text-[var(--text-muted)]">
-                <span>
-                  {nuevas.length > 0 ? (
-                    <strong className="text-[var(--brand-violet)] font-bold">✨ {nuevas.length} {nuevas.length === 1 ? 'misión nueva' : 'misiones nuevas'}</strong>
-                  ) : (
-                    <span className="text-[var(--brand-emerald)] font-bold">¡Estás al día con tus misiones nuevas!</span>
-                  )}
+              {/* Fila 2: Filtro Secundario por Tipo de Minijuego */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[var(--border-muted)]">
+                <span className="text-[11px] font-display font-semibold text-[var(--text-muted)] uppercase tracking-wider mr-1">
+                  Formato:
                 </span>
+                {[
+                  { id: 'todos', label: 'Todos', Icon: Layers, color: 'text-[var(--text-primary)]' },
+                  { id: 'OpcionMultiple', label: 'Quizzes', Icon: HelpCircle, color: 'text-[var(--brand-primary)]' },
+                  { id: 'BatallaDeJefe', label: 'Batallas de Jefe', Icon: Swords, color: 'text-[var(--brand-crimson)]' },
+                  { id: 'LineaTemporal', label: 'Líneas Temporales', Icon: Clock, color: 'text-[var(--brand-violet)]' },
+                ].map((f) => {
+                  const isSelected = tipoFiltro === f.id;
+                  const Icon = f.Icon;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => {
+                        playParchment();
+                        setTipoFiltro(f.id);
+                      }}
+                      className={[
+                        'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-display font-semibold transition-all cursor-pointer',
+                        isSelected
+                          ? 'bg-[var(--bg-accent)] text-[var(--text-primary)] border border-[var(--border-hover)] shadow-xs font-bold'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]',
+                      ].join(' ')}
+                    >
+                      <Icon size={12} className={isSelected ? f.color : 'text-[var(--text-muted)]'} />
+                      <span>{f.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -219,13 +275,24 @@ function TableroMisiones() {
             /* Estado vacío de filtro */
             <Card className="p-8 text-center flex flex-col items-center gap-3">
               <p className="text-sm text-[var(--text-secondary)]">
-                {tabFiltro === 'nuevas'
+                {tipoFiltro !== 'todos'
+                  ? `No hay misiones de este formato en la categoría seleccionada (${tabFiltro === 'nuevas' ? 'Nuevas' : tabFiltro === 'repaso' ? 'De Repaso' : 'Todas'}).`
+                  : tabFiltro === 'nuevas'
                   ? '¡Felicitaciones! Has completado todas las misiones del aula. Puedes practicar en modo repaso para consolidar.'
                   : 'Aún no tienes misiones completadas para repasar. ¡Comienza resolviendo las misiones nuevas!'}
               </p>
-              <Button variant="ghost" size="sm" onClick={() => setTabFiltro('todas')}>
-                Ver todas las misiones
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {tipoFiltro !== 'todos' && (
+                  <Button variant="ghost" size="sm" onClick={() => setTipoFiltro('todos')}>
+                    Ver todos los formatos
+                  </Button>
+                )}
+                {tabFiltro !== 'todas' && (
+                  <Button variant="ghost" size="sm" onClick={() => setTabFiltro('todas')}>
+                    Ver todas las misiones
+                  </Button>
+                )}
+              </div>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

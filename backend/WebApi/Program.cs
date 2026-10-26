@@ -250,6 +250,20 @@ if (app.Environment.IsDevelopment())
         m3.Validar(docenteId);
         repoMisiones.GuardarAsync(m3).GetAwaiter().GetResult();
     }
+
+    var misionPendienteId = Guid.Parse("e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b");
+    if (!context.BorradoresIA.Any(b => b.MisionId == misionPendienteId))
+    {
+        var mPendiente = Mision.Generar(
+            docenteId, aulaId,
+            "Ciencias: El Ciclo del Agua",
+            "Fases del ciclo hidrológico: evaporación, condensación, precipitación y recolección.",
+            "Una gran sequía amenaza el valle de los sabios. El elemental de agua ha perdido sus memorias sobre el ciclo vital del agua. ¡Ayúdalo a reconstruirlo!",
+            "OpcionMultiple",
+            """{"preguntas":[{"enunciado":"¿Cómo se denomina el proceso por el cual el agua líquida pasa a estado gaseoso por acción del calor?","opciones":["Evaporación","Condensación","Precipitación","Sublimación"],"respuestaCorrecta":"Evaporación","explicacion":"La evaporación transforma el agua líquida de océanos y ríos en vapor hacia la atmósfera."},{"enunciado":"¿Qué fenómeno produce la formación de nubes a partir del vapor de agua?","opciones":["Condensación","Fusión","Evaporación","Solidificación"],"respuestaCorrecta":"Condensación","explicacion":"Al enfriarse en las capas altas, el vapor se condensa formando diminutas gotas que componen las nubes."}]}""",
+            92, 120, misionPendienteId);
+        repoMisiones.GuardarAsync(mPendiente).GetAwaiter().GetResult();
+    }
 }
 
 

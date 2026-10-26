@@ -122,10 +122,10 @@ export const misionesApi = {
   getActivas: (aulaId) => apiFetch(`/api/misiones/activas/${aulaId}`),
 
   // POST /api/misiones/generar-con-ia
-  generarConIa: ({ aulaId, temaCurricular, textoFuente }) =>
+  generarConIa: ({ aulaId, temaCurricular, textoFuente, tipoPlantilla }) =>
     apiFetch('/api/misiones/generar-con-ia', {
       method: 'POST',
-      body: JSON.stringify({ aulaId, temaCurricular, textoFuente }),
+      body: JSON.stringify({ aulaId, temaCurricular, textoFuente, tipoPlantilla }),
     }),
 
   // PUT /api/misiones/{id}/editar

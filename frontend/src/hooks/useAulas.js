@@ -75,6 +75,12 @@ export function useCrearAula() {
         setCodigoInvitacion(nuevaAula.codigoInvitacion);
       }
       queryClient.invalidateQueries({ queryKey: ['aulas', 'mis-aulas'] });
+      queryClient.invalidateQueries({ queryKey: ['misiones'] });
+      queryClient.invalidateQueries({ queryKey: ['personaje'] });
+      queryClient.invalidateQueries({ queryKey: ['ranking'] });
+      queryClient.invalidateQueries({ queryKey: ['grimorio'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
     },
   });
 }
@@ -108,6 +114,10 @@ export function useUnirseAula() {
       queryClient.invalidateQueries({ queryKey: ['aulas', 'mis-aulas'] });
       queryClient.invalidateQueries({ queryKey: ['misiones'] });
       queryClient.invalidateQueries({ queryKey: ['personaje'] });
+      queryClient.invalidateQueries({ queryKey: ['ranking'] });
+      queryClient.invalidateQueries({ queryKey: ['grimorio'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
     },
   });
 }

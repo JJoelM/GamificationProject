@@ -352,8 +352,12 @@ function ValidadorMision() {
             </div>
           </Card>
 
-          {/* Editor interactivo de preguntas */}
-          <EditorPayload payload={payload} onChange={setPayload} />
+          {/* Editor interactivo del minijuego */}
+          <EditorPayload
+            payload={payload}
+            onChange={setPayload}
+            tipoPlantilla={borrador?.tipoPlantilla}
+          />
         </div>
 
         {/* Columna derecha — vista previa del alumno (condicional) */}
@@ -378,6 +382,7 @@ function ValidadorMision() {
                 payload={payload}
                 recompensaXp={recompensaXp}
                 temaCurricular={borrador.temaCurricular}
+                tipoPlantilla={borrador.tipoPlantilla}
               />
             </motion.div>
           )}

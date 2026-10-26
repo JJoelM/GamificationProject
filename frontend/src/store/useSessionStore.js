@@ -118,6 +118,7 @@ const useSessionStore = create(
         }));
       },
 
+      setAulaActivaId: (aulaId) => set({ aulaActivaId: aulaId }),
       setAulaActiva: (aulaId) => set({ aulaActivaId: aulaId }),
 
       setCodigoInvitacion: (codigo) => set({ codigoInvitacionAula: codigo }),
