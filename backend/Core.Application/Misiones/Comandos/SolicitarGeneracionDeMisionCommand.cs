@@ -1,6 +1,9 @@
 using Core.Application.Common;
 using Core.Domain.Agregados.Misiones;
+using Core.Domain.Entidades;
+using Core.Domain.SeedWork;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Core.Application.Misiones.Comandos;
 
@@ -18,16 +21,24 @@ public sealed class SolicitarGeneracionDeMisionCommandHandler
 
     private readonly IGeneradorDeMisiones _generador;
     private readonly IRepositorioMisiones _repositorio;
+    private readonly IApplicationDbContext _db;
 
     public SolicitarGeneracionDeMisionCommandHandler(
-        IGeneradorDeMisiones generador, IRepositorioMisiones repositorio)
+        IGeneradorDeMisiones generador, IRepositorioMisiones repositorio, IApplicationDbContext db)
     {
         _generador = generador;
         _repositorio = repositorio;
+        _db = db;
     }
 
     public async Task<Guid> Handle(SolicitarGeneracionDeMisionCommand request, CancellationToken cancellationToken)
     {
+        var aula = await _db.Aulas.FirstOrDefaultAsync(a => a.Id == request.AulaId, cancellationToken)
+            ?? throw new AgregadoNoEncontradoException(nameof(Aula), request.AulaId);
+
+        if (aula.DocenteId != request.DocenteId)
+            throw new UnauthorizedAccessException("El aula indicada no pertenece al docente autenticado.");
+
         var contenido = await _generador.GenerarAsync(
             request.TipoPlantilla, request.TemaCurricular, request.TextoFuente, cancellationToken);
 

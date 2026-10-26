@@ -44,7 +44,9 @@ REGLAS_COMUNES = (
 )
 
 INSTRUCCION_OPCION_MULTIPLE = REGLAS_COMUNES + (
-    "\nTAREA: generar entre 3 y 5 preguntas de opcion multiple.\n"
+    "\nTAREA: generar entre 3 y 8 preguntas de opcion multiple. La cantidad de preguntas debe ser "
+    "proporcional a la extension y densidad del texto fuente: textos breves o puntuales 3 a 4 preguntas; "
+    "textos extensos, densos o de varias secciones entre 5 y 8 preguntas.\n"
     "- Cada pregunta tiene exactamente 4 opciones, una sola correcta, y las incorrectas deben ser plausibles.\n"
     "- 'respuesta_correcta' debe ser identica a una de las opciones.\n"
     "- 'explicacion': 1 o 2 oraciones que ensenan POR QUE esa es la respuesta correcta.\n"
@@ -53,9 +55,9 @@ INSTRUCCION_OPCION_MULTIPLE = REGLAS_COMUNES + (
 INSTRUCCION_BATALLA_DE_JEFE = REGLAS_COMUNES + (
     "\nTAREA: disenar una batalla contra un jefe. El jefe es la personificacion de un concepto dificil del tema.\n"
     "- 'nombre_jefe': un nombre breve y tematico (ej: 'El Bug Ancestral').\n"
-    "- 'fases': entre 3 y 5 preguntas, ordenadas de menor a mayor dificultad. Cada fase tiene "
-    "exactamente 4 opciones, una sola correcta ('respuesta_correcta' identica a una opcion) y una "
-    "'explicacion' de 1 o 2 oraciones.\n"
+    "- 'fases': entre 3 y 6 preguntas (fases de combate) proporcionales a la complejidad del tema, ordenadas de "
+    "menor a mayor dificultad. Cada fase tiene exactamente 4 opciones, una sola correcta ('respuesta_correcta' "
+    "identica a una opcion) y una 'explicacion' de 1 o 2 oraciones.\n"
     "- 'penalizacion_fallo': lo que le pasa al alumno si falla esa fase. Debe ser EXACTAMENTE uno de: "
     "temblor, destello, enfriamiento. Variá entre fases.\n"
 )
@@ -63,8 +65,8 @@ INSTRUCCION_BATALLA_DE_JEFE = REGLAS_COMUNES + (
 INSTRUCCION_LINEA_TEMPORAL = REGLAS_COMUNES + (
     "\nTAREA: armar un ejercicio de reconstruccion de secuencia. Busca en el texto un proceso, flujo "
     "o cronologia con pasos en un orden que importa.\n"
-    "- 'eventos_en_orden_correcto': entre 4 y 7 eventos, cada uno en UNA oracion corta, EN EL ORDEN "
-    "CORRECTO. No numeres los eventos ni agregues ids.\n"
+    "- 'eventos_en_orden_correcto': entre 4 y 8 eventos (proporcionales a los hitos descritos en el texto), "
+    "cada uno en UNA oracion corta, EN EL ORDEN CORRECTO. No numeres los eventos ni agregues ids.\n"
     "- 'estado_erroneo_descripcion': 1 o 2 oraciones que describen el problema o resultado erroneo "
     "que ocurre cuando el proceso falla o se ejecuta mal.\n"
     "- 'indice_evento_culpable': el numero (empezando en 1) del evento que, omitido o ejecutado mal, "

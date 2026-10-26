@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Sparkles, BrainCircuit, Zap, BookOpen, Loader2, Compass, Swords, Clock, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Sparkles, BrainCircuit, Zap, BookOpen, Loader2, Compass, Swords, Clock,
+  Check, FileUp, FileText, AlertCircle, X, CheckCircle2, RotateCcw
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
@@ -7,6 +10,7 @@ import Badge from '../../../components/ui/Badge';
 import ErrorBanner from '../../../components/ui/ErrorBanner';
 import { useGenerarMisionIa } from '../../../hooks/useMisionMutations';
 import { playChime, playParchment } from '../../../utils/audio';
+import { cargarPdf, extraerTextoDeRango } from '../../../utils/pdfExtractor';
 
 /**
  * Plantillas disponibles para la invocación de la IA
@@ -144,6 +148,18 @@ function FormGenerarMision({ isOpen, onClose }) {
   const [tipoPlantilla, setTipoPlantilla] = useState('OpcionMultiple');
   const [misionGeneradaId, setMisionGeneradaId] = useState(null);
 
+  // Estados para extracción de PDF
+  const fileInputRef = useRef(null);
+  const [pdfInfo, setPdfInfo] = useState(null); // { pdfDoc, numPages, nombre, tamanoKb }
+  const [paginaDesde, setPaginaDesde] = useState(1);
+  const [paginaHasta, setPaginaHasta] = useState(1);
+  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+  const [pdfProgreso, setPdfProgreso] = useState(0);
+  const [pdfError, setPdfError] = useState(null);
+  const [mostrarConfirmacionReemplazo, setMostrarConfirmacionReemplazo] = useState(false);
+  const [textoPdfPendiente, setTextoPdfPendiente] = useState('');
+  const [pdfExtraccionExitosa, setPdfExtraccionExitosa] = useState(null);
+
   const { mutate: generarMision, isPending, error, reset } = useGenerarMisionIa();
 
   const handleClose = () => {
@@ -152,6 +168,11 @@ function FormGenerarMision({ isOpen, onClose }) {
     setTextoFuente('');
     setTipoPlantilla('OpcionMultiple');
     setMisionGeneradaId(null);
+    setPdfInfo(null);
+    setPdfError(null);
+    setPdfExtraccionExitosa(null);
+    setMostrarConfirmacionReemplazo(false);
+    setTextoPdfPendiente('');
     onClose();
   };
 
@@ -174,9 +195,80 @@ function FormGenerarMision({ isOpen, onClose }) {
     );
   };
 
+  // Manejo de carga del archivo PDF
+  const handlePdfSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPdfError(null);
+    setPdfExtraccionExitosa(null);
+
+    try {
+      const info = await cargarPdf(file);
+      setPdfInfo(info);
+      setPaginaDesde(1);
+      // Por defecto sugerir hasta 5 páginas o el total si es menor
+      setPaginaHasta(Math.min(5, info.numPages));
+    } catch (err) {
+      setPdfError(err.message || 'No se pudo leer el archivo PDF.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  // Extracción de texto según rango
+  const handleEjecutarExtraccion = async () => {
+    if (!pdfInfo?.pdfDoc) return;
+    setPdfError(null);
+    setIsExtractingPdf(true);
+    setPdfProgreso(0);
+
+    try {
+      const resultado = await extraerTextoDeRango(
+        pdfInfo.pdfDoc,
+        Number(paginaDesde),
+        Number(paginaHasta),
+        ({ progresoPorcentaje }) => setPdfProgreso(progresoPorcentaje)
+      );
+
+      if (resultado.esEscaneado || !resultado.texto.trim()) {
+        setPdfError(
+          'El PDF seleccionado parece ser una imagen escaneada o no posee una capa de texto seleccionable. Probá con un PDF digital o copiá el texto manualmente.'
+        );
+        setIsExtractingPdf(false);
+        return;
+      }
+
+      if (textoFuente.trim().length > 0) {
+        setTextoPdfPendiente(resultado.texto);
+        setMostrarConfirmacionReemplazo(true);
+      } else {
+        aplicarTextoExtraido(resultado.texto, resultado.totalPaginasExtraidas);
+      }
+    } catch (err) {
+      setPdfError('Error durante la extracción: ' + (err.message || 'Fallo inesperado'));
+    } finally {
+      setIsExtractingPdf(false);
+    }
+  };
+
+  const aplicarTextoExtraido = (texto, cantPaginas) => {
+    setTextoFuente(texto);
+    playParchment();
+    setPdfExtraccionExitosa({
+      desde: paginaDesde,
+      hasta: paginaHasta,
+      totalPaginas: cantPaginas,
+      chars: texto.length,
+    });
+    setPdfInfo(null);
+    setTextoPdfPendiente('');
+    setMostrarConfirmacionReemplazo(false);
+  };
+
+  const MAX_CARACTERES = 20000;
   const textoLen = textoFuente.length;
   const textoOk = textoLen >= 50;
-  const textoWarn = textoLen > 4000;
+  const textoWarn = textoLen > MAX_CARACTERES;
 
   return (
     <Modal
@@ -187,6 +279,15 @@ function FormGenerarMision({ isOpen, onClose }) {
     >
       {/* Estado: generando */}
       {isPending && <PantallaGenerando />}
+
+      {/* Input de archivo PDF oculto */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="application/pdf,.pdf"
+        className="hidden"
+        onChange={handlePdfSelected}
+      />
 
       {/* Estado: éxito */}
       {!isPending && misionGeneradaId && (
@@ -318,27 +419,235 @@ function FormGenerarMision({ isOpen, onClose }) {
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
+          {/* Sección de Texto Fuente con Soporte para PDF */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <label
                 htmlFor="textoFuente"
                 className="text-xs font-display font-semibold text-[var(--text-primary)] uppercase tracking-wider"
               >
                 Texto / Material Fuente
               </label>
-              <span className={[
-                'text-[11px] font-display font-semibold',
-                textoWarn ? 'text-[var(--brand-crimson)]' : textoOk ? 'text-[var(--brand-emerald)]' : 'text-[var(--text-muted)]',
-              ].join(' ')}>
-                {textoLen} / 4000 {textoWarn && '— muy largo, considera recortar'}
-              </span>
+
+              <div className="flex items-center gap-3">
+                {/* Botón para subir PDF */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isPending || isExtractingPdf}
+                  className="flex items-center gap-1.5 text-xs font-display font-bold text-[var(--brand-primary)] hover:text-[var(--brand-secondary)] hover:underline cursor-pointer transition-colors"
+                >
+                  <FileUp size={14} />
+                  <span>Subir PDF / Apunte</span>
+                </button>
+
+                <span className={[
+                  'text-[11px] font-display font-semibold',
+                  textoWarn ? 'text-[var(--brand-crimson)]' : textoOk ? 'text-[var(--brand-emerald)]' : 'text-[var(--text-muted)]',
+                ].join(' ')}>
+                  {textoLen} / {MAX_CARACTERES} {textoWarn && '— muy extenso, considera recortar'}
+                </span>
+              </div>
             </div>
+
+            {/* Panel Interactivo de PDF si fue cargado */}
+            <AnimatePresence>
+              {pdfInfo && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="p-3.5 rounded-xl border-2 border-[var(--brand-primary)]/40 bg-[var(--bg-panel)] shadow-sm flex flex-col gap-3"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-[var(--border-muted)] pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-1.5 rounded-lg bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
+                        <FileText size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-display font-bold text-xs text-[var(--text-primary)] truncate">
+                          {pdfInfo.nombre}
+                        </p>
+                        <p className="text-[10px] text-[var(--text-muted)] font-display">
+                          {pdfInfo.numPages} {pdfInfo.numPages === 1 ? 'página' : 'páginas'} • {pdfInfo.tamanoKb} KB • Extracción 100% en tu navegador
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setPdfInfo(null)}
+                      className="text-[var(--text-muted)] hover:text-[var(--brand-crimson)] p-1 cursor-pointer"
+                      title="Descartar PDF"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  {/* Selector de Rango de Páginas */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs font-display">
+                      <span className="text-[var(--text-secondary)] font-semibold">Rango de páginas:</span>
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[11px] text-[var(--text-muted)]">Desde</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={paginaHasta}
+                          value={paginaDesde}
+                          onChange={(e) => setPaginaDesde(Math.max(1, Math.min(Number(e.target.value) || 1, pdfInfo.numPages)))}
+                          className="w-12 px-1.5 py-1 text-center rounded border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] font-bold text-xs outline-none"
+                        />
+                        <label className="text-[11px] text-[var(--text-muted)]">Hasta</label>
+                        <input
+                          type="number"
+                          min={paginaDesde}
+                          max={pdfInfo.numPages}
+                          value={paginaHasta}
+                          onChange={(e) => setPaginaHasta(Math.max(paginaDesde, Math.min(Number(e.target.value) || paginaDesde, pdfInfo.numPages)))}
+                          className="w-12 px-1.5 py-1 text-center rounded border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] font-bold text-xs outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Atajos rápidos */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaginaDesde(1);
+                          setPaginaHasta(pdfInfo.numPages);
+                        }}
+                        className="px-2 py-0.5 rounded text-[11px] font-display font-semibold bg-[var(--bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                      >
+                        Todas ({pdfInfo.numPages})
+                      </button>
+                      {pdfInfo.numPages > 3 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaginaDesde(1);
+                            setPaginaHasta(Math.min(3, pdfInfo.numPages));
+                          }}
+                          className="px-2 py-0.5 rounded text-[11px] font-display font-semibold bg-[var(--bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                        >
+                          Págs 1 a 3
+                        </button>
+                      )}
+                      {pdfInfo.numPages > 5 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaginaDesde(1);
+                            setPaginaHasta(Math.min(5, pdfInfo.numPages));
+                          }}
+                          className="px-2 py-0.5 rounded text-[11px] font-display font-semibold bg-[var(--bg-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                        >
+                          Págs 1 a 5
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {pdfError && (
+                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                      <AlertCircle size={15} className="shrink-0" />
+                      <span>{pdfError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="primary"
+                      onClick={handleEjecutarExtraccion}
+                      loading={isExtractingPdf}
+                      disabled={isExtractingPdf}
+                    >
+                      <Sparkles size={13} className="text-[#FCD34D]" />
+                      <span>
+                        {isExtractingPdf
+                          ? `Extrayendo texto (${pdfProgreso}%)...`
+                          : `Extraer páginas ${paginaDesde} a ${paginaHasta}`}
+                      </span>
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Diálogo de Confirmación de Reemplazo si ya había texto */}
+            <AnimatePresence>
+              {mostrarConfirmacionReemplazo && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  className="p-3.5 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 text-amber-300 flex flex-col gap-2.5"
+                >
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={18} className="shrink-0 text-amber-400 mt-0.5" />
+                    <div className="text-xs">
+                      <strong className="block font-display font-bold text-amber-200">
+                        ¿Reemplazar el texto existente?
+                      </strong>
+                      <p className="mt-0.5 text-amber-300/90 leading-relaxed">
+                        El campo de texto ya contiene <strong>{textoLen} caracteres</strong>. Si continúas, será reemplazado por los <strong>{textoPdfPendiente.length} caracteres</strong> extraídos del PDF.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setMostrarConfirmacionReemplazo(false);
+                        setTextoPdfPendiente('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="primary"
+                      onClick={() => aplicarTextoExtraido(textoPdfPendiente, paginaHasta - paginaDesde + 1)}
+                    >
+                      Reemplazar texto
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Chip de éxito de extracción */}
+            {pdfExtraccionExitosa && !pdfInfo && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-[var(--brand-emerald)] shrink-0" />
+                  <span>
+                    Texto cargado con éxito de páginas {pdfExtraccionExitosa.desde} a {pdfExtraccionExitosa.hasta} ({pdfExtraccionExitosa.chars} caracteres).
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPdfExtraccionExitosa(null)}
+                  className="text-emerald-400 hover:text-white p-0.5 cursor-pointer"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+
             <textarea
               id="textoFuente"
               required
               rows={7}
               disabled={isPending}
-              placeholder="Pegá aquí el contenido educativo, fragmento de libro, apuntes o cualquier material del que la IA va a extraer el conocimiento para construir la misión..."
+              placeholder="Pegá aquí el contenido educativo o subí un PDF con el botón superior para volcar el texto de las páginas que desees..."
               value={textoFuente}
               onChange={(e) => setTextoFuente(e.target.value)}
               className={[
@@ -346,6 +655,7 @@ function FormGenerarMision({ isOpen, onClose }) {
                 textoWarn ? 'border-[var(--brand-crimson)]' : 'border-[var(--border)] focus:border-[var(--brand-primary)]',
               ].join(' ')}
             />
+
             {!textoOk && textoLen > 0 && (
               <p className="text-[11px] text-[var(--brand-gold)] font-display">
                 Mínimo 50 caracteres para un resultado óptimo.

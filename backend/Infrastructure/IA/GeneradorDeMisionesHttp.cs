@@ -46,12 +46,26 @@ public class GeneradorDeMisionesHttp : IGeneradorDeMisiones
 
         using (respuesta)
         {
-            if (respuesta.StatusCode == HttpStatusCode.BadGateway)
-                throw new GeneracionFallidaException(MensajeGenerico);
-
-            // 401, 422, 500...: error de configuracion o de contrato, no algo que el docente pueda reintentar.
             if (!respuesta.IsSuccessStatusCode)
-                throw new InvalidOperationException($"El microservicio de IA respondió {(int)respuesta.StatusCode}.");
+            {
+                string? detalleError = null;
+                try
+                {
+                    detalleError = await respuesta.Content.ReadAsStringAsync(ct);
+                }
+                catch { /* ignorar fallo al leer detalle */ }
+
+                var mensaje = respuesta.StatusCode switch
+                {
+                    HttpStatusCode.BadGateway => MensajeGenerico,
+                    HttpStatusCode.TooManyRequests => "Se superó temporalmente la cuota de generación con IA. Por favor, aguardá un momento e intentá nuevamente.",
+                    _ => string.IsNullOrWhiteSpace(detalleError)
+                        ? MensajeGenerico
+                        : $"El servicio de IA no pudo generar la misión (HTTP {(int)respuesta.StatusCode}). {detalleError}"
+                };
+
+                throw new GeneracionFallidaException(mensaje);
+            }
 
             try
             {
