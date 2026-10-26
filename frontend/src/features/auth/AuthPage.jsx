@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, LogIn, UserPlus, GraduationCap, BookOpen, ShieldCheck, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  Swords, LogIn, UserPlus, GraduationCap, BookOpen, ShieldCheck,
+  Sparkles, AlertCircle, CheckCircle2, ArrowLeft
+} from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi } from '../../services/api';
 import Button from '../../components/ui/Button';
@@ -22,9 +25,21 @@ import { playSuccess, playParchment } from '../../utils/audio';
  */
 function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryTab = searchParams.get('tab');
+
   const setUsuario = useSessionStore((s) => s.setUsuario);
 
-  const [tab, setTab] = useState('login'); // 'login' | 'registro-docente' | 'registro-alumno'
+  const [tab, setTab] = useState(
+    queryTab === 'registro-docente' || queryTab === 'registro-alumno' ? queryTab : 'login'
+  );
+
+  useEffect(() => {
+    if (queryTab && (queryTab === 'registro-docente' || queryTab === 'registro-alumno' || queryTab === 'login')) {
+      setTab(queryTab);
+    }
+  }, [queryTab]);
+
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState(null);
   const [parentalNotice, setParentalNotice] = useState(null);
@@ -162,6 +177,21 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-base)] px-4 py-12 relative overflow-hidden">
+      {/* Botón para volver a la Landing */}
+      <div className="absolute top-4 left-4 z-10">
+        <button
+          type="button"
+          onClick={() => {
+            playParchment();
+            navigate('/');
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-panel)] text-xs font-display font-bold text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-accent)] transition-all cursor-pointer shadow-xs"
+        >
+          <ArrowLeft size={14} />
+          <span>Volver al Inicio</span>
+        </button>
+      </div>
+
       {/* Controles de barra superior */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <SoundToggle />

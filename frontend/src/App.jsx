@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
+import LandingPage from './features/landing/LandingPage';
 import AuthPage from './features/auth/AuthPage';
 import DashboardDocente from './features/docente/DashboardDocente';
 import InboxBorradores from './features/docente/InboxBorradores';
@@ -16,7 +17,8 @@ import GestionDocentes from './features/directivo/GestionDocentes';
  * App — Configuración de rutas de React Router
  *
  * Rutas según spec.md + extensiones pedagógicas:
- * /                              → AuthPage (Login universal y autorregistros con cookie HttpOnly)
+ * /                              → LandingPage (Página de captación, propuesta de valor y comercial Painterly RPG)
+ * /auth o /login                 → AuthPage (Login universal y autorregistros con cookie HttpOnly)
  *
  * Rutas Docente:
  * /docente/dashboard             → DashboardDocente (métricas, código de aula y accesos rápidos)
@@ -37,8 +39,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Portal y Landing Pública Comercial */}
+        <Route path="/" element={<LandingPage />} />
+
         {/* Autenticación Real — fuera del AppShell */}
-        <Route path="/" element={<AuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<AuthPage />} />
 
         {/* Rutas principales envueltas en AppShell (sidebar + topbar + audio + level up) */}
         <Route element={<AppShell />}>
