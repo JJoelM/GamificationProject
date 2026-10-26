@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Swords, Shield, Sparkles, BookOpen, Clock, Award, CheckCircle2,
-  ArrowRight, Users, GraduationCap, Building2, Flame, Heart, FileUp,
-  BrainCircuit, ChevronRight, Zap, Play, Eye, Compass, Star, Lock
+  Swords, Shield, Sparkles, BookOpen, Clock,
+  ArrowRight, GraduationCap, Building2, Flame, FileUp,
+  BrainCircuit, Zap, Compass, Lock, ShieldCheck
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import Card from '../../components/ui/Card';
 import ThemeToggle from '../../components/layout/ThemeToggle';
 import SoundToggle from '../../components/layout/SoundToggle';
-import { playParchment, playChime, playSuccess } from '../../utils/audio';
+import { playParchment } from '../../utils/audio';
 
 /**
  * LandingPage — Portal principal de presentación, propuesta de valor y captación.
@@ -24,7 +23,6 @@ import { playParchment, playChime, playSuccess } from '../../utils/audio';
 function LandingPage() {
   const navigate = useNavigate();
   const [rolActivo, setRolActivo] = useState('docentes'); // 'docentes' | 'alumnos' | 'instituciones'
-  const [minijuegoActivo, setMinijuegoActivo] = useState('jefe'); // 'jefe' | 'tiempo' | 'quiz'
 
   const handleIrAAuth = (tab = 'login') => {
     playParchment();
@@ -592,7 +590,7 @@ function LandingPage() {
             </p>
             <div className="flex items-center justify-center md:justify-start gap-4 pt-2 text-xs font-display font-bold text-[var(--brand-primary)]">
               <span>✓ Cero alucinaciones en el aula</span>
-              <span>✓ Trazabilidad legal total</span>
+              <span>✓ Trazabilidad pedagógica total</span>
               <span>✓ Privacidad de datos protegida</span>
             </div>
           </div>
