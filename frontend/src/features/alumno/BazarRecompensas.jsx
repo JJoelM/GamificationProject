@@ -2,79 +2,205 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Zap, Shield, Check, ShoppingBag, ArrowLeft,
-  Crown, Info, Loader2
+  Crown, Info, Loader2, Lightbulb, Feather, Heart, Flame
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useSessionStore from '../../store/useSessionStore';
 import { usePersonaje } from '../../hooks/usePersonaje';
-import { useComprarArticulo, usePersonalizarPersonaje } from '../../hooks/useBazarMutations';
+import { useCatalogoBazar, useComprarArticulo, usePersonalizarPersonaje } from '../../hooks/useBazarMutations';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
-import { ARTICULOS_BAZAR, CATEGORIAS_BAZAR } from './components/BazarData';
+import Spinner from '../../components/ui/Spinner';
 import { playSuccess, playParchment } from '../../utils/audio';
 
-const MAPEO_TIPO_BACKEND = {
-  escudo: 'EscudoRacha',
-  EscudoRacha: 'EscudoRacha',
-  mascota: 'Mascota',
-  Mascota: 'Mascota',
-  marco: 'Marco',
-  Marco: 'Marco',
-  titulo: 'Titulo',
-  Titulo: 'Titulo',
-  avatar: 'Avatar',
-  Avatar: 'Avatar',
+/** Metadatos visuales complementarios según el ID y tipo del catálogo del backend */
+const METADATOS_VISUALES = {
+  pista: {
+    descripcion: 'Descarta una opción incorrecta en misiones de opción múltiple o batallas de jefe.',
+    rareza: 'Consumible',
+    colorRareza: 'text-amber-500',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/15 border-2 border-amber-500 text-amber-500 shadow-sm`}>
+        <Lightbulb size={30} className="animate-pulse" />
+      </div>
+    ),
+  },
+  'escudo-racha': {
+    descripcion: 'Protege tu racha de días activos por 1 día si no puedes ingresar a estudiar.',
+    rareza: 'Consumible',
+    colorRareza: 'text-[var(--brand-emerald)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-2 border-[var(--brand-emerald)] text-[var(--brand-emerald)] shadow-sm`}>
+        <Shield size={30} className="animate-pulse" />
+      </div>
+    ),
+  },
+  escudo_1: {
+    descripcion: 'Protege tu racha de días activos por 1 día si no puedes ingresar a estudiar.',
+    rareza: 'Consumible',
+    colorRareza: 'text-[var(--brand-emerald)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-2 border-[var(--brand-emerald)] text-[var(--brand-emerald)] shadow-sm`}>
+        <Shield size={30} className="animate-pulse" />
+      </div>
+    ),
+  },
+  'avatar-explorador': {
+    descripcion: 'Espíritu curioso y ágil que lidera las expediciones por el mapa curricular.',
+    rareza: 'Común',
+    colorRareza: 'text-[var(--brand-primary)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-blue-500/15 border-2 border-blue-500 text-blue-500 text-2xl`}>
+        🧭
+      </div>
+    ),
+  },
+  avatar_guerrero: {
+    descripcion: 'Defensor incansable que combate el error con persistencia y coraje.',
+    rareza: 'Raro',
+    colorRareza: 'text-[var(--brand-primary)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-red-500/15 border-2 border-red-500 text-red-500 text-2xl`}>
+        ⚔️
+      </div>
+    ),
+  },
+  avatar_mago: {
+    descripcion: 'Canalizador del saber arcano y la deducción lógica profunda.',
+    rareza: 'Épico',
+    colorRareza: 'text-[var(--brand-violet)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-purple-500/15 border-2 border-purple-500 text-purple-500 text-2xl`}>
+        🧙
+      </div>
+    ),
+  },
+  avatar_arquera: {
+    descripcion: 'Precisión milimétrica para acertar conceptos complejos a la distancia.',
+    rareza: 'Raro',
+    colorRareza: 'text-[var(--brand-emerald)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-emerald-500/15 border-2 border-emerald-500 text-emerald-500 text-2xl`}>
+        🏹
+      </div>
+    ),
+  },
+  'marco-pergamino': {
+    descripcion: 'Borde clásico tejido con pergamino antiguo de los sabios.',
+    rareza: 'Común',
+    colorRareza: 'text-amber-700 dark:text-amber-400',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-dashed border-amber-600 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-display font-black text-xs`}>
+        📜
+      </div>
+    ),
+  },
+  marco_dorado: {
+    descripcion: 'Orlado dorado con incrustaciones mágicas para estudiantes dedicados.',
+    rareza: 'Legendario',
+    colorRareza: 'text-[var(--brand-gold)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-double border-amber-400 bg-amber-500/15 text-amber-400 text-xl shadow-[0_0_12px_rgba(245,158,11,0.4)]`}>
+        ✨
+      </div>
+    ),
+  },
+  'mascota-lechuza': {
+    descripcion: 'Acompaña tus sesiones de estudio y susurra sabiduría en las anomalías.',
+    rareza: 'Raro',
+    colorRareza: 'text-[var(--brand-primary)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-sky-500/15 border-2 border-sky-500 text-sky-500 text-2xl`}>
+        🦉
+      </div>
+    ),
+  },
+  mascota_dragon: {
+    descripcion: 'Pequeño dragón guardián que enciende tu motivación en cada desafío.',
+    rareza: 'Épico',
+    colorRareza: 'text-[var(--brand-crimson)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-rose-500/15 border-2 border-rose-500 text-rose-500 text-2xl`}>
+        🐲
+      </div>
+    ),
+  },
+  titulo_centinela: {
+    descripcion: 'Distintivo de honor para quienes protegen el conocimiento con constancia.',
+    rareza: 'Épico',
+    colorRareza: 'text-[var(--brand-violet)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-indigo-500/15 border-2 border-indigo-500 text-indigo-500 text-2xl`}>
+        🛡️
+      </div>
+    ),
+  },
+  titulo_erudito: {
+    descripcion: 'La máxima distinción para los maestros de la deducción causal.',
+    rareza: 'Legendario',
+    colorRareza: 'text-[var(--brand-gold)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/15 border-2 border-amber-400 text-amber-400 text-2xl shadow-[0_0_15px_rgba(245,158,11,0.35)]`}>
+        👑
+      </div>
+    ),
+  },
 };
 
 function BazarRecompensas() {
   const navigate = useNavigate();
+
   const storeAp = useSessionStore((s) => s.apTotal);
   const storeEscudosDisponibles = useSessionStore((s) => s.escudosRachaDisponibles);
   const storeEscudos = useSessionStore((s) => s.escudosRacha);
   const storeCosmeticos = useSessionStore((s) => s.cosmeticosComprados);
-  const storeArticulos = useSessionStore((s) => s.articulosComprados);
   const storeMarco = useSessionStore((s) => s.marcoEstilo);
   const storeMascota = useSessionStore((s) => s.mascotaEquipada);
   const storeTitulo = useSessionStore((s) => s.tituloEquipado);
   const storeAvatar = useSessionStore((s) => s.avatarEquipado);
 
   const { data: personaje } = usePersonaje();
+  const { data: catalogo, isLoading: isLoadingCatalogo } = useCatalogoBazar();
   const { mutate: comprar, isPending: isComprando } = useComprarArticulo();
   const { mutate: personalizar, isPending: isPersonalizando } = usePersonalizarPersonaje();
 
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todas');
+  const [bloqueActivo, setBloqueActivo] = useState('consumibles'); // 'consumibles' | 'cosmeticos'
+  const [subFiltroCosmetico, setSubFiltroCosmetico] = useState('todos');
   const [feedbackMensaje, setFeedbackMensaje] = useState(null);
   const [articuloEnProcesoId, setArticuloEnProcesoId] = useState(null);
 
-  // Estados reactivos (combinando backend y sesión sin llamadas condicionales a hooks)
+  // Estados consolidados
   const apTotal = personaje?.puntosAccionAP ?? storeAp ?? 0;
-  const escudosRacha =
-    personaje?.escudosRachaDisponibles ??
-    storeEscudosDisponibles ??
-    storeEscudos ??
-    0;
-  const cosmeticosComprados =
-    personaje?.cosmeticosComprados ??
-    storeCosmeticos ??
-    storeArticulos ??
-    [];
+  const escudosRacha = personaje?.escudosRachaDisponibles ?? storeEscudosDisponibles ?? storeEscudos ?? 0;
+  const pistasDisponibles = personaje?.pistasDisponibles ?? 0;
+  const cosmeticosComprados = personaje?.cosmeticosComprados ?? storeCosmeticos ?? [];
 
   const marcoEstilo = personaje?.marcoEquipado || storeMarco;
   const mascotaEquipada = personaje?.mascotaEquipada || storeMascota;
   const tituloEquipado = personaje?.tituloEquipado || storeTitulo;
   const avatarEquipado = personaje?.avatarEquipado || storeAvatar;
 
-  const articulosFiltrados =
-    categoriaSeleccionada === 'todas'
-      ? ARTICULOS_BAZAR
-      : ARTICULOS_BAZAR.filter((a) => a.categoria === categoriaSeleccionada);
+  // Catálogo dinámico del backend clasificado
+  const articulosConsumibles = (catalogo || []).filter(
+    (a) => a.tipo === 'Pista' || a.tipo === 'EscudoRacha'
+  );
 
+  const articulosCosmeticos = (catalogo || []).filter(
+    (a) => a.tipo !== 'Pista' && a.tipo !== 'EscudoRacha'
+  );
+
+  const cosmeticosFiltrados = subFiltroCosmetico === 'todos'
+    ? articulosCosmeticos
+    : articulosCosmeticos.filter((a) => a.tipo.toLowerCase() === subFiltroCosmetico.toLowerCase());
+
+  // Acción de compra o equipamiento
   const handleAccionArticulo = (articulo) => {
+    const esConsumible = articulo.tipo === 'Pista' || articulo.tipo === 'EscudoRacha';
     const yaComprado = cosmeticosComprados.includes(articulo.id);
 
-    // 1. Si ya fue comprado y no es consumible, la acción es EQUIPAR
-    if (yaComprado && articulo.tipo !== 'escudo') {
+    // Si ya fue comprado y es cosmético -> EQUIPAR
+    if (!esConsumible && yaComprado) {
       setArticuloEnProcesoId(articulo.id);
       const payload = {
         avatarId: avatarEquipado,
@@ -83,10 +209,10 @@ function BazarRecompensas() {
         titulo: tituloEquipado,
       };
 
-      if (articulo.tipo === 'marco') payload.marco = articulo.valor;
-      if (articulo.tipo === 'mascota') payload.mascota = articulo.valor;
-      if (articulo.tipo === 'titulo') payload.titulo = articulo.valor;
-      if (articulo.tipo === 'avatar') payload.avatarId = articulo.valor;
+      if (articulo.tipo === 'Marco') payload.marco = articulo.id;
+      if (articulo.tipo === 'Mascota') payload.mascota = articulo.id;
+      if (articulo.tipo === 'Titulo') payload.titulo = articulo.id;
+      if (articulo.tipo === 'Avatar') payload.avatarId = articulo.id;
 
       personalizar(payload, {
         onSuccess: () => {
@@ -108,7 +234,7 @@ function BazarRecompensas() {
       return;
     }
 
-    // 2. Si no ha sido comprado, la acción es COMPRAR con AP
+    // Si no ha sido comprado -> COMPRAR con AP
     if (apTotal < articulo.costoAp) {
       setFeedbackMensaje({
         tipo: 'error',
@@ -118,53 +244,36 @@ function BazarRecompensas() {
     }
 
     setArticuloEnProcesoId(articulo.id);
-    const tipoBackend = MAPEO_TIPO_BACKEND[articulo.tipo] || 'Mascota';
-
     comprar(
-      {
-        articuloId: articulo.id,
-        costoAp: articulo.costoAp,
-        tipo: tipoBackend,
-        valor: articulo.valor,
-      },
+      { articuloId: articulo.id },
       {
         onSuccess: () => {
           setArticuloEnProcesoId(null);
           playSuccess();
           setFeedbackMensaje({
             tipo: 'exito',
-            texto: `¡Adquiriste "${articulo.nombre}"! Ya está disponible en tu inventario.`,
+            texto: esConsumible
+              ? `¡Adquiriste +1 ${articulo.nombre}! Ya está disponible en tus recursos de aventura.`
+              : `¡Adquiriste "${articulo.nombre}"! Ya puedes equiparlo cuando gustes.`,
           });
         },
         onError: (err) => {
           setArticuloEnProcesoId(null);
           setFeedbackMensaje({
             tipo: 'error',
-            texto: err.mensajeAmigable || 'No se pudo completar la compra.',
+            texto: err.mensajeAmigable || 'No se pudo completar la compra en el Bazar.',
           });
         },
       }
     );
   };
 
-  const getEstadoArticulo = (articulo) => {
-    if (articulo.tipo === 'escudo') {
-      return { esEquipado: false, yaComprado: false, label: 'Adquirir Escudo' };
-    }
-
-    const yaComprado = cosmeticosComprados.includes(articulo.id);
-    let esEquipado = false;
-
-    if (articulo.tipo === 'marco') esEquipado = marcoEstilo === articulo.valor;
-    if (articulo.tipo === 'mascota') esEquipado = mascotaEquipada === articulo.valor;
-    if (articulo.tipo === 'titulo') esEquipado = tituloEquipado === articulo.valor;
-    if (articulo.tipo === 'avatar') esEquipado = avatarEquipado === articulo.valor;
-
-    return {
-      yaComprado,
-      esEquipado,
-      label: esEquipado ? 'Equipado' : yaComprado ? 'Equipar' : `Comprar por ${articulo.costoAp} AP`,
-    };
+  const isEquipado = (articulo) => {
+    if (articulo.tipo === 'Marco') return marcoEstilo === articulo.id;
+    if (articulo.tipo === 'Mascota') return mascotaEquipada === articulo.id;
+    if (articulo.tipo === 'Titulo') return tituloEquipado === articulo.id;
+    if (articulo.tipo === 'Avatar') return avatarEquipado === articulo.id;
+    return false;
   };
 
   return (
@@ -185,12 +294,12 @@ function BazarRecompensas() {
             </h1>
           </div>
           <p className="text-sm text-[var(--text-secondary)]">
-            Canjea tus Puntos de Habilidad (AP) por acompañantes, marcos de honor y escudos de estudio.
+            Canjea tus Puntos de Acción (AP) por pistas pedagógicas, escudos de racha y personalización cosmética.
           </p>
         </div>
 
         {/* Recursos del Alumno */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {/* AP Balance */}
           <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-[color-mix(in_oklch,var(--brand-violet)_15%,var(--bg-panel))] border-2 border-[var(--brand-violet)] shadow-[3px_3px_0px_var(--brand-violet)]">
             <Zap size={20} className="text-[var(--brand-violet)] animate-bounce" />
@@ -200,6 +309,19 @@ function BazarRecompensas() {
               </span>
               <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[var(--brand-violet)]">
                 AP Disponibles
+              </span>
+            </div>
+          </div>
+
+          {/* Pistas Disponibles */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-amber-500/15 border-2 border-amber-500 shadow-[3px_3px_0px_var(--border)]">
+            <Lightbulb size={18} className="text-amber-500" />
+            <div className="text-left">
+              <span className="font-display font-bold text-sm text-[var(--text-primary)] block leading-none">
+                {pistasDisponibles}
+              </span>
+              <span className="text-[9px] font-display font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                Pistas
               </span>
             </div>
           </div>
@@ -249,123 +371,246 @@ function BazarRecompensas() {
         )}
       </AnimatePresence>
 
-      {/* ── Categorías del Bazar ── */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-c)] overflow-x-auto">
-        {CATEGORIAS_BAZAR.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => {
-              playParchment();
-              setCategoriaSeleccionada(cat.id);
-            }}
-            className={[
-              'px-4 py-2 rounded-xl text-xs font-display font-bold whitespace-nowrap transition-all cursor-pointer',
-              categoriaSeleccionada === cat.id
-                ? 'bg-[var(--brand-primary)] text-white shadow-sm'
-                : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-accent)]',
-            ].join(' ')}
-          >
-            {cat.label}
-          </button>
-        ))}
+      {/* ── Selector de Bloques Principales (Consumibles vs Cosméticos) ── */}
+      <div className="flex items-center p-1.5 rounded-2xl bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-c)] gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            playParchment();
+            setBloqueActivo('consumibles');
+          }}
+          className={[
+            'flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-display text-xs sm:text-sm font-bold transition-all cursor-pointer',
+            bloqueActivo === 'consumibles'
+              ? 'bg-[var(--brand-primary)] text-white shadow-[2px_2px_0px_var(--border)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-accent)]',
+          ].join(' ')}
+        >
+          <Sparkles size={16} />
+          <span>Consumibles de Aventura ({articulosConsumibles.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playParchment();
+            setBloqueActivo('cosmeticos');
+          }}
+          className={[
+            'flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-display text-xs sm:text-sm font-bold transition-all cursor-pointer',
+            bloqueActivo === 'cosmeticos'
+              ? 'bg-[var(--brand-violet)] text-white shadow-[2px_2px_0px_var(--border)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--brand-violet)] hover:bg-[var(--bg-accent)]',
+          ].join(' ')}
+        >
+          <Crown size={16} />
+          <span>Cosméticos & Títulos ({articulosCosmeticos.length})</span>
+        </button>
       </div>
 
-      {/* ── Cuadrícula de Artículos ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {articulosFiltrados.map((articulo, idx) => {
-          const { yaComprado, esEquipado } = getEstadoArticulo(articulo);
-          const IconVisual = articulo.IconoVisual;
-          const isCurrentLoading =
-            (isComprando || isPersonalizando) && articuloEnProcesoId === articulo.id;
+      {isLoadingCatalogo ? (
+        <div className="py-24 flex justify-center items-center">
+          <Spinner size="lg" label="Consultando el catálogo oficial del Bazar..." />
+        </div>
+      ) : bloqueActivo === 'consumibles' ? (
+        /* ════════════ BLOQUE 1: CONSUMIBLES DE AVENTURA ════════════ */
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-display font-semibold text-[var(--text-secondary)]">
+              Adquiere consumibles para resolver misiones complejas y proteger tu racha académica.
+            </span>
+          </div>
 
-          return (
-            <motion.div
-              key={articulo.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05, type: 'spring', stiffness: 220, damping: 22 }}
-            >
-              <Card
-                className={[
-                  'flex flex-col justify-between gap-4 h-full relative group transition-all',
-                  esEquipado
-                    ? 'border-2 border-[var(--brand-violet)] bg-gradient-to-br from-[var(--bg-panel)] to-[color-mix(in_oklch,var(--brand-violet)_10%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-violet)]'
-                    : yaComprado
-                      ? 'border-2 border-[var(--brand-primary)] bg-[var(--bg-panel)] shadow-[3px_3px_0px_var(--border)]'
-                      : 'border-2 border-[var(--border-muted)] bg-[var(--bg-panel)]',
-                ].join(' ')}
-              >
-                {/* Header de la tarjeta */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <IconVisual />
-                    <div>
-                      <span className={`text-[10px] font-display font-black uppercase tracking-wider ${articulo.colorRareza}`}>
-                        ✦ {articulo.rareza}
-                      </span>
-                      <h3 className="font-display font-bold text-base text-[var(--text-primary)] leading-tight mt-0.5">
-                        {articulo.nombre}
-                      </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {articulosConsumibles.map((articulo) => {
+              const meta = METADATOS_VISUALES[articulo.id] || METADATOS_VISUALES['escudo-racha'];
+              const Icono = meta.IconoVisual;
+              const tieneSuficiente = apTotal >= articulo.costoAp;
+              const enProceso = isComprando && articuloEnProcesoId === articulo.id;
+              const cantidadActual =
+                articulo.tipo === 'Pista' ? pistasDisponibles : escudosRacha;
+
+              return (
+                <Card
+                  key={articulo.id}
+                  className="p-5 flex flex-col justify-between gap-4 border-2 border-[var(--border)] bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-muted)] shadow-[3px_3px_0px_var(--border)]"
+                >
+                  <div className="flex items-start gap-4">
+                    <Icono className="w-16 h-16 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">
+                          {articulo.nombre}
+                        </h3>
+                        <Badge variant={articulo.tipo === 'Pista' ? 'xp' : 'racha'}>
+                          En inventario: {cantidadActual}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                        {meta.descripcion}
+                      </p>
                     </div>
                   </div>
 
-                  {esEquipado ? (
-                    <Badge variant="violet">
-                      <Check size={10} /> Equipado
-                    </Badge>
-                  ) : yaComprado && articulo.tipo !== 'escudo' ? (
-                    <Badge variant="racha">
-                      <Sparkles size={10} /> Adquirido
-                    </Badge>
-                  ) : null}
-                </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-[var(--border-muted)]">
+                    <div className="flex items-center gap-1.5 text-[var(--brand-violet)] font-display font-black text-base">
+                      <Zap size={16} />
+                      <span>{articulo.costoAp} AP</span>
+                    </div>
 
-                {/* Descripción */}
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed flex-1">
-                  {articulo.descripcion}
-                </p>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleAccionArticulo(articulo)}
+                      disabled={enProceso || !tieneSuficiente}
+                      className="font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-600 shadow-[2px_2px_0px_#78350f]"
+                    >
+                      {enProceso ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <ShoppingBag size={14} />
+                      )}
+                      <span>Comprar +1 ({articulo.costoAp} AP)</span>
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* ════════════ BLOQUE 2: COSMÉTICOS Y TÍTULOS ════════════ */
+        <div className="flex flex-col gap-4">
+          {/* Subfiltro de categorías cosméticas */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-muted)] overflow-x-auto">
+            {[
+              { id: 'todos', label: 'Todos' },
+              { id: 'avatar', label: 'Avatares' },
+              { id: 'marco', label: 'Marcos' },
+              { id: 'mascota', label: 'Mascotas' },
+              { id: 'titulo', label: 'Títulos' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => {
+                  playParchment();
+                  setSubFiltroCosmetico(f.id);
+                }}
+                className={[
+                  'px-3 py-1.5 rounded-lg text-xs font-display font-semibold transition-all cursor-pointer',
+                  subFiltroCosmetico === f.id
+                    ? 'bg-[var(--brand-violet)] text-white shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--brand-violet)]',
+                ].join(' ')}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-                {/* Footer de acción */}
-                <div className="flex items-center justify-between pt-3 border-t border-[var(--border-muted)] mt-auto gap-2">
-                  <div className="flex items-center gap-1 text-xs font-display font-bold text-[var(--brand-violet)]">
-                    <Zap size={14} />
-                    <span>{articulo.costoAp} AP</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {cosmeticosFiltrados.map((articulo) => {
+              const meta = METADATOS_VISUALES[articulo.id] || {
+                descripcion: 'Artículo de prestigio para personalizar tu perfil.',
+                rareza: 'Especial',
+                colorRareza: 'text-[var(--brand-violet)]',
+                IconoVisual: ({ className = 'w-14 h-14' }) => (
+                  <div className={`${className} flex items-center justify-center rounded-2xl bg-[var(--bg-accent)] text-2xl`}>
+                    ✨
+                  </div>
+                ),
+              };
+              const Icono = meta.IconoVisual;
+              const yaComprado = cosmeticosComprados.includes(articulo.id);
+              const equipado = isEquipado(articulo);
+              const tieneSuficiente = apTotal >= articulo.costoAp;
+              const enProceso =
+                (isComprando || isPersonalizando) && articuloEnProcesoId === articulo.id;
+
+              return (
+                <Card
+                  key={articulo.id}
+                  className={[
+                    'p-4 flex flex-col justify-between gap-3 border-2 transition-all',
+                    equipado
+                      ? 'border-[var(--brand-gold)] bg-[color-mix(in_oklch,var(--brand-gold)_8%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-gold)]'
+                      : yaComprado
+                        ? 'border-[var(--brand-emerald)] bg-[var(--bg-panel)] shadow-[2px_2px_0px_var(--border)]'
+                        : 'border-[var(--border)] bg-[var(--bg-panel)] shadow-[2px_2px_0px_var(--border)]',
+                  ].join(' ')}
+                >
+                  <div className="flex items-start gap-3">
+                    <Icono className="w-14 h-14 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                        <span className={`text-[10px] font-display font-black tracking-wider uppercase ${meta.colorRareza}`}>
+                          {meta.rareza}
+                        </span>
+                        {equipado && (
+                          <Badge variant="racha" className="text-[10px] px-2 py-0.2">
+                            Equipado
+                          </Badge>
+                        )}
+                        {!equipado && yaComprado && (
+                          <Badge variant="correcto" className="text-[10px] px-2 py-0.2">
+                            Comprado
+                          </Badge>
+                        )}
+                      </div>
+                      <h4 className="font-display font-bold text-base text-[var(--text-primary)] truncate">
+                        {articulo.nombre}
+                      </h4>
+                      <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mt-0.5">
+                        {meta.descripcion}
+                      </p>
+                    </div>
                   </div>
 
-                  <Button
-                    size="sm"
-                    variant={esEquipado ? 'ghost' : yaComprado ? 'secondary' : 'primary'}
-                    disabled={esEquipado || isCurrentLoading}
-                    onClick={() => handleAccionArticulo(articulo)}
-                  >
-                    {isCurrentLoading ? (
-                      <>
-                        <Loader2 size={13} className="animate-spin" />
-                        <span>Procesando...</span>
-                      </>
-                    ) : esEquipado ? (
-                      <>
-                        <Check size={13} />
-                        En Uso
-                      </>
+                  <div className="flex items-center justify-between pt-2 border-t border-[var(--border-muted)]">
+                    <div className="flex items-center gap-1 text-[var(--brand-violet)] font-display font-bold text-sm">
+                      <Zap size={14} />
+                      <span>{articulo.costoAp} AP</span>
+                    </div>
+
+                    {equipado ? (
+                      <span className="text-xs font-display font-bold text-[var(--brand-gold)] flex items-center gap-1">
+                        <Check size={14} /> En Uso
+                      </span>
                     ) : yaComprado ? (
-                      <>
-                        <Sparkles size={13} />
-                        Equipar
-                      </>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleAccionArticulo(articulo)}
+                        disabled={enProceso}
+                        className="text-xs font-bold"
+                      >
+                        {enProceso ? <Loader2 size={13} className="animate-spin" /> : null}
+                        <span>Equipar</span>
+                      </Button>
                     ) : (
-                      <>
-                        <ShoppingBag size={13} />
-                        {articulo.costoAp} AP
-                      </>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleAccionArticulo(articulo)}
+                        disabled={enProceso || !tieneSuficiente}
+                        className="text-xs font-bold"
+                      >
+                        {enProceso ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <ShoppingBag size={13} />
+                        )}
+                        <span>Comprar ({articulo.costoAp} AP)</span>
+                      </Button>
                     )}
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -38,7 +38,8 @@ public static class MisionesEndpoints
                 usuario.ObtenerUsuarioId(),
                 request.AulaId,
                 request.TemaCurricular,
-                request.TextoFuente);
+                request.TextoFuente,
+                request.TipoPlantilla);
 
             var misionId = await mediator.Send(comando);
             return Results.Created($"/api/misiones/{misionId}", new { misionId });

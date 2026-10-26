@@ -1,3 +1,4 @@
+using Core.Application.Common;
 using Core.Domain.SeedWork;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +35,9 @@ public class ManejadorDeExcepciones : IExceptionHandler
             // del cliente al elegir endpoint, no un fallo del servidor.
             NotSupportedException =>
                 (StatusCodes.Status400BadRequest, "Operación no soportada", exception.Message),
+
+            GeneracionFallidaException =>
+                (StatusCodes.Status502BadGateway, "Error en generación con IA", exception.Message),
 
             // Todo lo demás (InvalidOperationException de LINQ, errores de DI,
             // HttpRequestException al llamar al microservicio de IA, etc.) es un

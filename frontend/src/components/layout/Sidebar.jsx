@@ -11,6 +11,7 @@ import {
   Sparkles,
   ShoppingBag,
   BarChart3,
+  GitFork,
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi } from '../../services/api';
@@ -23,6 +24,7 @@ import ArtFrame from '../ui/ArtFrame';
 const NAV_DOCENTE = [
   { to: '/docente/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/docente/misiones/pendientes', label: 'Inbox de Misiones', Icon: InboxIcon },
+  { to: '/docente/camino', label: 'Secuencia Curricular', Icon: GitFork },
   { to: '/docente/metricas', label: 'Diagnóstico & Métricas', Icon: BarChart3 },
 ];
 

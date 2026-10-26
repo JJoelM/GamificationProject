@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Sparkles, Inbox, Swords, ArrowRight, BookOpen,
   Copy, Check, KeyRound, TrendingUp, Clock, Award,
-  Lightbulb, Users, ChevronRight
+  Lightbulb, Users, ChevronRight, GitFork
 } from 'lucide-react';
 import { useBorradoresDocente } from '../../hooks/useMisiones';
 import { useMisAulas } from '../../hooks/useAulas';
@@ -277,6 +277,15 @@ function DashboardDocente() {
             >
               <BookOpen size={15} />
               Inbox de Misiones
+              <ChevronRight size={14} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/docente/camino')}
+            >
+              <GitFork size={15} className="text-[var(--brand-primary)]" />
+              Secuencia Curricular
               <ChevronRight size={14} />
             </Button>
             <Button

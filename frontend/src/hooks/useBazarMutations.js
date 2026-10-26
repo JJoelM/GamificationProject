@@ -1,30 +1,36 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { alumnosApi } from '../services/api';
 import useSessionStore from '../store/useSessionStore';
 
 /**
- * useBazarMutations — Mutaciones para compra de artículos y personalización cosmética del personaje.
+ * useCatalogoBazar — Consulta el catálogo dinámico de artículos del Bazar (GET /api/alumnos/bazar/catalogo).
+ * Retorna [ { id, nombre, tipo, costoAp } ].
+ */
+export function useCatalogoBazar() {
+  return useQuery({
+    queryKey: ['bazar-catalogo'],
+    queryFn: () => alumnosApi.getCatalogoBazar(),
+    staleTime: 1000 * 60 * 5, // 5 minutos de frescura
+  });
+}
+
+/**
+ * useComprarArticulo — Mutación para compra de consumibles y cosméticos en el Bazar.
  *
  * CQRS:
- * - Compra: POST /api/alumnos/bazar/comprar?aulaId={aulaId}
- * - Personalización: PUT /api/alumnos/personaje/{aulaId}/personalizacion
- * - Ambas invalidan la query ['personaje'] para sincronizar el estado del backend.
+ * - Compra: POST /api/alumnos/bazar/{aulaId}/comprar
+ * - Body: { articuloId }
+ * - Invalida ['personaje'] y ['bazar-catalogo'] tras la compra.
  */
-
 export function useComprarArticulo() {
   const queryClient = useQueryClient();
   const aulaId = useSessionStore((s) => s.aulaActivaId);
 
   return useMutation({
-    mutationFn: async ({ articuloId, costoAp, tipo, valor }) => {
+    mutationFn: async ({ articuloId }) => {
       if (import.meta.env.VITE_USE_MOCK === 'true') {
         const state = useSessionStore.getState();
-        const res = state.comprarArticulo({
-          id: articuloId,
-          costoAp,
-          tipo: tipo.toLowerCase(),
-          valor,
-        });
+        const res = state.comprarArticulo({ id: articuloId });
         if (!res.exito) {
           const err = new Error(res.motivo || 'No tienes suficientes AP.');
           err.status = 409;
@@ -33,20 +39,16 @@ export function useComprarArticulo() {
         return { exito: true };
       }
 
-      return await alumnosApi.comprarArticulo(aulaId, {
-        articuloId,
-        costoAp,
-        tipo,
-        valor,
-      });
+      return await alumnosApi.comprarArticulo(aulaId, { articuloId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personaje'] });
+      queryClient.invalidateQueries({ queryKey: ['bazar-catalogo'] });
     },
     onError: (error) => {
       if (error?.status === 409) {
         error.mensajeAmigable =
-          error.detail || 'AP insuficientes o este artículo ya fue adquirido en el aula.';
+          error.detail || error.message || 'AP insuficientes o este cosmético ya fue adquirido.';
       } else {
         error.mensajeAmigable =
           error.detail || error.message || 'No se pudo completar la compra en el Bazar.';

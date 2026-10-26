@@ -1,7 +1,10 @@
 import { useState, useCallback } from 'react';
-import { Swords, Send, CheckCircle2, ChevronRight, ChevronLeft, Shield } from 'lucide-react';
+import { Swords, Send, CheckCircle2, ChevronRight, ChevronLeft, Shield, Lightbulb, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useResolverMision } from '../../../hooks/useMisionMutations';
+import { usePersonaje } from '../../../hooks/usePersonaje';
+import { useUsarPista } from '../../../hooks/usePistas';
+import ModalSinPistas from './ModalSinPistas';
 import ResultadoResolucion from './ResultadoResolucion';
 import BatallaDeJefe from './BatallaDeJefe';
 import LineaTemporal from './LineaTemporal';
@@ -16,6 +19,10 @@ import { playParchment, playChime } from '../../../utils/audio';
  */
 function ResolverQuiz({ mision, isOpen, onClose }) {
   const { mutate: resolver, isPending, data: resultadoData, error, reset } = useResolverMision();
+  const { data: personaje } = usePersonaje();
+  const { mutate: pedirPista, isPending: isUsandoPista } = useUsarPista();
+
+  const pistasDisponibles = personaje?.pistasDisponibles ?? 0;
 
   let preguntas = [];
   try {
@@ -26,6 +33,8 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
   } catch { /* empty */ }
 
   const [respuestas, setRespuestas] = useState({});
+  const [descartesPorPregunta, setDescartesPorPregunta] = useState({});
+  const [modalSinPistasOpen, setModalSinPistasOpen] = useState(false);
   const [preguntaIdx, setPreguntaIdx] = useState(0);
   const [fase, setFase] = useState('narrativa'); // 'narrativa' | 'quiz' | 'revision'
   const [direccion, setDireccion] = useState(1); // 1=next, -1=prev for animation
@@ -39,6 +48,45 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
     playParchment();
     setRespuestas((prev) => ({ ...prev, [preguntaIdx]: opcion }));
   }, [preguntaIdx]);
+
+  const handleUsarPista = () => {
+    if (pistasDisponibles <= 0) {
+      setModalSinPistasOpen(true);
+      return;
+    }
+
+    const yaDescartadas = descartesPorPregunta[preguntaIdx] || [];
+    pedirPista(
+      {
+        misionId: mision.misionId,
+        indicePregunta: preguntaIdx,
+        opcionesYaDescartadas: yaDescartadas,
+      },
+      {
+        onSuccess: (data) => {
+          playParchment();
+          if (data?.opcionADescartar) {
+            setDescartesPorPregunta((prev) => ({
+              ...prev,
+              [preguntaIdx]: [...(prev[preguntaIdx] || []), data.opcionADescartar],
+            }));
+            if (respuestas[preguntaIdx] === data.opcionADescartar) {
+              setRespuestas((prev) => {
+                const copia = { ...prev };
+                delete copia[preguntaIdx];
+                return copia;
+              });
+            }
+          }
+        },
+        onError: (err) => {
+          if (err?.status === 409 || err?.esFaltaDePistas) {
+            setModalSinPistasOpen(true);
+          }
+        },
+      }
+    );
+  };
 
   const handleSiguiente = () => {
     setDireccion(1);
@@ -68,6 +116,8 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
   const handleClose = () => {
     reset();
     setRespuestas({});
+    setDescartesPorPregunta({});
+    setModalSinPistasOpen(false);
     setPreguntaIdx(0);
     setFase('narrativa');
     setDireccion(1);
@@ -112,7 +162,8 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
   };
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={isOpen}
       onClose={isPending ? undefined : handleClose}
       title={resultadoData ? 'Resultado de la Misión' : fase === 'revision' ? 'Revisar y Entregar' : 'Resolver Misión'}
@@ -193,12 +244,34 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
                 ))}
               </div>
 
-              {/* Barra de progreso */}
-              <div className="flex items-center justify-between text-xs font-display text-[var(--text-muted)]">
+              {/* Barra de progreso y botón de pista */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-display text-[var(--text-muted)]">
                 <span>Pregunta {preguntaIdx + 1} de {total}</span>
-                <span className="font-bold text-[var(--brand-primary)]">
-                  {cantRespondidas} respondidas
-                </span>
+                <div className="flex items-center gap-2.5">
+                  {/* Botón táctil Painterly: Usar Pista */}
+                  <button
+                    type="button"
+                    onClick={handleUsarPista}
+                    disabled={isUsandoPista}
+                    className={[
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-display font-bold transition-all cursor-pointer shadow-xs',
+                      pistasDisponibles > 0
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 active:scale-95'
+                        : 'bg-[var(--bg-muted)] border-[var(--border-muted)] text-[var(--text-muted)] opacity-70 hover:opacity-100',
+                    ].join(' ')}
+                    title="Descarta una opción incorrecta usando una pista del Grimorio"
+                  >
+                    <Lightbulb size={14} className={isUsandoPista ? 'animate-spin text-amber-500' : 'text-amber-500'} />
+                    <span>Usar Pista</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
+                      {pistasDisponibles}
+                    </span>
+                  </button>
+
+                  <span className="font-bold text-[var(--brand-primary)]">
+                    {cantRespondidas} respondidas
+                  </span>
+                </div>
               </div>
               <div className="w-full h-1.5 rounded-full bg-[var(--bg-muted)] border border-[var(--border-muted)] overflow-hidden">
                 <motion.div
@@ -245,6 +318,9 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
                     <div className="flex flex-col gap-2.5">
                       {pregunta.opciones?.map((opcion, oIndex) => {
                         const isSelected = respuestas[preguntaIdx] === opcion;
+                        const descartadas = descartesPorPregunta[preguntaIdx] || [];
+                        const esDescartada = descartadas.includes(opcion);
+
                         return (
                           <button
                             key={oIndex}
@@ -252,32 +328,49 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
                             type="button"
                             role="radio"
                             aria-checked={isSelected}
-                            tabIndex={isSelected || (!respuestas[preguntaIdx] && oIndex === 0) ? 0 : -1}
-                            onClick={() => handleSelectOpcion(opcion)}
-                            onKeyDown={(e) => handleOptionKeyDown(e, opcion, oIndex)}
+                            disabled={esDescartada}
+                            tabIndex={esDescartada ? -1 : isSelected || (!respuestas[preguntaIdx] && oIndex === 0) ? 0 : -1}
+                            onClick={() => !esDescartada && handleSelectOpcion(opcion)}
+                            onKeyDown={(e) => !esDescartada && handleOptionKeyDown(e, opcion, oIndex)}
                             className={[
-                              'flex items-center gap-3 p-3.5 rounded-[10px_14px_10px_12px] border-2 text-left text-sm transition-all duration-150 cursor-pointer outline-none',
-                              'focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2',
-                              isSelected
+                              'flex items-center gap-3 p-3.5 rounded-[10px_14px_10px_12px] border-2 text-left text-sm transition-all duration-150 outline-none',
+                              esDescartada
+                                ? 'border-dashed border-red-400/40 bg-[var(--bg-muted)] opacity-40 line-through cursor-not-allowed select-none'
+                                : 'cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2',
+                              !esDescartada && isSelected
                                 ? 'border-[var(--brand-primary)] bg-[color-mix(in_oklch,var(--brand-primary)_12%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-primary)] text-[var(--brand-primary)] font-semibold -translate-y-0.5'
-                                : 'border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--bg-accent)] hover:-translate-y-0.5',
+                                : !esDescartada
+                                  ? 'border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--bg-accent)] hover:-translate-y-0.5'
+                                  : '',
                             ].join(' ')}
                           >
                             <div
                               className={[
                                 'w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                                isSelected
-                                  ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white dark:text-slate-950 scale-110'
-                                  : 'border-[var(--border-muted)] bg-[var(--bg-panel)] text-transparent',
+                                esDescartada
+                                  ? 'border-red-400/40 bg-red-50 dark:bg-red-950/20 text-red-500'
+                                  : isSelected
+                                    ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white dark:text-slate-950 scale-110'
+                                    : 'border-[var(--border-muted)] bg-[var(--bg-panel)] text-transparent',
                               ].join(' ')}
                               aria-hidden="true"
                             >
-                              <CheckCircle2 size={14} className={isSelected ? 'block' : 'opacity-0'} />
+                              {esDescartada ? (
+                                <XCircle size={14} className="text-red-500" />
+                              ) : (
+                                <CheckCircle2 size={14} className={isSelected ? 'block' : 'opacity-0'} />
+                              )}
                             </div>
                             <span className="flex-1 leading-snug">{opcion}</span>
-                            <span className="text-[10px] font-display font-bold text-[var(--text-muted)] opacity-60 shrink-0">
-                              {String.fromCharCode(65 + oIndex)}
-                            </span>
+                            {esDescartada ? (
+                              <span className="text-[10px] font-display font-bold text-red-600 dark:text-red-400 shrink-0">
+                                Descartada por pista
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-display font-bold text-[var(--text-muted)] opacity-60 shrink-0">
+                                {String.fromCharCode(65 + oIndex)}
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -398,6 +491,11 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
         </div>
       )}
     </Modal>
+    <ModalSinPistas
+      isOpen={modalSinPistasOpen}
+      onClose={() => setModalSinPistasOpen(false)}
+    />
+    </>
   );
 }
 

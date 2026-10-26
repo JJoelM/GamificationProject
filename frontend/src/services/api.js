@@ -151,6 +151,28 @@ export const misionesApi = {
       method: 'POST',
       body: JSON.stringify({ motivo }),
     }),
+
+  // GET /api/misiones/aulas/{aulaId}/camino (Docente)
+  getCaminoDocente: (aulaId) => apiFetch(`/api/misiones/aulas/${aulaId}/camino`),
+
+  // PUT /api/misiones/{id}/sugeridas (Docente)
+  definirSugeridas: (id, { misionesSugeridas }) =>
+    apiFetch(`/api/misiones/${id}/sugeridas`, {
+      method: 'PUT',
+      body: JSON.stringify({ misionesSugeridas }),
+    }),
+
+  // POST /api/misiones/{id}/ocultar (Docente)
+  ocultar: (id) =>
+    apiFetch(`/api/misiones/${id}/ocultar`, {
+      method: 'POST',
+    }),
+
+  // POST /api/misiones/{id}/republicar (Docente)
+  republicar: (id) =>
+    apiFetch(`/api/misiones/${id}/republicar`, {
+      method: 'POST',
+    }),
 };
 
 // ── Servicios de API de Alumnos ──
@@ -164,17 +186,16 @@ export const alumnosApi = {
   // GET /api/alumnos/grimorio/{aulaId} (Alumno vía JWT)
   getGrimorio: (aulaId) => apiFetch(`/api/alumnos/grimorio/${aulaId}`),
 
-  // POST /api/alumnos/bazar/comprar?aulaId={aulaId}
-  // Body: { articuloId, costoAp, tipo, valor, aulaId }
-  comprarArticulo: (aulaId, { articuloId, costoAp, tipo, valor }) =>
-    apiFetch(`/api/alumnos/bazar/comprar?aulaId=${aulaId}`, {
+  // GET /api/alumnos/bazar/catalogo
+  getCatalogoBazar: () => apiFetch('/api/alumnos/bazar/catalogo'),
+
+  // POST /api/alumnos/bazar/{aulaId}/comprar
+  // Body: { articuloId }
+  comprarArticulo: (aulaId, { articuloId }) =>
+    apiFetch(`/api/alumnos/bazar/${aulaId}/comprar`, {
       method: 'POST',
       body: JSON.stringify({
         articuloId,
-        costoAp: Number(costoAp),
-        tipo,
-        valor: String(valor),
-        aulaId,
       }),
     }),
 
@@ -190,6 +211,20 @@ export const alumnosApi = {
         titulo: titulo ?? null,
       }),
     }),
+
+  // POST /api/alumnos/misiones/{misionId}/pista (Alumno vía JWT)
+  // Body: { indicePregunta, opcionesYaDescartadas }
+  usarPista: (misionId, { indicePregunta, opcionesYaDescartadas }) =>
+    apiFetch(`/api/alumnos/misiones/${misionId}/pista`, {
+      method: 'POST',
+      body: JSON.stringify({
+        indicePregunta: Number(indicePregunta),
+        opcionesYaDescartadas: opcionesYaDescartadas || [],
+      }),
+    }),
+
+  // GET /api/alumnos/camino/{aulaId} (Alumno vía JWT)
+  getCamino: (aulaId) => apiFetch(`/api/alumnos/camino/${aulaId}`),
 
   // POST /api/alumnos/misiones/{misionId}/resolver (Alumno vía JWT)
   resolverMision: (misionId, { respuestas }) =>

@@ -5,6 +5,7 @@ import DashboardDocente from './features/docente/DashboardDocente';
 import InboxBorradores from './features/docente/InboxBorradores';
 import ValidadorMision from './features/docente/ValidadorMision';
 import MetricasAula from './features/docente/MetricasAula';
+import SecuenciaCurricularDocente from './features/docente/SecuenciaCurricularDocente';
 import DashboardAlumno from './features/alumno/DashboardAlumno';
 import TableroMisiones from './features/alumno/TableroMisiones';
 import BazarRecompensas from './features/alumno/BazarRecompensas';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/docente/misiones/pendientes" element={<InboxBorradores />} />
           <Route path="/docente/misiones/:id/validar" element={<ValidadorMision />} />
           <Route path="/docente/metricas" element={<MetricasAula />} />
+          <Route path="/docente/camino" element={<SecuenciaCurricularDocente />} />
 
           {/* Entorno Alumno */}
           <Route path="/alumno/dashboard" element={<DashboardAlumno />} />
