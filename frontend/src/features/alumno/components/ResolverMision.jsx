@@ -260,7 +260,7 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
                         ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 active:scale-95'
                         : 'bg-[var(--bg-muted)] border-[var(--border-muted)] text-[var(--text-muted)] opacity-70 hover:opacity-100',
                     ].join(' ')}
-                    title="Descarta una opción incorrecta usando una pista del Grimorio"
+                    title="Descarta una opción incorrecta usando una pista del Bazar"
                   >
                     <Lightbulb size={14} className={isUsandoPista ? 'animate-spin text-amber-500' : 'text-amber-500'} />
                     <span>Usar Pista</span>

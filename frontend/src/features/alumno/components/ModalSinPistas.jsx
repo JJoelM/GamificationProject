@@ -18,7 +18,7 @@ function ModalSinPistas({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="¡Grimorio sin tinta!"
+      title="¡Pistas agotadas!"
       size="sm"
     >
       <div className="flex flex-col items-center text-center gap-4 py-2 select-none">
@@ -31,7 +31,7 @@ function ModalSinPistas({ isOpen, onClose }) {
             (っ- ‸ - ς) No te quedan pistas disponibles
           </span>
           <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-            Tu reserva arcana de pistas pedagógicas se ha agotado. Podés visitar el Bazar del Alquimista y canjear tus puntos de acción (AP) para recargar pergaminos de revelación.
+            Tu reserva de pistas compradas en el Bazar se ha agotado. Podés visitar el Bazar del Alquimista y canjear tus puntos de acción (AP) para adquirir nuevas pistas de descarte.
           </p>
         </div>
 
