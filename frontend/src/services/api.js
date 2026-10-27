@@ -111,6 +111,29 @@ export const usuariosApi = {
       method: 'POST',
       body: JSON.stringify({ nuevoEstado }),
     }),
+
+  // GET /api/usuarios/mis-datos (Usuario autenticado vía JWT)
+  getMisDatos: () => apiFetch('/api/usuarios/mis-datos'),
+
+  // PUT /api/usuarios/mis-datos (Usuario autenticado vía JWT)
+  actualizarMisDatos: ({ nombreCompleto, aceptaUsoInvestigacion }) =>
+    apiFetch('/api/usuarios/mis-datos', {
+      method: 'PUT',
+      body: JSON.stringify({ nombreCompleto, aceptaUsoInvestigacion }),
+    }),
+
+  // POST /api/usuarios/mis-datos/cambiar-password
+  cambiarPassword: ({ passwordActual, passwordNueva }) =>
+    apiFetch('/api/usuarios/mis-datos/cambiar-password', {
+      method: 'POST',
+      body: JSON.stringify({ passwordActual, passwordNueva }),
+    }),
+
+  // DELETE /api/usuarios/mis-datos
+  eliminarMiCuenta: () =>
+    apiFetch('/api/usuarios/mis-datos', {
+      method: 'DELETE',
+    }),
 };
 
 // ── Servicios de API de Misiones ──
@@ -265,4 +288,10 @@ export const aulasApi = {
 export const docentesApi = {
   // GET /api/docentes/metricas/{aulaId} (Docente vía JWT)
   getMetricas: (aulaId) => apiFetch(`/api/docentes/metricas/${aulaId}`),
+};
+
+// ── Servicios de API de Directivo ──
+export const directivoApi = {
+  // GET /api/directivo/metricas (Directivo / Admin vía JWT)
+  getMetricas: () => apiFetch('/api/directivo/metricas'),
 };

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -8,14 +9,16 @@ import {
   GraduationCap,
   BookOpen,
   ShieldCheck,
-  Sparkles,
   ShoppingBag,
   BarChart3,
   GitFork,
+  Settings,
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi } from '../../services/api';
 import ArtFrame from '../ui/ArtFrame';
+import PerfilModal from './PerfilModal';
+import { playParchment } from '../../utils/audio';
 
 /**
  * Sidebar v3 — Navegación lateral rol-aware completa con Bazar, Grimorio y Diagnóstico
@@ -36,6 +39,7 @@ const NAV_ALUMNO = [
 ];
 
 const NAV_DIRECTIVO = [
+  { to: '/directivo/dashboard', label: 'Métricas Globales', Icon: BarChart3 },
   { to: '/directivo/docentes', label: 'Gestión de Cuentas', Icon: ShieldCheck },
 ];
 
@@ -58,6 +62,7 @@ const navLinkActive = [
 function Sidebar() {
   const { usuario, clearUsuario, resetearProgreso } = useSessionStore();
   const navigate = useNavigate();
+  const [isPerfilOpen, setIsPerfilOpen] = useState(false);
 
   const rol = usuario?.rol || 'Alumno';
   const navItems =
@@ -119,19 +124,27 @@ function Sidebar() {
         </div>
       </div>
 
-      {/* ── Indicador de usuario y rol ── */}
+      {/* ── Indicador de usuario y rol (Click para abrir perfil) ── */}
       <div className="px-5 pt-3 pb-2">
-        <div className="flex flex-col gap-1.5 p-2.5 rounded-[10px_14px_12px_12px] bg-[color-mix(in_oklch,var(--brand-primary)_8%,var(--bg-panel))] border border-[var(--border-muted)]">
-          <div className="flex items-center gap-2">
-            <RolIcon size={14} className="text-[var(--brand-primary)] shrink-0" />
-            <span className="text-xs font-display font-bold text-[var(--brand-primary)] uppercase tracking-wide">
-              {rol}
-            </span>
+        <button
+          type="button"
+          onClick={() => { playParchment(); setIsPerfilOpen(true); }}
+          title="Configuración de Cuenta y Perfil"
+          className="w-full text-left flex flex-col gap-1.5 p-2.5 rounded-[10px_14px_12px_12px] bg-[color-mix(in_oklch,var(--brand-primary)_8%,var(--bg-panel))] border border-[var(--border-muted)] hover:border-[var(--brand-primary)] transition-all cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <RolIcon size={14} className="text-[var(--brand-primary)] shrink-0" />
+              <span className="text-xs font-display font-bold text-[var(--brand-primary)] uppercase tracking-wide">
+                {rol}
+              </span>
+            </div>
+            <Settings size={13} className="text-[var(--text-muted)] group-hover:text-[var(--brand-primary)] transition-colors" />
           </div>
           <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
             {usuario?.nombreCompleto || 'Usuario Conectado'}
           </span>
-        </div>
+        </button>
       </div>
 
       {/* ── Nav Links ── */}
@@ -162,8 +175,21 @@ function Sidebar() {
         />
       </div>
 
-      {/* ── Footer: Cerrar sesión ── */}
-      <div className="px-3 pb-4 pt-2 border-t border-[var(--border-muted)]">
+      {/* ── Footer: Mi Perfil y Cerrar sesión ── */}
+      <div className="px-3 pb-4 pt-2 border-t border-[var(--border-muted)] flex flex-col gap-1">
+        <button
+          onClick={() => { playParchment(); setIsPerfilOpen(true); }}
+          className={[
+            'w-full flex items-center gap-3 px-4 py-2 rounded-[8px_12px_10px_10px]',
+            'text-xs font-display font-bold text-[var(--text-secondary)] cursor-pointer',
+            'hover:bg-[var(--bg-accent)] hover:text-[var(--brand-primary)]',
+            'transition-colors duration-150',
+          ].join(' ')}
+        >
+          <Settings size={15} strokeWidth={2} aria-hidden="true" />
+          Mi Perfil & Seguridad
+        </button>
+
         <button
           onClick={handleCerrarSesion}
           className={[
@@ -178,6 +204,12 @@ function Sidebar() {
           Cerrar Sesión
         </button>
       </div>
+
+      {/* Modal de Perfil & Configuración */}
+      <PerfilModal
+        isOpen={isPerfilOpen}
+        onClose={() => setIsPerfilOpen(false)}
+      />
     </aside>
   );
 }

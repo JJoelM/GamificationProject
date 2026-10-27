@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, ShieldCheck, UserCheck, UserX, RefreshCw, Search,
-  Clock, CheckCircle2, XCircle, AlertTriangle, Shield, Filter,
+  Clock, CheckCircle2, XCircle, AlertTriangle, Shield,
   ChevronDown, ChevronUp, Mail,
 } from 'lucide-react';
 import { usuariosApi } from '../../services/api';
@@ -55,22 +55,7 @@ function GestionDocentes() {
 
   const { data: docentes, isLoading, error, refetch } = useQuery({
     queryKey: ['usuarios', 'docentes'],
-    queryFn: async () => {
-      try {
-        return await usuariosApi.getDocentes();
-      } catch (err) {
-        if (!err.isApiError) {
-          return [
-            { usuarioId: '11111111-1111-1111-1111-111111111111', email: 'docente@unne.edu.ar', nombreCompleto: 'Prof. Arduino Marcori', estadoCuenta: 'Activa', rol: 'Docente', fechaRegistro: '2025-03-15' },
-            { usuarioId: '55555555-5555-5555-5555-555555555555', email: 'laura.garcia@unne.edu.ar', nombreCompleto: 'Prof. Laura García', estadoCuenta: 'Pendiente', rol: 'Docente', fechaRegistro: '2025-09-10' },
-            { usuarioId: '66666666-6666-6666-6666-666666666666', email: 'carlos.mendez@unne.edu.ar', nombreCompleto: 'Prof. Carlos Méndez', estadoCuenta: 'Suspendida', rol: 'Docente', fechaRegistro: '2025-06-22' },
-            { usuarioId: '77777777-7777-7777-7777-777777777777', email: 'maria.lopez@unne.edu.ar', nombreCompleto: 'Prof. María López', estadoCuenta: 'Activa', rol: 'Docente', fechaRegistro: '2025-04-01' },
-            { usuarioId: '88888888-8888-8888-8888-888888888888', email: 'pedro.alumno@unne.edu.ar', nombreCompleto: 'Pedro Ramírez', estadoCuenta: 'PendienteDeAprobacionParental', rol: 'Alumno', fechaRegistro: '2025-09-13' },
-          ];
-        }
-        throw err;
-      }
-    },
+    queryFn: () => usuariosApi.getDocentes(),
   });
 
   const { mutate: cambiarEstado, isPending: isUpdating } = useMutation({

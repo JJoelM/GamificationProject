@@ -12,6 +12,7 @@ import TableroMisiones from './features/alumno/TableroMisiones';
 import BazarRecompensas from './features/alumno/BazarRecompensas';
 import GrimorioSaber from './features/alumno/GrimorioSaber';
 import GestionDocentes from './features/directivo/GestionDocentes';
+import DashboardDirectivo from './features/directivo/DashboardDirectivo';
 
 /**
  * App — Configuración de rutas de React Router
@@ -62,6 +63,7 @@ function App() {
           <Route path="/alumno/grimorio" element={<GrimorioSaber />} />
 
           {/* Entorno Directivo / Administrador */}
+          <Route path="/directivo/dashboard" element={<DashboardDirectivo />} />
           <Route path="/directivo/docentes" element={<GestionDocentes />} />
         </Route>
       </Routes>

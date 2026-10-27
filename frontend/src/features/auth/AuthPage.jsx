@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  Swords, LogIn, UserPlus, GraduationCap, BookOpen, ShieldCheck,
-  Sparkles, AlertCircle, CheckCircle2, ArrowLeft
+  Swords, LogIn, GraduationCap, BookOpen, ShieldCheck,
+  CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi } from '../../services/api';
@@ -25,20 +25,14 @@ import { playSuccess, playParchment } from '../../utils/audio';
  */
 function AuthPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const queryTab = searchParams.get('tab');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const tab = rawTab === 'registro-docente' || rawTab === 'registro-alumno' ? rawTab : 'login';
+  const setTab = (newTab) => {
+    setSearchParams({ tab: newTab });
+  };
 
   const setUsuario = useSessionStore((s) => s.setUsuario);
-
-  const [tab, setTab] = useState(
-    queryTab === 'registro-docente' || queryTab === 'registro-alumno' ? queryTab : 'login'
-  );
-
-  useEffect(() => {
-    if (queryTab && (queryTab === 'registro-docente' || queryTab === 'registro-alumno' || queryTab === 'login')) {
-      setTab(queryTab);
-    }
-  }, [queryTab]);
 
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState(null);
@@ -71,7 +65,7 @@ function AuthPage() {
     if (rol === 'Docente') {
       navigate('/docente/dashboard');
     } else if (rol === 'Directivo' || rol === 'Administrador') {
-      navigate('/directivo/docentes');
+      navigate('/directivo/dashboard');
     } else {
       navigate('/alumno/dashboard');
     }
