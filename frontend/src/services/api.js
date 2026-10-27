@@ -260,3 +260,9 @@ export const aulasApi = {
       body: JSON.stringify({ codigoInvitacion }),
     }),
 };
+
+// ── Servicios de API de Docentes ──
+export const docentesApi = {
+  // GET /api/docentes/metricas/{aulaId} (Docente vía JWT)
+  getMetricas: (aulaId) => apiFetch(`/api/docentes/metricas/${aulaId}`),
+};

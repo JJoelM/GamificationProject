@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useBorradoresDocente } from '../../hooks/useMisiones';
 import { useMisAulas } from '../../hooks/useAulas';
+import { useMetricasAula } from '../../hooks/useMetricas';
 import useSessionStore from '../../store/useSessionStore';
 import FormGenerarMision from './components/FormGenerarMision';
 import Card from '../../components/ui/Card';
@@ -93,8 +94,10 @@ function DashboardDocente() {
   const codigoInvitacion = useSessionStore((s) => s.codigoInvitacionAula);
 
   const { data: borradores } = useBorradoresDocente();
+  const { data: metricas } = useMetricasAula();
 
   const cantBorradores = borradores?.length ?? 0;
+  const tasaParticipacion = metricas ? `${Math.round(metricas.tasaCompletitud * 100)}%` : '--';
 
   const tip = TIPS[tipIdx];
   const TipIcon = tip.icon;
@@ -180,9 +183,17 @@ function DashboardDocente() {
           iconBg="bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))]"
           iconColor="text-[var(--brand-emerald)]"
           label="Participación del Aula"
-          value="92%"
-          badge={<Badge variant="correcto">Excelente</Badge>}
-          sub="Tasa de actividad semanal y análisis de errores."
+          value={tasaParticipacion}
+          badge={
+            metricas?.tasaCompletitud >= 0.7 ? (
+              <Badge variant="correcto">Excelente</Badge>
+            ) : metricas?.tasaCompletitud >= 0.4 ? (
+              <Badge variant="xp">Activa</Badge>
+            ) : (
+              <Badge variant="info">En curso</Badge>
+            )
+          }
+          sub={`${metricas?.alumnosConAlMenosUnaMisionCompleta ?? 0} de ${metricas?.totalInscriptos ?? 0} alumnos activos.`}
           onClick={() => navigate('/docente/metricas')}
         />
 
