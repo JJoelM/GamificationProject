@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   InboxIcon,
@@ -13,6 +15,7 @@ import {
   BarChart3,
   GitFork,
   Settings,
+  X,
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi } from '../../services/api';
@@ -21,7 +24,7 @@ import PerfilModal from './PerfilModal';
 import { playParchment } from '../../utils/audio';
 
 /**
- * Sidebar v3 — Navegación lateral rol-aware completa con Bazar, Grimorio y Diagnóstico
+ * Sidebar v4 — Navegación lateral rol-aware responsiva (Desktop + Mobile Drawer)
  */
 
 const NAV_DOCENTE = [
@@ -59,8 +62,9 @@ const navLinkActive = [
   'shadow-[2px_2px_0px_var(--brand-primary)]',
 ].join(' ');
 
-function Sidebar() {
+function SidebarContent({ onCloseMobile }) {
   const { usuario, clearUsuario, resetearProgreso } = useSessionStore();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
 
@@ -85,24 +89,24 @@ function Sidebar() {
     } catch {
       // Ignorar error en logout — la sesión local se limpia igual
     }
-    // Limpiar storage persistido y estado de progreso en memoria
+    // Limpiar caché completa de React Query y storage local para evitar fugas entre cuentas
+    queryClient.clear();
     useSessionStore.persist.clearStorage();
     resetearProgreso();
     clearUsuario();
+    onCloseMobile?.();
     navigate('/');
   };
 
+  const handleOpenPerfil = () => {
+    playParchment();
+    setIsPerfilOpen(true);
+  };
+
   return (
-    <aside
-      className={[
-        'flex flex-col h-full',
-        'bg-gradient-to-b from-[var(--bg-panel)] to-[var(--bg-muted)]',
-        'border-r-2 border-[var(--border)]',
-        'w-64 shrink-0',
-      ].join(' ')}
-    >
+    <div className="flex flex-col h-full bg-gradient-to-b from-[var(--bg-panel)] to-[var(--bg-muted)] select-none">
       {/* ── Logo / Título ── */}
-      <div className="px-5 pt-6 pb-4 border-b border-[var(--border-muted)]">
+      <div className="px-5 pt-5 pb-4 border-b border-[var(--border-muted)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
             className={[
@@ -122,13 +126,25 @@ function Sidebar() {
             <p className="text-[11px] text-[var(--text-muted)]">Plataforma RPG Educativa</p>
           </div>
         </div>
+
+        {/* Botón cerrar en mobile */}
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)] transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* ── Indicador de usuario y rol (Click para abrir perfil) ── */}
-      <div className="px-5 pt-3 pb-2">
+      <div className="px-4 pt-3 pb-2">
         <button
           type="button"
-          onClick={() => { playParchment(); setIsPerfilOpen(true); }}
+          onClick={handleOpenPerfil}
           title="Configuración de Cuenta y Perfil"
           className="w-full text-left flex flex-col gap-1.5 p-2.5 rounded-[10px_14px_12px_12px] bg-[color-mix(in_oklch,var(--brand-primary)_8%,var(--bg-panel))] border border-[var(--border-muted)] hover:border-[var(--brand-primary)] transition-all cursor-pointer group"
         >
@@ -153,6 +169,7 @@ function Sidebar() {
           <NavLink
             key={to}
             to={to}
+            onClick={() => onCloseMobile?.()}
             className={({ isActive }) =>
               [navLinkBase, isActive ? navLinkActive : ''].join(' ')
             }
@@ -178,7 +195,8 @@ function Sidebar() {
       {/* ── Footer: Mi Perfil y Cerrar sesión ── */}
       <div className="px-3 pb-4 pt-2 border-t border-[var(--border-muted)] flex flex-col gap-1">
         <button
-          onClick={() => { playParchment(); setIsPerfilOpen(true); }}
+          type="button"
+          onClick={handleOpenPerfil}
           className={[
             'w-full flex items-center gap-3 px-4 py-2 rounded-[8px_12px_10px_10px]',
             'text-xs font-display font-bold text-[var(--text-secondary)] cursor-pointer',
@@ -191,6 +209,7 @@ function Sidebar() {
         </button>
 
         <button
+          type="button"
           onClick={handleCerrarSesion}
           className={[
             'w-full flex items-center gap-3 px-4 py-2 rounded-[8px_12px_10px_10px]',
@@ -210,8 +229,45 @@ function Sidebar() {
         isOpen={isPerfilOpen}
         onClose={() => setIsPerfilOpen(false)}
       />
-    </aside>
+    </div>
   );
 }
 
-export default Sidebar;
+export default function Sidebar({ isOpenMobile, onCloseMobile }) {
+  return (
+    <>
+      {/* ── Desktop Sidebar (Fijo en md+) ── */}
+      <aside className="hidden md:flex flex-col h-full border-r-2 border-[var(--border)] w-64 shrink-0 overflow-hidden">
+        <SidebarContent />
+      </aside>
+
+      {/* ── Mobile Drawer (Slide-over con backdrop en < md) ── */}
+      <AnimatePresence>
+        {isOpenMobile && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onCloseMobile}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              aria-hidden="true"
+            />
+
+            {/* Panel lateral deslizante */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+              className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10 border-r-2 border-[var(--border)]"
+            >
+              <SidebarContent onCloseMobile={onCloseMobile} />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

@@ -48,6 +48,10 @@ desktop.ini
 *.swp
 *.swo
 
+# ── Material de defensa y documentos personales ──
+presentacion/
+*.pdf
+
 # ── Logs ──
 *.log
 logs/

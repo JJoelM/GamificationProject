@@ -8,12 +8,13 @@ import useSessionStore from '../store/useSessionStore';
  */
 export function useMisDatos() {
   const usuario = useSessionStore((s) => s.usuario);
+  const usuarioId = usuario?.usuarioId || 'anon';
 
   return useQuery({
-    queryKey: ['usuarios', 'mis-datos'],
+    queryKey: ['usuarios', 'mis-datos', usuarioId],
     queryFn: () => usuariosApi.getMisDatos(),
     enabled: Boolean(usuario),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 0, // Siempre fresco por usuario para evitar fugas entre cuentas
   });
 }
 
@@ -57,11 +58,13 @@ export function useCambiarPassword() {
  * Endpoint: DELETE /api/usuarios/mis-datos
  */
 export function useEliminarMiCuenta() {
+  const queryClient = useQueryClient();
   const logout = useSessionStore((s) => s.logout);
 
   return useMutation({
     mutationFn: () => usuariosApi.eliminarMiCuenta(),
     onSuccess: () => {
+      queryClient.clear();
       logout();
       window.location.href = '/';
     },

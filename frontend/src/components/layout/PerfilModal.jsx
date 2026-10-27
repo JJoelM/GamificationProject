@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import {
   User, KeyRound, AlertTriangle, Check, Loader2,
-  Shield, Calendar, Mail
+  Shield, Calendar, Mail, ShieldAlert, AlertCircle
 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import Spinner from '../ui/Spinner';
-import ErrorBanner from '../ui/ErrorBanner';
+import ErrorBanner from '../../components/ui/ErrorBanner';
+import PasswordStrengthIndicator, { isPasswordSecure } from '../ui/PasswordStrengthIndicator';
 import {
   useMisDatos,
   useActualizarMisDatos,
@@ -19,6 +20,7 @@ import { playSuccess, playParchment } from '../../utils/audio';
 function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDatos }) {
   const [nombreCompleto, setNombreCompleto] = useState(misDatos?.nombreCompleto || '');
   const [aceptaInvestigacion, setAceptaInvestigacion] = useState(Boolean(misDatos?.aceptaUsoInvestigacion));
+  const [modalRevocarOpen, setModalRevocarOpen] = useState(false);
   const [exito, setExito] = useState(false);
 
   const handleSubmit = (e) => {
@@ -40,94 +42,160 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
     );
   };
 
+  const handleCheckboxChange = (e) => {
+    // Si estaba activado y el usuario desmarca, mostrar advertencia previa
+    if (!e.target.checked && aceptaInvestigacion) {
+      setModalRevocarOpen(true);
+    } else {
+      setAceptaInvestigacion(e.target.checked);
+    }
+  };
+
+  const confirmarRevocacion = () => {
+    setAceptaInvestigacion(false);
+    setModalRevocarOpen(false);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {errorDatos && <ErrorBanner error={errorDatos} />}
-      {exito && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-display font-bold flex items-center gap-2">
-          <Check size={16} />
-          <span>¡Tus datos han sido actualizados con éxito!</span>
-        </div>
-      )}
-
-      {/* Resumen de Cuenta (Read-only) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-muted)]">
-        <div className="flex items-center gap-2.5">
-          <Mail size={16} className="text-[var(--text-muted)] shrink-0" />
-          <div className="flex flex-col min-w-0">
-            <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Email</span>
-            <span className="text-xs text-[var(--text-primary)] font-semibold truncate">{misDatos.email}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <Shield size={16} className="text-[var(--text-muted)] shrink-0" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Rol y Estado</span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Badge variant="info">{misDatos.rol}</Badge>
-              <Badge variant={misDatos.estadoCuenta === 'Activa' ? 'correcto' : 'xp'}>
-                {misDatos.estadoCuenta}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {misDatos.fechaNacimiento && (
-          <div className="flex items-center gap-2.5 sm:col-span-2">
-            <Calendar size={16} className="text-[var(--text-muted)] shrink-0" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Fecha de Nacimiento</span>
-              <span className="text-xs text-[var(--text-primary)] font-semibold">{misDatos.fechaNacimiento}</span>
-            </div>
+    <>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {errorDatos && <ErrorBanner error={errorDatos} />}
+        {exito && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-display font-bold flex items-center gap-2">
+            <Check size={16} />
+            <span>¡Tus datos han sido actualizados con éxito!</span>
           </div>
         )}
-      </div>
 
-      {/* Campo Editable: Nombre Completo */}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="nombreCompleto" className="text-xs font-display font-bold text-[var(--text-primary)]">
-          Nombre Completo
-        </label>
-        <input
-          id="nombreCompleto"
-          type="text"
-          value={nombreCompleto}
-          onChange={(e) => setNombreCompleto(e.target.value)}
-          required
-          className="w-full px-3 py-2 rounded-xl border-2 border-[var(--border-muted)] bg-[var(--bg-panel)] text-sm text-[var(--text-primary)] focus:border-[var(--brand-primary)] focus:outline-none transition-colors"
-        />
-      </div>
+        {/* Resumen de Cuenta (Read-only) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-muted)]">
+          <div className="flex items-center gap-2.5">
+            <Mail size={16} className="text-[var(--text-muted)] shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Email</span>
+              <span className="text-xs text-[var(--text-primary)] font-semibold truncate">{misDatos.email}</span>
+            </div>
+          </div>
 
-      {/* Consentimiento de Investigación */}
-      <label className="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-muted)] bg-[var(--bg-base)] cursor-pointer hover:bg-[var(--bg-panel)] transition-colors">
-        <input
-          type="checkbox"
-          checked={aceptaInvestigacion}
-          onChange={(e) => setAceptaInvestigacion(e.target.checked)}
-          className="mt-0.5 w-4 h-4 rounded text-[var(--brand-primary)] border-[var(--border-muted)] focus:ring-[var(--brand-primary)]"
-        />
-        <div className="flex flex-col text-xs leading-relaxed">
-          <span className="font-display font-bold text-[var(--text-primary)]">
-            Consentimiento para Investigación Académica (UNNE)
-          </span>
-          <span className="text-[var(--text-secondary)] text-[11px] mt-0.5">
-            Autorizo el uso de estadísticas anónimas de aprendizaje para fines de investigación pedagógica en el Proyecto Final de Carrera.
-          </span>
+          <div className="flex items-center gap-2.5">
+            <Shield size={16} className="text-[var(--text-muted)] shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Rol y Estado</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Badge variant="info">{misDatos.rol}</Badge>
+                <Badge variant={misDatos.estadoCuenta === 'Activa' ? 'correcto' : 'xp'}>
+                  {misDatos.estadoCuenta}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {misDatos.fechaNacimiento && (
+            <div className="flex items-center gap-2.5 sm:col-span-2">
+              <Calendar size={16} className="text-[var(--text-muted)] shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Fecha de Nacimiento</span>
+                <span className="text-xs text-[var(--text-primary)] font-semibold">{misDatos.fechaNacimiento}</span>
+              </div>
+            </div>
+          )}
         </div>
-      </label>
 
-      <div className="flex justify-end pt-2">
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={isGuardando || !nombreCompleto.trim()}
-        >
-          {isGuardando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-          <span>{isGuardando ? 'Guardando...' : 'Guardar Cambios'}</span>
-        </Button>
-      </div>
-    </form>
+        {/* Campo Editable: Nombre Completo */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="nombreCompleto" className="text-xs font-display font-bold text-[var(--text-primary)]">
+            Nombre Completo
+          </label>
+          <input
+            id="nombreCompleto"
+            type="text"
+            value={nombreCompleto}
+            onChange={(e) => setNombreCompleto(e.target.value)}
+            required
+            className="w-full px-3 py-2 rounded-xl border-2 border-[var(--border-muted)] bg-[var(--bg-panel)] text-sm text-[var(--text-primary)] focus:border-[var(--brand-primary)] focus:outline-none transition-colors"
+          />
+        </div>
+
+        {/* Consentimiento de Investigación con advertencia */}
+        <div className="flex flex-col gap-1.5 p-3.5 rounded-xl border border-[var(--border-muted)] bg-[var(--bg-base)]">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={aceptaInvestigacion}
+              onChange={handleCheckboxChange}
+              className="mt-0.5 w-4 h-4 rounded text-[var(--brand-primary)] border-[var(--border-muted)] focus:ring-[var(--brand-primary)]"
+            />
+            <div className="flex flex-col text-xs leading-relaxed">
+              <span className="font-display font-bold text-[var(--text-primary)]">
+                Consentimiento para Investigación Académica (UNNE)
+              </span>
+              <span className="text-[var(--text-secondary)] text-[11px] mt-0.5">
+                Autorizo el uso anónimo de mis estadísticas de aprendizaje para fines de investigación en el Proyecto Final de Carrera.
+              </span>
+            </div>
+          </label>
+
+          {!aceptaInvestigacion && (
+            <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-[11px] flex items-center gap-1.5 font-medium">
+              <AlertCircle size={14} className="shrink-0" />
+              <span>Consentimiento revocado. Tus métricas no se incluirán en el estudio de investigación del PFC.</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isGuardando || !nombreCompleto.trim()}
+          >
+            {isGuardando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+            <span>{isGuardando ? 'Guardando...' : 'Guardar Cambios'}</span>
+          </Button>
+        </div>
+      </form>
+
+      {/* Modal de Advertencia Previa para Revocar Consentimiento */}
+      <Modal
+        isOpen={modalRevocarOpen}
+        onClose={() => setModalRevocarOpen(false)}
+        title="Revocar Consentimiento de Investigación"
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+              <ShieldAlert size={22} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                ¿Estás seguro de que deseas retirar tu consentimiento?
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                Al desmarcar esta opción, tus métricas de resolución y progreso dejarán de formar parte de los análisis estadísticos del Proyecto Final de Carrera de la UNNE. Podrás volver a otorgar tu consentimiento en cualquier momento.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-muted)]">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setModalRevocarOpen(false)}
+            >
+              Mantener Consentimiento
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={confirmarRevocacion}
+            >
+              Confirmar Revocación
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 
@@ -153,8 +221,8 @@ export default function PerfilModal({ isOpen, onClose }) {
     e.preventDefault();
     setErrorLocalPass(null);
 
-    if (passwordNueva.length < 8) {
-      setErrorLocalPass('La nueva contraseña debe tener al menos 8 caracteres.');
+    if (!isPasswordSecure(passwordNueva)) {
+      setErrorLocalPass('La nueva contraseña no cumple los requisitos de seguridad (mín. 8 caracteres, mayúscula, minúscula, número y símbolo).');
       return;
     }
 
@@ -187,12 +255,12 @@ export default function PerfilModal({ isOpen, onClose }) {
     >
       <div className="flex flex-col gap-5">
         {/* ── Tabs de Navegación ── */}
-        <div className="flex border-b-2 border-[var(--border-muted)] gap-2 pb-1">
+        <div className="flex border-b-2 border-[var(--border-muted)] gap-1 sm:gap-2 pb-1 overflow-x-auto">
           <button
             type="button"
             onClick={() => { playParchment(); setTabActiva('datos'); }}
             className={[
-              'flex items-center gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px]',
+              'flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0',
               tabActiva === 'datos'
                 ? 'border-[var(--brand-primary)] text-[var(--brand-primary)] bg-[var(--brand-primary)]/10'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
@@ -206,28 +274,28 @@ export default function PerfilModal({ isOpen, onClose }) {
             type="button"
             onClick={() => { playParchment(); setTabActiva('seguridad'); }}
             className={[
-              'flex items-center gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px]',
+              'flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0',
               tabActiva === 'seguridad'
                 ? 'border-[var(--brand-primary)] text-[var(--brand-primary)] bg-[var(--brand-primary)]/10'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
             ].join(' ')}
           >
             <KeyRound size={15} />
-            <span>Seguridad & Contraseña</span>
+            <span>Seguridad & Clave</span>
           </button>
 
           <button
             type="button"
             onClick={() => { playParchment(); setTabActiva('peligro'); }}
             className={[
-              'flex items-center gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] ml-auto',
+              'flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] ml-auto shrink-0',
               tabActiva === 'peligro'
                 ? 'border-[var(--brand-crimson)] text-[var(--brand-crimson)] bg-[var(--brand-crimson)]/10'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--brand-crimson)]',
             ].join(' ')}
           >
             <AlertTriangle size={15} />
-            <span>Cuenta</span>
+            <span>Baja</span>
           </button>
         </div>
 
@@ -296,7 +364,7 @@ export default function PerfilModal({ isOpen, onClose }) {
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="passNueva" className="text-xs font-display font-bold text-[var(--text-primary)]">
-                    Nueva Contraseña (mínimo 8 caracteres)
+                    Nueva Contraseña
                   </label>
                   <input
                     id="passNueva"
@@ -304,10 +372,10 @@ export default function PerfilModal({ isOpen, onClose }) {
                     value={passwordNueva}
                     onChange={(e) => setPasswordNueva(e.target.value)}
                     required
-                    minLength={8}
-                    placeholder="••••••••"
+                    placeholder="Mín. 8 caracteres, mayúscula, minúscula, número y símbolo"
                     className="w-full px-3 py-2 rounded-xl border-2 border-[var(--border-muted)] bg-[var(--bg-panel)] text-sm text-[var(--text-primary)] focus:border-[var(--brand-primary)] focus:outline-none transition-colors"
                   />
+                  <PasswordStrengthIndicator password={passwordNueva} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -320,10 +388,14 @@ export default function PerfilModal({ isOpen, onClose }) {
                     value={confirmarPassword}
                     onChange={(e) => setConfirmarPassword(e.target.value)}
                     required
-                    minLength={8}
                     placeholder="••••••••"
                     className="w-full px-3 py-2 rounded-xl border-2 border-[var(--border-muted)] bg-[var(--bg-panel)] text-sm text-[var(--text-primary)] focus:border-[var(--brand-primary)] focus:outline-none transition-colors"
                   />
+                  {confirmarPassword && (
+                    <span className={`text-[11px] font-semibold ${passwordNueva === confirmarPassword ? 'text-[var(--brand-emerald)]' : 'text-[var(--brand-crimson)]'}`}>
+                      {passwordNueva === confirmarPassword ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-2">

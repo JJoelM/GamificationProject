@@ -16,6 +16,7 @@
 
 /* 1. Tailwind — directiva obligatoria en v4 */
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
    TAILWIND v4 — @theme block (genera clases automáticamente)

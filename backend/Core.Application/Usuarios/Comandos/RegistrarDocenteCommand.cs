@@ -10,8 +10,6 @@ public sealed record RegistrarDocenteCommand(string Email, string NombreCompleto
 
 public sealed class RegistrarDocenteCommandHandler : IRequestHandler<RegistrarDocenteCommand, Guid>
 {
-    private const int LongitudMinimaPassword = 8;
-
     private readonly IApplicationDbContext _db;
     private readonly PasswordHasher<Usuario> _hasher = new();
 
@@ -19,8 +17,7 @@ public sealed class RegistrarDocenteCommandHandler : IRequestHandler<RegistrarDo
 
     public async Task<Guid> Handle(RegistrarDocenteCommand request, CancellationToken cancellationToken)
     {
-        if (request.Password.Length < LongitudMinimaPassword)
-            throw new ArgumentException($"La contraseña debe tener al menos {LongitudMinimaPassword} caracteres.");
+        ValidadorPassword.Validar(request.Password);
 
         if (await _db.Usuarios.AnyAsync(u => u.Email == request.Email, cancellationToken))
             throw new ArgumentException("Ya existe una cuenta registrada con ese email.");
