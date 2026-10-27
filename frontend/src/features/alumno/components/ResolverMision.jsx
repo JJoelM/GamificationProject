@@ -134,6 +134,7 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
       misionId: mision.misionId,
       respuestas: respuestasArray,
       preguntasOriginales: preguntas,
+      esRepaso: Boolean(mision?.completada),
     });
   };
 

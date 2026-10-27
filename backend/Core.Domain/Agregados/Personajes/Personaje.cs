@@ -91,12 +91,51 @@ public sealed class Personaje : AgregadoRaiz
             Id, articuloId, tipo, valor, costoAp, PuntosAccionAP - costoAp, DateTime.UtcNow));
     }
 
-    // Solo cosmeticos ya comprados. Equipar un escudo o una pista no tiene sentido
+    private static readonly HashSet<string> TitulosDeNivel = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Iniciado del Saber",
+        "Buscador de Respuestas",
+        "Explorador Curioso",
+        "Erudito de las Runas",
+        "Maestro Alquimista",
+        "Centinela del Saber",
+        "Erudito Arcano"
+    };
+
+    private static readonly HashSet<string> ArticulosBase = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "avatar-explorador",
+        "erudito_arcano",
+        "exploradora_reliquias",
+        "marco-pergamino",
+        "scroll",
+        "parchment",
+        "default"
+    };
+
+    public bool EsArticuloDesbloqueado(string articuloId, TipoArticulo tipo)
+    {
+        if (_cosmeticosComprados.Contains(articuloId)) return true;
+        if (ArticulosBase.Contains(articuloId)) return true;
+        if (tipo == TipoArticulo.Titulo && TitulosDeNivel.Contains(articuloId)) return true;
+
+        var articulo = CatalogoBazar.Buscar(articuloId);
+        if (articulo != null && _cosmeticosComprados.Contains(articulo.Id)) return true;
+
+        var porNombre = CatalogoBazar.Todos.FirstOrDefault(a =>
+            string.Equals(a.Nombre, articuloId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(a.Id, articuloId, StringComparison.OrdinalIgnoreCase));
+        if (porNombre != null && _cosmeticosComprados.Contains(porNombre.Id)) return true;
+
+        return false;
+    }
+
+    // Solo cosmeticos ya comprados o desbloqueados. Equipar un escudo o una pista no tiene sentido
     public void EquiparArticulo(string articuloId, TipoArticulo tipo, string valor)
     {
         if (tipo is not (TipoArticulo.Avatar or TipoArticulo.Marco or TipoArticulo.Mascota or TipoArticulo.Titulo))
             throw new ArgumentException("Solo se pueden equipar avatares, marcos, mascotas y títulos.");
-        if (!_cosmeticosComprados.Contains(articuloId))
+        if (!EsArticuloDesbloqueado(articuloId, tipo))
             throw new TransicionDeEstadoInvalidaException($"No podés equipar '{articuloId}' porque no lo compraste todavía.");
 
         RegistrarEvento(new ArticuloEquipado(Id, articuloId, tipo, valor, DateTime.UtcNow));

@@ -106,6 +106,7 @@ function LineaTemporal({ mision, isOpen, onClose }) {
         ordenPropuesto,
         eventoCulpableElegido: culpableElegido,
         eventosOriginales: eventos,
+        esRepaso: Boolean(mision?.completada),
       },
       {
         onSuccess: (data) => {

@@ -116,6 +116,57 @@ export const ARTICULOS_BAZAR = [
       </svg>
     ),
   },
+  {
+    id: 'mascota-lechuza',
+    nombre: 'Lechuza Sabia',
+    categoria: 'mascotas',
+    tipo: 'mascota',
+    valor: 'mascota-lechuza',
+    costoAp: 60,
+    descripcion: 'Acompaña tus sesiones de estudio y susurra sabiduría en las anomalías.',
+    rareza: 'Raro',
+    colorRareza: 'text-[var(--brand-primary)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <svg viewBox="0 0 64 64" className={className} fill="none">
+        <circle cx="32" cy="34" r="22" fill="#0369A1" />
+        <circle cx="32" cy="34" r="18" fill="#0284C7" />
+        <circle cx="24" cy="30" r="7" fill="#FDE047" stroke="#CA8A04" strokeWidth="1.5" />
+        <circle cx="40" cy="30" r="7" fill="#FDE047" stroke="#CA8A04" strokeWidth="1.5" />
+        <circle cx="24" cy="30" r="3.5" fill="#0F172A" />
+        <circle cx="40" cy="30" r="3.5" fill="#0F172A" />
+        <circle cx="22" cy="28" r="1" fill="#FFFFFF" />
+        <circle cx="38" cy="28" r="1" fill="#FFFFFF" />
+        <polygon points="32,34 29,40 35,40" fill="#F59E0B" />
+        <path d="M28 44 Q32 48 36 44" stroke="#BAE6FD" strokeWidth="1.5" fill="none" />
+        <polygon points="32,10 16,18 32,26 48,18" fill="#0284C7" stroke="#38BDF8" strokeWidth="1" />
+      </svg>
+    ),
+  },
+  {
+    id: 'mascota_dragon',
+    nombre: 'Dragón Chispa',
+    categoria: 'mascotas',
+    tipo: 'mascota',
+    valor: 'mascota_dragon',
+    costoAp: 80,
+    descripcion: 'Pequeño dragón guardián que enciende tu motivación en cada desafío.',
+    rareza: 'Épico',
+    colorRareza: 'text-[var(--brand-crimson)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <svg viewBox="0 0 64 64" className={className} fill="none">
+        <circle cx="32" cy="32" r="22" fill="#7F1D1D" />
+        <path d="M14 34 Q20 18 32 24 Q24 38 14 34 Z" fill="#DC2626" />
+        <path d="M50 34 Q44 18 32 24 Q40 38 50 34 Z" fill="#DC2626" />
+        <ellipse cx="32" cy="36" rx="9" ry="14" fill="#B91C1C" />
+        <circle cx="32" cy="22" r="7" fill="#EF4444" />
+        <circle cx="29" cy="21" r="2" fill="#FDE047" />
+        <circle cx="35" cy="21" r="2" fill="#FDE047" />
+        <circle cx="29" cy="21" r="1" fill="#000000" />
+        <circle cx="35" cy="21" r="1" fill="#000000" />
+        <path d="M30 48 Q32 58 28 60 Q32 52 34 60 Q34 50 30 48" fill="#F59E0B" />
+      </svg>
+    ),
+  },
 
   // ── 3. Marcos de Retrato Exclusivos ──
   {

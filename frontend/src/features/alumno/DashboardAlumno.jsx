@@ -35,7 +35,8 @@ function DashboardAlumno() {
     const resueltas = [];
 
     misiones.forEach((m) => {
-      if (misionesResueltas[m.misionId]?.completada) {
+      const esCompletada = Boolean(m.completada || misionesResueltas[m.misionId]?.completada);
+      if (esCompletada) {
         resueltas.push(m);
       } else {
         nuevas.push(m);

@@ -39,7 +39,8 @@ function TableroMisiones() {
     const r = [];
 
     misiones.forEach((m) => {
-      if (misionesResueltas[m.misionId]?.completada) {
+      const esCompletada = Boolean(m.completada || misionesResueltas[m.misionId]?.completada);
+      if (esCompletada) {
         r.push(m);
       } else {
         n.push(m);

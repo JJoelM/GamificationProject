@@ -202,17 +202,11 @@ function BazarRecompensas() {
     // Si ya fue comprado y es cosmético -> EQUIPAR
     if (!esConsumible && yaComprado) {
       setArticuloEnProcesoId(articulo.id);
-      const payload = {
-        avatarId: avatarEquipado,
-        marco: marcoEstilo,
-        mascota: mascotaEquipada,
-        titulo: tituloEquipado,
-      };
-
+      const payload = {};
       if (articulo.tipo === 'Marco') payload.marco = articulo.id;
-      if (articulo.tipo === 'Mascota') payload.mascota = articulo.id;
-      if (articulo.tipo === 'Titulo') payload.titulo = articulo.id;
-      if (articulo.tipo === 'Avatar') payload.avatarId = articulo.id;
+      else if (articulo.tipo === 'Mascota') payload.mascota = articulo.id;
+      else if (articulo.tipo === 'Titulo') payload.titulo = articulo.id;
+      else if (articulo.tipo === 'Avatar') payload.avatarId = articulo.id;
 
       personalizar(payload, {
         onSuccess: () => {
@@ -220,14 +214,14 @@ function BazarRecompensas() {
           playParchment();
           setFeedbackMensaje({
             tipo: 'info',
-            texto: `¡Equipaste "${articulo.nombre}" con éxito!`,
+            texto: `(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ ¡Equipaste "${articulo.nombre}" con éxito!`,
           });
         },
         onError: (err) => {
           setArticuloEnProcesoId(null);
           setFeedbackMensaje({
             tipo: 'error',
-            texto: err.mensajeAmigable || 'No se pudo equipar el artículo.',
+            texto: err.mensajeAmigable || '(っ•﹏•)っ No se pudo equipar el artículo.',
           });
         },
       });

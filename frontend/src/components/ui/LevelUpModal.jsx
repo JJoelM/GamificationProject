@@ -11,7 +11,16 @@ import { playLevelUp } from '../../utils/audio';
  */
 function LevelUpModal() {
   const levelUpPendiente = useSessionStore((s) => s.levelUpPendiente);
-  const cerrarLevelUp = useSessionStore((s) => s.cerrarLevelUp);
+  const cerrarLevelUpStore = useSessionStore((s) => s.cerrarLevelUp);
+  const limpiarLevelUpStore = useSessionStore((s) => s.limpiarLevelUp);
+
+  const handleCerrar = () => {
+    if (typeof cerrarLevelUpStore === 'function') {
+      cerrarLevelUpStore();
+    } else if (typeof limpiarLevelUpStore === 'function') {
+      limpiarLevelUpStore();
+    }
+  };
 
   useEffect(() => {
     if (levelUpPendiente) {
@@ -19,7 +28,22 @@ function LevelUpModal() {
     }
   }, [levelUpPendiente]);
 
+  useEffect(() => {
+    if (!levelUpPendiente) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        handleCerrar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [levelUpPendiente, cerrarLevelUpStore, limpiarLevelUpStore]);
+
   if (!levelUpPendiente) return null;
+
+  const nivel = levelUpPendiente.nivel ?? levelUpPendiente.nivelNuevo ?? 1;
+  const titulo = levelUpPendiente.titulo ?? levelUpPendiente.tituloNuevo ?? 'Iniciado del Saber';
+  const rango = levelUpPendiente.rango ?? levelUpPendiente.rangoNuevo ?? 'Bronce';
 
   return (
     <AnimatePresence>
@@ -28,6 +52,7 @@ function LevelUpModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="levelup-title"
+        onClick={handleCerrar}
       >
         <XpParticleBurst />
 
@@ -36,6 +61,7 @@ function LevelUpModal() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: -20 }}
           transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+          onClick={(e) => e.stopPropagation()}
           className={[
             'relative w-full max-w-lg p-8 rounded-[24px_32px_26px_30px]',
             'bg-gradient-to-b from-[var(--bg-panel)] to-[var(--bg-muted)]',
@@ -58,7 +84,7 @@ function LevelUpModal() {
               <Sparkles size={14} /> ¡Subiste de Rango! <Sparkles size={14} />
             </span>
             <h2 id="levelup-title" className="font-display font-black text-4xl text-[var(--text-primary)]">
-              ¡Nivel {levelUpPendiente.nivel}!
+              ¡Nivel {nivel}!
             </h2>
           </div>
 
@@ -68,10 +94,10 @@ function LevelUpModal() {
               Nuevo Título de Aventurero Desbloqueado
             </span>
             <span className="font-display font-black text-xl text-[var(--brand-primary)]">
-              "{levelUpPendiente.titulo}"
+              "{titulo}"
             </span>
             <span className="text-xs text-[var(--text-secondary)] mt-1">
-              Rango de maestría: <strong className="text-[var(--brand-gold)]">{levelUpPendiente.rango}</strong>
+              Rango de maestría: <strong className="text-[var(--brand-gold)]">{rango}</strong>
             </span>
           </div>
 
@@ -84,7 +110,7 @@ function LevelUpModal() {
               variant="primary"
               size="lg"
               className="w-full justify-center"
-              onClick={cerrarLevelUp}
+              onClick={handleCerrar}
             >
               <span>¡Continuar la Aventura!</span>
               <ArrowRight size={18} />

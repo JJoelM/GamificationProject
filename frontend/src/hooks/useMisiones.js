@@ -148,12 +148,31 @@ export function useBorradoresDocente() {
 export function useMisionesActivas() {
   const aulaId = useSessionStore((s) => s.aulaActivaId);
   const usuario = useSessionStore((s) => s.usuario);
+  const registrarMisionResuelta = useSessionStore((s) => s.registrarMisionResuelta);
 
   return useQuery({
     queryKey: ['misiones', 'activas', aulaId],
-    queryFn: USE_MOCK
-      ? () => Promise.resolve(MOCK_MISIONES_ACTIVAS)
-      : () => misionesApi.getActivas(aulaId),
+    queryFn: async () => {
+      const data = USE_MOCK
+        ? await Promise.resolve(MOCK_MISIONES_ACTIVAS)
+        : await misionesApi.getActivas(aulaId);
+
+      // Hidratar misiones resueltas en Zustand si vienen del backend tras un refresh
+      if (Array.isArray(data)) {
+        data.forEach((m) => {
+          if (m.completada) {
+            registrarMisionResuelta({
+              misionId: m.misionId,
+              porcentaje: m.mejorPorcentaje ?? 100,
+              xpGanado: m.recompensaXp ?? 0,
+              apGanado: 0,
+            });
+          }
+        });
+      }
+
+      return data;
+    },
     enabled: Boolean(aulaId && (!usuario || usuario.rol === 'Alumno')),
   });
 }

@@ -6,6 +6,7 @@ import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
 import { AVATARES_RPG, AURAS_DISPONIBLES, getAvatarPorId } from './AvataresData';
 import useSessionStore, { calcularNivel } from '../../../store/useSessionStore';
+import { usePersonaje } from '../../../hooks/usePersonaje';
 import { usePersonalizarPersonaje } from '../../../hooks/useBazarMutations';
 import { playParchment, playSuccess } from '../../../utils/audio';
 
@@ -14,15 +15,15 @@ function SelectorAvatarModal({ isOpen, onClose }) {
   const avatarEquipado = useSessionStore((s) => s.avatarEquipado) || 'erudito_arcano';
   const auraColorActual = useSessionStore((s) => s.auraColor) || '#2563EB';
   const marcoEstiloActual = useSessionStore((s) => s.marcoEstilo) || 'scroll';
-  const mascotaEquipadaActual = useSessionStore((s) => s.mascotaEquipada) || 'buho_erudito';
-  const tituloEquipadoActual = useSessionStore((s) => s.tituloEquipado) || 'Iniciado del Saber';
 
   const setAvatarEquipado = useSessionStore((s) => s.setAvatarEquipado);
   const setAuraColor = useSessionStore((s) => s.setAuraColor);
   const setMarcoEstilo = useSessionStore((s) => s.setMarcoEstilo);
 
+  const { data: personaje } = usePersonaje();
   const { mutate: personalizar, isPending: isGuardando } = usePersonalizarPersonaje();
 
+  const cosmeticosComprados = personaje?.cosmeticosComprados || [];
   const nivelInfo = calcularNivel(xpTotal);
   const [selectedAvatarId, setSelectedAvatarId] = useState(avatarEquipado);
   const [selectedAura, setSelectedAura] = useState(auraColorActual);
@@ -31,18 +32,18 @@ function SelectorAvatarModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedAvatarId(avatarEquipado);
+      setSelectedAvatarId(personaje?.avatarEquipado || avatarEquipado);
       setSelectedAura(auraColorActual);
-      setSelectedMarco(marcoEstiloActual);
+      setSelectedMarco(personaje?.marcoEquipado || marcoEstiloActual);
       setGuardarError(null);
     }
-  }, [isOpen, avatarEquipado, auraColorActual, marcoEstiloActual]);
+  }, [isOpen, avatarEquipado, auraColorActual, marcoEstiloActual, personaje]);
 
   const avatarSeleccionado = getAvatarPorId(selectedAvatarId);
   const AvatarIcon = avatarSeleccionado.IconoPreview;
 
-  const handleSelectAvatar = (avatar) => {
-    if (nivelInfo.nivel < avatar.nivelRequerido) return;
+  const handleSelectAvatar = (avatar, isUnlocked) => {
+    if (!isUnlocked) return;
     playParchment();
     setSelectedAvatarId(avatar.id);
   };
@@ -57,12 +58,10 @@ function SelectorAvatarModal({ isOpen, onClose }) {
     setAuraColor(selectedAura);
     setMarcoEstilo(selectedMarco);
 
+    // Enviar personalización al backend asegurando compatibilidad CQRS
     personalizar(
       {
         avatarId: selectedAvatarId,
-        marco: selectedMarco,
-        mascota: mascotaEquipadaActual,
-        titulo: tituloEquipadoActual,
       },
       {
         onSuccess: () => {
@@ -71,7 +70,10 @@ function SelectorAvatarModal({ isOpen, onClose }) {
           onClose();
         },
         onError: (err) => {
-          setGuardarError(err.mensajeAmigable || 'No se pudo equipar el retrato seleccionado.');
+          setGuardarError(
+            err.mensajeAmigable ||
+            '(っ•﹏•)っ ¡Ups! No se pudo equipar el retrato seleccionado todavía.'
+          );
         },
       }
     );
@@ -147,7 +149,10 @@ function SelectorAvatarModal({ isOpen, onClose }) {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {AVATARES_RPG.map((avatar) => {
-              const isUnlocked = nivelInfo.nivel >= avatar.nivelRequerido;
+              const isUnlocked =
+                avatar.nivelRequerido === 1 ||
+                nivelInfo.nivel >= avatar.nivelRequerido ||
+                cosmeticosComprados.includes(avatar.id);
               const isSelected = selectedAvatarId === avatar.id;
               const IconComp = avatar.IconoPreview;
 
@@ -156,7 +161,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                   key={avatar.id}
                   type="button"
                   disabled={!isUnlocked || isGuardando}
-                  onClick={() => handleSelectAvatar(avatar)}
+                  onClick={() => handleSelectAvatar(avatar, isUnlocked)}
                   className={[
                     'relative p-3 rounded-[12px_16px_14px_14px] border-2 flex flex-col items-center gap-2 text-center transition-all cursor-pointer text-left',
                     isSelected

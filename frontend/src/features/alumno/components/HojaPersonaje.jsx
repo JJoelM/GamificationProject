@@ -62,7 +62,7 @@ function HojaPersonaje() {
 
   // Buscar mascota equipada para renderizar su icono animado
   const mascotaVisual = ARTICULOS_BAZAR.find(
-    (a) => a.tipo === 'mascota' && a.valor === mascotaEquipada
+    (a) => a.tipo === 'mascota' && (a.valor === mascotaEquipada || a.id === mascotaEquipada)
   );
 
   // Click-outside para cerrar el selector de títulos
@@ -83,9 +83,6 @@ function HojaPersonaje() {
     setIsSelectorOpen(false);
 
     personalizar({
-      avatarId: avatarEquipado,
-      marco: marcoEstilo,
-      mascota: mascotaEquipada,
       titulo,
     });
   };

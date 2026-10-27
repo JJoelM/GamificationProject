@@ -248,9 +248,12 @@ const useSessionStore = create(
           update = {
             ...update,
             levelUpPendiente: {
-              nivelAnterior: nivelPrevio.nivel,
+              nivel: nivelNuevo.nivel,
               nivelNuevo: nivelNuevo.nivel,
+              nivelAnterior: nivelPrevio.nivel,
+              titulo: nivelNuevo.titulo,
               tituloNuevo: nivelNuevo.titulo,
+              rango: nivelNuevo.rango,
               rangoNuevo: nivelNuevo.rango,
             },
             tituloEquipado: nivelNuevo.titulo,
@@ -260,6 +263,7 @@ const useSessionStore = create(
         set(update);
       },
 
+      cerrarLevelUp: () => set({ levelUpPendiente: null }),
       limpiarLevelUp: () => set({ levelUpPendiente: null }),
 
       resetearProgreso: () => {

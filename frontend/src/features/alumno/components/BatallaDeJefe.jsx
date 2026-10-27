@@ -336,6 +336,7 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
         misionId: mision.misionId,
         respuestas: respuestasArray,
         preguntasOriginales: fases,
+        esRepaso: Boolean(mision?.completada),
       },
       {
         onSuccess: () => {

@@ -244,5 +244,15 @@ export const AURAS_DISPONIBLES = [
 ];
 
 export function getAvatarPorId(id) {
-  return AVATARES_RPG.find((a) => a.id === id) || AVATARES_RPG[0];
+  if (!id) return AVATARES_RPG[0];
+  const directo = AVATARES_RPG.find((a) => a.id === id);
+  if (directo) return directo;
+
+  // Mapeos y aliases con el catálogo del Bazar
+  if (id === 'avatar-explorador') return AVATARES_RPG.find((a) => a.id === 'exploradora_reliquias') || AVATARES_RPG[1];
+  if (id === 'avatar_guerrero') return AVATARES_RPG.find((a) => a.id === 'caballera_astral') || AVATARES_RPG[4];
+  if (id === 'avatar_mago') return AVATARES_RPG.find((a) => a.id === 'erudito_arcano') || AVATARES_RPG[0];
+  if (id === 'avatar_arquera') return AVATARES_RPG.find((a) => a.id === 'alquimista_botanica') || AVATARES_RPG[2];
+
+  return AVATARES_RPG[0];
 }
