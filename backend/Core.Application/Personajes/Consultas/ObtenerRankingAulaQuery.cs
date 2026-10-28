@@ -7,8 +7,16 @@ namespace Core.Application.Personajes.Consultas;
 
 public sealed record ObtenerRankingAulaQuery(Guid AulaId, Guid AlumnoId) : IRequest<RankingAulaDto>;
 
-public sealed record EntradaRanking(string NombreCompleto, int ExperienciaXP, int RachaDiasActivos,
-    string? AvatarEquipado, bool EsYo);
+public sealed record EntradaRanking(
+    string NombreCompleto,
+    int ExperienciaXP,
+    int RachaDiasActivos,
+    int MisionesCompletadas,
+    string? AvatarEquipado,
+    string? MarcoEquipado,
+    string? MascotaEquipada,
+    string? TituloEquipado,
+    bool EsYo);
 
 public sealed record RankingAulaDto(List<EntradaRanking> Ranking, ProgresoPropio ProgresoPropio);
 
@@ -47,7 +55,11 @@ public sealed class ObtenerRankingAulaQueryHandler : IRequestHandler<ObtenerRank
             mapaDeNombres.GetValueOrDefault(p.AlumnoId, "Alumno"),
             p.ExperienciaXP,
             p.RachaDiasActivos,
+            p.MisionesCompletadas,
             p.AvatarEquipado,
+            p.MarcoEquipado,
+            p.MascotaEquipada,
+            p.TituloEquipado,
             p.AlumnoId == request.AlumnoId))
             .ToList();
 

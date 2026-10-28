@@ -158,6 +158,7 @@ if (app.Environment.IsDevelopment())
     var rolAdministradorId = Guid.Parse("D0000000-0000-0000-0000-000000000000");
     var docenteId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     var alumnoId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    var alumno2Id = Guid.Parse("66666666-6666-6666-6666-666666666666");
     var aulaId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     var administradorId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     var directivoId = Guid.Parse("55555555-5555-5555-5555-555555555555");
@@ -186,6 +187,14 @@ if (app.Environment.IsDevelopment())
         context.Usuarios.Add(alumno);
     }
 
+    if (!context.Usuarios.Any(u => u.Id == alumno2Id))
+    {
+        var alumno2 = new Usuario(alumno2Id, "lucia@alumno.unne.edu.ar", "Lucía Fernández", rolAlumnoId);
+        alumno2.EstablecerContrasena(hasher.HashPassword(alumno2, "Cambiar123!"));
+        alumno2.RegistrarFechaNacimiento(new DateOnly(2003, 5, 12));
+        context.Usuarios.Add(alumno2);
+    }
+
     if (!context.Usuarios.Any(u => u.Id == administradorId))
     {
         var admin = new Usuario(administradorId, "admin@unne.edu.ar", "Administrador", rolAdministradorId);
@@ -208,7 +217,16 @@ if (app.Environment.IsDevelopment())
     if (!context.Aulas.Any(a => a.Id == aulaId))
     {
         context.Aulas.Add(new Aula(aulaId, "Laboratorio de Sistemas", docenteId));
+    }
+
+    if (!context.Inscripciones.Any(i => i.AulaId == aulaId && i.AlumnoId == alumnoId))
+    {
         context.Inscripciones.Add(new Inscripcion(aulaId, alumnoId));
+    }
+
+    if (!context.Inscripciones.Any(i => i.AulaId == aulaId && i.AlumnoId == alumno2Id))
+    {
+        context.Inscripciones.Add(new Inscripcion(aulaId, alumno2Id));
     }
 
     context.SaveChanges();
@@ -240,6 +258,40 @@ if (app.Environment.IsDevelopment())
             95, 150, misionOpcionMultipleId);
         m1.Validar(docenteId);
         repoMisiones.GuardarAsync(m1).GetAwaiter().GetResult();
+    }
+
+    var personaje2Id = Core.Domain.SeedWork.IdentidadCompuesta.Combinar(alumno2Id, aulaId);
+    var personaje2 = repoPersonajes.ObtenerPorIdAsync(personaje2Id).GetAwaiter().GetResult();
+    if (personaje2 is null)
+    {
+        personaje2 = Core.Domain.Agregados.Personajes.Personaje.Iniciar(alumno2Id, aulaId);
+        // Al menos una misión completada para ranking activo (180 XP, 500 AP iniciales para cosméticos)
+        personaje2.RegistrarResolucionDeMision(
+            misionOpcionMultipleId,
+            recompensaXpBase: 180,
+            recompensaApBase: 500,
+            porcentajeCorrecto: 100,
+            fecha: DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Avatar base de exploradora
+        personaje2.EquiparArticulo("exploradora_reliquias", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Avatar, "exploradora_reliquias");
+
+        // Comprar y equipar marco orlado de oro y mascota dragón
+        personaje2.ComprarArticulo("orlado_dorado", 100, Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Marco, "orlado_dorado");
+        personaje2.ComprarArticulo("dragon", 250, Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Mascota, "dragon");
+
+        // Equipar título por nivel
+        personaje2.EquiparArticulo("Buscador de Respuestas", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Titulo, "Buscador de Respuestas");
+
+        repoPersonajes.GuardarAsync(personaje2).GetAwaiter().GetResult();
+
+        var resumenP2 = context.PersonajesResumen.FirstOrDefault(p => p.PersonajeId == personaje2Id);
+        if (resumenP2 is not null)
+        {
+            resumenP2.ActualizarPersonalizacion("exploradora_reliquias", "orlado_dorado", "dragon", "Buscador de Respuestas");
+            resumenP2.ActualizarProgreso(180, 150, 1, 1);
+            context.SaveChanges();
+        }
     }
 
     if (!context.MisionesActivas.Any(m => m.MisionId == misionBatallaJefeId))
