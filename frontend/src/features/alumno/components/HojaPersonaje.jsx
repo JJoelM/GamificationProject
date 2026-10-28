@@ -6,7 +6,7 @@ import Badge from '../../../components/ui/Badge';
 import XpBar from '../../../components/ui/XpBar';
 import ArtFrame from '../../../components/ui/ArtFrame';
 import SelectorAvatarModal from './SelectorAvatarModal';
-import useSessionStore, { calcularNivel, NIVELES_RPG } from '../../../store/useSessionStore';
+import useSessionStore, { calcularNivel, NIVELES_RPG, formatearTitulo, TITULOS_MAP } from '../../../store/useSessionStore';
 import { usePersonaje } from '../../../hooks/usePersonaje';
 import { usePersonalizarPersonaje } from '../../../hooks/useBazarMutations';
 import { ARTICULOS_BAZAR } from './BazarData';
@@ -58,7 +58,30 @@ function HojaPersonaje() {
   const xpProgreso = xpTotal - nivelInfo.xpMin;
   const xpMetaNivel = nivelInfo.xpMax - nivelInfo.xpMin;
 
-  const titulosDesbloqueados = NIVELES_RPG.filter((n) => n.nivel <= nivelInfo.nivel);
+  const cosmeticosComprados = personaje?.cosmeticosComprados || [];
+  const titulosNivel = NIVELES_RPG.filter((n) => n.nivel <= nivelInfo.nivel).map((n) => ({
+    nivel: `Nv.${n.nivel}`,
+    titulo: n.titulo,
+    valor: n.titulo,
+  }));
+  const titulosBazar = Object.entries(TITULOS_MAP)
+    .filter(
+      ([id, nombre]) =>
+        cosmeticosComprados.includes(id) ||
+        cosmeticosComprados.includes(`titulo_${id}`) ||
+        tituloEquipado === id ||
+        tituloEquipado === nombre
+    )
+    .map(([, nombre]) => ({
+      nivel: 'Bazar',
+      titulo: nombre,
+      valor: nombre,
+    }));
+
+  // Deduplicar títulos disponibles
+  const titulosDesbloqueados = Array.from(
+    new Map([...titulosNivel, ...titulosBazar].map((item) => [item.titulo, item])).values()
+  );
 
   // Buscar mascota equipada para renderizar su icono animado
   const mascotaVisual = ARTICULOS_BAZAR.find(
@@ -135,23 +158,51 @@ function HojaPersonaje() {
               </Badge>
             </motion.div>
 
-            {/* Mascota acompañante animada flotante */}
+            {/* Mascota acompañante con aura de partículas místicas */}
             {mascotaVisual && (
-              <motion.div
-                initial={{ y: 0 }}
-                animate={{ y: [-4, 4, -4] }}
-                transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
-                className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 flex items-center justify-center p-1 rounded-full bg-[var(--bg-panel)] border-3 border-[var(--brand-gold)] shadow-[0_6px_16px_rgba(0,0,0,0.35),2px_2px_0px_#000] cursor-pointer hover:scale-115 transition-transform"
+              <div
+                className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 flex items-center justify-center cursor-pointer hover:scale-115 transition-transform"
                 title={`Compañero leal: ${mascotaVisual.nombre}`}
+                onClick={() => setIsAvatarModalOpen(true)}
               >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 overflow-hidden rounded-full flex items-center justify-center bg-gradient-to-tr from-amber-500/20 to-purple-500/20">
+                {/* Aura suave de resplandor */}
+                <motion.div
+                  animate={{
+                    scale: [1, 1.08, 1],
+                    opacity: [0.35, 0.65, 0.35],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 3.2,
+                    ease: 'easeInOut',
+                  }}
+                  className="absolute inset-0 -m-1 rounded-full bg-gradient-to-tr from-[var(--brand-gold)] via-amber-300 to-yellow-500 blur-xs pointer-events-none"
+                  aria-hidden="true"
+                />
+
+                {/* Micro partículas doradas delicadas */}
+                <motion.span
+                  animate={{ opacity: [0.2, 0.9, 0.2], scale: [0.7, 1.2, 0.7] }}
+                  transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                  className="absolute -top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-yellow-200 shadow-[0_0_5px_#FDE047] pointer-events-none z-10"
+                  aria-hidden="true"
+                />
+                <motion.span
+                  animate={{ opacity: [0.8, 0.2, 0.8], scale: [1.2, 0.6, 1.2] }}
+                  transition={{ repeat: Infinity, duration: 3.1, delay: 0.8, ease: 'easeInOut' }}
+                  className="absolute -bottom-0.5 left-1 w-1.5 h-1.5 rounded-full bg-amber-200 shadow-[0_0_5px_#F59E0B] pointer-events-none z-10"
+                  aria-hidden="true"
+                />
+
+                {/* Medallón circular */}
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 p-1 rounded-full bg-[var(--bg-panel)] border-3 border-[var(--brand-gold)] shadow-[0_6px_16px_rgba(0,0,0,0.35),2px_2px_0px_#000] z-0 overflow-hidden flex items-center justify-center">
                   {mascotaVisual.imagenSrc ? (
                     <img src={mascotaVisual.imagenSrc} alt={mascotaVisual.nombre} className="w-full h-full object-cover rounded-full" />
                   ) : (
                     <mascotaVisual.IconoVisual className="w-full h-full" />
                   )}
                 </div>
-              </motion.div>
+              </div>
             )}
           </div>
 
@@ -191,7 +242,7 @@ function HojaPersonaje() {
                   aria-expanded={isSelectorOpen}
                 >
                   <Sparkles size={11} className="text-[var(--brand-gold)]" />
-                  <span>{tituloEquipado}</span>
+                  <span>{formatearTitulo(tituloEquipado)}</span>
                   <ChevronDown
                     size={12}
                     className={`opacity-70 transition-transform ${isSelectorOpen ? 'rotate-180' : ''}`}
@@ -207,21 +258,24 @@ function HojaPersonaje() {
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
                       role="listbox"
-                      className="absolute left-0 mt-1 w-60 rounded-xl bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-modal)] p-1.5 z-30"
+                      className="absolute left-0 mt-1 w-64 rounded-xl bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-modal)] p-1.5 z-30"
                     >
                       <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[var(--text-secondary)] px-2 py-1 block">
                         Títulos Desbloqueados ({titulosDesbloqueados.length})
                       </span>
                       <div className="flex flex-col gap-0.5">
                         {titulosDesbloqueados.map((t) => {
-                          const isSelected = t.titulo === tituloEquipado;
+                          const isSelected =
+                            t.titulo === tituloEquipado ||
+                            t.valor === tituloEquipado ||
+                            t.titulo === formatearTitulo(tituloEquipado);
                           return (
                             <button
-                              key={t.nivel}
+                              key={t.titulo}
                               type="button"
                               role="option"
                               aria-selected={isSelected}
-                              onClick={() => handleSelectTitulo(t.titulo)}
+                              onClick={() => handleSelectTitulo(t.valor)}
                               className={[
                                 'w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold text-left transition-colors cursor-pointer',
                                 isSelected
@@ -231,7 +285,7 @@ function HojaPersonaje() {
                             >
                               <div className="flex items-center gap-2">
                                 <span className={`text-[10px] font-bold ${isSelected ? 'text-white/80' : 'text-[var(--text-secondary)]'}`}>
-                                  Nv.{t.nivel}
+                                  {t.nivel}
                                 </span>
                                 <span>{t.titulo}</span>
                               </div>

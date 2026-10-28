@@ -9,7 +9,7 @@ import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
 import ArtFrame from '../../../components/ui/ArtFrame';
 import { AVATARES_RPG, getAvatarPorId } from './AvataresData';
-import useSessionStore, { calcularNivel } from '../../../store/useSessionStore';
+import useSessionStore, { calcularNivel, formatearTitulo } from '../../../store/useSessionStore';
 import { usePersonaje } from '../../../hooks/usePersonaje';
 import { usePersonalizarPersonaje } from '../../../hooks/useBazarMutations';
 import { playParchment, playSuccess } from '../../../utils/audio';
@@ -159,7 +159,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
 
           <div className="flex-1 flex flex-col gap-1.5 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-              <Badge variant="violet">{selectedTitulo || 'Iniciado del Saber'}</Badge>
+              <Badge variant="violet">{formatearTitulo(selectedTitulo)}</Badge>
               <span className="text-xs font-display font-bold uppercase tracking-wider text-[var(--brand-primary)]">
                 {avatarSeleccionado?.clase}
               </span>

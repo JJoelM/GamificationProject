@@ -109,14 +109,52 @@ function TarjetaCompanero() {
         <Badge variant="gold">Leal</Badge>
       </div>
 
-      {/* Cuerpo principal: Retrato circular ampliado + Datos */}
+      {/* Cuerpo principal: Retrato circular con aura de partículas místicas + Datos */}
       <div className="flex items-center gap-4">
-        <motion.div
-          animate={{ y: [-3, 3, -3] }}
-          transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
-          className="relative shrink-0"
-        >
-          <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full p-1 bg-gradient-to-tr from-[var(--brand-gold)] via-[#FDE047] to-[var(--brand-gold)] shadow-[0_4px_16px_rgba(217,119,6,0.35),2px_2px_0px_#000]">
+        <div className="relative shrink-0 flex items-center justify-center">
+          {/* Resplandor pulsante suave y delicado */}
+          <motion.div
+            animate={{
+              scale: [1, 1.08, 1],
+              opacity: [0.35, 0.65, 0.35],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 3.5,
+              ease: 'easeInOut',
+            }}
+            className="absolute inset-0 -m-1.5 rounded-full bg-gradient-to-tr from-[var(--brand-gold)] via-amber-300 to-yellow-500 blur-sm pointer-events-none"
+            aria-hidden="true"
+          />
+
+          {/* Partículas orbitales delicadas y optimizadas (4 chispas doradas) */}
+          <motion.span
+            animate={{ opacity: [0.2, 0.9, 0.2], scale: [0.7, 1.2, 0.7] }}
+            transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
+            className="absolute -top-1 left-2 w-2 h-2 rounded-full bg-yellow-200 shadow-[0_0_6px_#FDE047] pointer-events-none z-10"
+            aria-hidden="true"
+          />
+          <motion.span
+            animate={{ opacity: [0.8, 0.2, 0.8], scale: [1.2, 0.6, 1.2] }}
+            transition={{ repeat: Infinity, duration: 3.2, delay: 0.6, ease: 'easeInOut' }}
+            className="absolute -top-1.5 right-3 w-1.5 h-1.5 rounded-full bg-amber-100 shadow-[0_0_6px_#FCD34D] pointer-events-none z-10"
+            aria-hidden="true"
+          />
+          <motion.span
+            animate={{ opacity: [0.3, 1, 0.3], scale: [0.6, 1.3, 0.6] }}
+            transition={{ repeat: Infinity, duration: 2.8, delay: 1.2, ease: 'easeInOut' }}
+            className="absolute -bottom-1 right-2 w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_#F59E0B] pointer-events-none z-10"
+            aria-hidden="true"
+          />
+          <motion.span
+            animate={{ opacity: [0.9, 0.3, 0.9], scale: [1.1, 0.7, 1.1] }}
+            transition={{ repeat: Infinity, duration: 3.4, delay: 1.8, ease: 'easeInOut' }}
+            className="absolute -bottom-0.5 left-3 w-1.5 h-1.5 rounded-full bg-amber-200 shadow-[0_0_5px_#FDE047] pointer-events-none z-10"
+            aria-hidden="true"
+          />
+
+          {/* Retrato circular */}
+          <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-full p-1 bg-gradient-to-tr from-[var(--brand-gold)] via-[#FDE047] to-[var(--brand-gold)] shadow-[0_4px_16px_rgba(217,119,6,0.35),2px_2px_0px_#000] z-0">
             <div className="w-full h-full rounded-full overflow-hidden bg-[var(--bg-panel)] flex items-center justify-center">
               <img
                 src={infoMascota.imagenSrc}
@@ -125,7 +163,7 @@ function TarjetaCompanero() {
               />
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <h4 className="font-display font-black text-lg text-[var(--text-primary)] leading-tight truncate">

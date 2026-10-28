@@ -10,7 +10,7 @@ import Button from '../../../components/ui/Button';
 import Spinner from '../../../components/ui/Spinner';
 import ArtFrame from '../../../components/ui/ArtFrame';
 import { useAlumnosAula } from '../../../hooks/useMetricas';
-import useSessionStore from '../../../store/useSessionStore';
+import useSessionStore, { formatearTitulo } from '../../../store/useSessionStore';
 import { playSuccess, playParchment } from '../../../utils/audio';
 
 const MASCOTA_IMG = {
@@ -172,7 +172,7 @@ export default function ListaAlumnosAula({ aulaId }) {
 
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <Badge variant="violet" className="text-[10px] py-0 px-2 truncate max-w-[170px]">
-                      {alumno.tituloEquipado || 'Iniciado del Saber'}
+                      {formatearTitulo(alumno.tituloEquipado)}
                     </Badge>
                   </div>
 

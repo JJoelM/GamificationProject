@@ -22,6 +22,27 @@ export const NIVELES_RPG = [
   { nivel: 5, xpMin: 2000, xpMax: 3500, titulo: 'Maestro Alquimista', rango: 'Diamante' },
 ];
 
+export const TITULOS_MAP = {
+  titulo_centinela: 'Centinela del Saber',
+  titulo_centinela_saber: 'Centinela del Saber',
+  titulo_erudito: 'Erudito Arcano',
+  titulo_maestro_grimorios: 'Maestro de Grimorios',
+  titulo_cazador: 'Cazador de Anomalías',
+};
+
+export function formatearTitulo(titulo) {
+  if (!titulo) return 'Iniciado del Saber';
+  if (TITULOS_MAP[titulo]) return TITULOS_MAP[titulo];
+  if (titulo.includes('_') || titulo.includes('-')) {
+    const limpio = titulo.replace(/^titulo[_-]/, '');
+    return limpio
+      .split(/[_-]/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+  return titulo;
+}
+
 export function calcularNivel(xp) {
   const current = NIVELES_RPG.find((n) => xp >= n.xpMin && xp < n.xpMax);
   return current || NIVELES_RPG[NIVELES_RPG.length - 1];
