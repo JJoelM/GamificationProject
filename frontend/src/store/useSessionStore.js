@@ -22,6 +22,27 @@ export const NIVELES_RPG = [
   { nivel: 5, xpMin: 2000, xpMax: 3500, titulo: 'Maestro Alquimista', rango: 'Diamante' },
 ];
 
+export const TITULOS_MAP = {
+  titulo_centinela: 'Centinela del Saber',
+  titulo_centinela_saber: 'Centinela del Saber',
+  titulo_erudito: 'Erudito Arcano',
+  titulo_maestro_grimorios: 'Maestro de Grimorios',
+  titulo_cazador: 'Cazador de Anomalías',
+};
+
+export function formatearTitulo(titulo) {
+  if (!titulo) return 'Iniciado del Saber';
+  if (TITULOS_MAP[titulo]) return TITULOS_MAP[titulo];
+  if (titulo.includes('_') || titulo.includes('-')) {
+    const limpio = titulo.replace(/^titulo[_-]/, '');
+    return limpio
+      .split(/[_-]/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+  return titulo;
+}
+
 export function calcularNivel(xp) {
   const current = NIVELES_RPG.find((n) => xp >= n.xpMin && xp < n.xpMax);
   return current || NIVELES_RPG[NIVELES_RPG.length - 1];
@@ -33,6 +54,7 @@ const PROGRESION_BASE = {
   apTotal: 0,
   rachaDias: 0,
   escudosRacha: 0,
+  escudosRachaDisponibles: 0,
   mejoraSemanal: 0,
   tituloEquipado: 'Iniciado del Saber',
   logrosDesbloqueados: [],
@@ -46,6 +68,7 @@ const PROGRESION_BASE = {
 
   // Inventario de artículos comprados en el Bazar
   articulosComprados: [],
+  cosmeticosComprados: [],
 
   // Historial de misiones resueltas: { [misionId]: { completada, intentos, mejorPuntaje, ultimaFecha } }
   misionesResueltas: {},
@@ -56,8 +79,9 @@ const useSessionStore = create(
     (set, get) => ({
       // ── Sesión y Preferencias Persistidas ──
       usuario: null,
-      aulaActivaId: MOCK_IDS.aulaId || '33333333-3333-3333-3333-333333333333',
+      aulaActivaId: null,
       codigoInvitacionAula: null,
+      mentorAvatar: 'hombre', // 'hombre' | 'mujer'
       theme: 'light',
       soundEnabled: true,
 
@@ -67,18 +91,45 @@ const useSessionStore = create(
       // ── Acciones de autenticación y sesión ──
       setUsuario: (usuario) => {
         if (!usuario) {
-          set({ usuario: null, ...PROGRESION_BASE });
+          try {
+            useSessionStore.persist.clearStorage();
+          } catch {
+            /* ignore */
+          }
+          set({
+            usuario: null,
+            aulaActivaId: null,
+            codigoInvitacionAula: null,
+            ...PROGRESION_BASE,
+            levelUpPendiente: null,
+          });
           return;
         }
+
+        const prevUsuario = get().usuario;
+        const usuarioCambio = !prevUsuario || prevUsuario.usuarioId !== usuario.usuarioId;
+
         set({
           usuario,
+          ...(usuarioCambio ? { aulaActivaId: null, codigoInvitacionAula: null } : {}),
           ...PROGRESION_BASE,
           levelUpPendiente: null,
         });
       },
 
       clearUsuario: () => {
-        set({ usuario: null, ...PROGRESION_BASE });
+        try {
+          useSessionStore.persist.clearStorage();
+        } catch {
+          /* ignore */
+        }
+        set({
+          usuario: null,
+          aulaActivaId: null,
+          codigoInvitacionAula: null,
+          ...PROGRESION_BASE,
+          levelUpPendiente: null,
+        });
       },
 
       logout: () => {
@@ -89,8 +140,10 @@ const useSessionStore = create(
         }
         set({
           usuario: null,
+          aulaActivaId: null,
           codigoInvitacionAula: null,
           ...PROGRESION_BASE,
+          levelUpPendiente: null,
         });
       },
 
@@ -105,15 +158,23 @@ const useSessionStore = create(
           xpTotal: datosBackend.experienciaXP ?? s.xpTotal,
           apTotal: datosBackend.puntosAccionAP ?? s.apTotal,
           rachaDias: datosBackend.rachaDiasActivos ?? s.rachaDias,
+          escudosRacha: datosBackend.escudosRachaDisponibles ?? s.escudosRacha,
+          escudosRachaDisponibles: datosBackend.escudosRachaDisponibles ?? s.escudosRachaDisponibles,
           avatarEquipado: datosBackend.avatarEquipado || s.avatarEquipado,
           marcoEstilo: datosBackend.marcoEquipado || s.marcoEstilo,
           mascotaEquipada: datosBackend.mascotaEquipada || s.mascotaEquipada,
+          tituloEquipado: datosBackend.tituloEquipado || s.tituloEquipado,
+          cosmeticosComprados: datosBackend.cosmeticosComprados ?? s.cosmeticosComprados,
+          articulosComprados: datosBackend.cosmeticosComprados ?? s.articulosComprados,
         }));
       },
 
+      setAulaActivaId: (aulaId) => set({ aulaActivaId: aulaId }),
       setAulaActiva: (aulaId) => set({ aulaActivaId: aulaId }),
 
       setCodigoInvitacion: (codigo) => set({ codigoInvitacionAula: codigo }),
+
+      setMentorAvatar: (avatar) => set({ mentorAvatar: avatar }),
 
       // Tema claro / oscuro
       setTheme: (theme) => {
@@ -147,6 +208,7 @@ const useSessionStore = create(
       setAuraColor: (auraColor) => set({ auraColor }),
       setMarcoEstilo: (marcoEstilo) => set({ marcoEstilo }),
       setMascotaEquipada: (mascotaId) => set({ mascotaEquipada: mascotaId }),
+      setTituloEquipado: (titulo) => set({ tituloEquipado: titulo }),
 
       // Bazar: comprar y equipar artículos con AP
       comprarArticulo: ({ id, costoAp, tipo, valor }) => {
@@ -239,9 +301,12 @@ const useSessionStore = create(
           update = {
             ...update,
             levelUpPendiente: {
-              nivelAnterior: nivelPrevio.nivel,
+              nivel: nivelNuevo.nivel,
               nivelNuevo: nivelNuevo.nivel,
+              nivelAnterior: nivelPrevio.nivel,
+              titulo: nivelNuevo.titulo,
               tituloNuevo: nivelNuevo.titulo,
+              rango: nivelNuevo.rango,
               rangoNuevo: nivelNuevo.rango,
             },
             tituloEquipado: nivelNuevo.titulo,
@@ -251,6 +316,7 @@ const useSessionStore = create(
         set(update);
       },
 
+      cerrarLevelUp: () => set({ levelUpPendiente: null }),
       limpiarLevelUp: () => set({ levelUpPendiente: null }),
 
       resetearProgreso: () => {
@@ -272,12 +338,18 @@ const useSessionStore = create(
         usuario: state.usuario,
         aulaActivaId: state.aulaActivaId,
         codigoInvitacionAula: state.codigoInvitacionAula,
+        mentorAvatar: state.mentorAvatar,
         theme: state.theme,
         soundEnabled: state.soundEnabled,
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.theme === 'dark' && typeof document !== 'undefined') {
           document.documentElement.classList.add('dark');
+        }
+        // Si no hay usuario activo tras rehidratación, asegurar que no queden datos de aula previa
+        if (!state?.usuario) {
+          state?.setAulaActivaId?.(null);
+          state?.setCodigoInvitacion?.(null);
         }
       },
     }

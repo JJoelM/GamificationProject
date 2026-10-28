@@ -1,30 +1,44 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, LogIn, UserPlus, GraduationCap, BookOpen, ShieldCheck, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  Swords, LogIn, GraduationCap, BookOpen, ShieldCheck,
+  CheckCircle2, ArrowLeft, ShieldAlert, Sparkles, AlertCircle
+} from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
-import { usuariosApi } from '../../services/api';
+import { usuariosApi, aulasApi } from '../../services/api';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/layout/ThemeToggle';
 import SoundToggle from '../../components/layout/SoundToggle';
 import ErrorBanner from '../../components/ui/ErrorBanner';
+import PasswordStrengthIndicator, { isPasswordSecure } from '../../components/ui/PasswordStrengthIndicator';
 import { playSuccess, playParchment } from '../../utils/audio';
 
 /**
- * AuthPage — Autenticación Real con JWT en Cookie HttpOnly
+ * AuthPage v4 — Autenticación Segura y Responsiva con Validación de Contraseña y Consentimiento de Investigación
  *
- * Flujos soportados según spec.md:
+ * Flujos:
  * · Login universal (/api/usuarios/login)
  * · Autorregistro de Docente (/api/usuarios/registro/docente)
  * · Registro de Alumno con código de invitación de aula (/api/usuarios/registro/alumno)
- * · Detección de menor de edad con estado PendienteDeAprobacionParental
- * · Acceso rápido a credenciales de prueba del backend
+ * · Validación de seguridad de contraseñas (8+ car., mayúscula, minúscula, dígito, símbolo)
+ * · Consentimiento ético informado para investigación académica en el PFC (UNNE)
+ * · Detección de menor de edad con registro de tutor
+ * · Limpieza completa de React Query cache en login/registro para prevenir fugas de sesión
  */
 function AuthPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const tab = rawTab === 'registro-docente' || rawTab === 'registro-alumno' ? rawTab : 'login';
+  const setTab = (newTab) => {
+    setSearchParams({ tab: newTab });
+  };
+
   const setUsuario = useSessionStore((s) => s.setUsuario);
 
-  const [tab, setTab] = useState('login'); // 'login' | 'registro-docente' | 'registro-alumno'
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState(null);
   const [parentalNotice, setParentalNotice] = useState(null);
@@ -33,10 +47,12 @@ function AuthPage() {
   // Campos de formulario
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [codigoInvitacion, setCodigoInvitacion] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('2003-01-01');
   const [emailTutor, setEmailTutor] = useState('');
+  const [aceptaInvestigacion, setAceptaInvestigacion] = useState(true);
 
   // Calcular si es menor de 18 años
   const esMenorDeEdad = () => {
@@ -56,7 +72,7 @@ function AuthPage() {
     if (rol === 'Docente') {
       navigate('/docente/dashboard');
     } else if (rol === 'Directivo' || rol === 'Administrador') {
-      navigate('/directivo/docentes');
+      navigate('/directivo/dashboard');
     } else {
       navigate('/alumno/dashboard');
     }
@@ -69,10 +85,26 @@ function AuthPage() {
 
     try {
       const data = await usuariosApi.login({ email, password });
+      // Limpiar caché previa antes de fijar nuevo usuario
+      queryClient.clear();
       setUsuario(data);
+
+      try {
+        const misAulas = await aulasApi.getMisAulas();
+        if (Array.isArray(misAulas) && misAulas.length > 0) {
+          useSessionStore.getState().setAulaActivaId(misAulas[0].aulaId);
+          if (misAulas[0].codigoInvitacion) {
+            useSessionStore.getState().setCodigoInvitacion(misAulas[0].codigoInvitacion);
+          }
+        } else {
+          useSessionStore.getState().setAulaActivaId(null);
+        }
+      } catch {
+        // En caso de fallo transitorio, useMisAulas en AppShell sincronizará
+      }
+
       redirectByRole(data.rol);
     } catch (err) {
-      // Si el backend no está disponible en localhost:5230, permitimos login offline simulado para desarrollo fluido
       if (!err.isApiError) {
         console.warn('Backend desconectado. Usando sesión offline simulada.');
         const isDocente = email.includes('docente');
@@ -83,6 +115,7 @@ function AuthPage() {
           nombreCompleto: isDocente ? 'Profesor Arduino' : isAdmin ? 'Directivo Escolar' : 'Joel Marcori',
           rol: rolSimulado,
         };
+        queryClient.clear();
         setUsuario(usuarioSimulado);
         redirectByRole(rolSimulado);
         return;
@@ -93,16 +126,37 @@ function AuthPage() {
     }
   };
 
+  const validarContrasenaYConfirmacion = () => {
+    if (!isPasswordSecure(password)) {
+      setError({ message: 'La contraseña no cumple con todos los requisitos de seguridad requeridos.' });
+      return false;
+    }
+    if (password !== passwordConfirm) {
+      setError({ message: 'Las contraseñas ingresadas no coinciden. Por favor, revísalas.' });
+      return false;
+    }
+    return true;
+  };
+
   const handleRegistroDocente = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!validarContrasenaYConfirmacion()) return;
+
     setIsPending(true);
 
     try {
-      await usuariosApi.registrarDocente({ email, nombreCompleto, password });
+      await usuariosApi.registrarDocente({
+        email,
+        nombreCompleto,
+        password,
+        aceptaUsoInvestigacion: aceptaInvestigacion,
+      });
       setSuccessMessage('¡Cuenta docente creada con éxito! Iniciando sesión...');
-      // Auto-login
+      // Auto-login con limpieza de caché
       const loginData = await usuariosApi.login({ email, password });
+      queryClient.clear();
       setUsuario(loginData);
       setTimeout(() => redirectByRole(loginData.rol), 1000);
     } catch (err) {
@@ -115,6 +169,9 @@ function AuthPage() {
   const handleRegistroAlumno = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!validarContrasenaYConfirmacion()) return;
+
     setIsPending(true);
 
     try {
@@ -125,16 +182,22 @@ function AuthPage() {
         password,
         fechaNacimiento,
         emailTutor: esMenorDeEdad() ? emailTutor : null,
+        aceptaUsoInvestigacion: aceptaInvestigacion,
       });
 
       if (res?.requiereAprobacionParental) {
         setParentalNotice(
-          'Tu cuenta fue registrada exitosamente. Al ser menor de edad, el estado de tu cuenta es Pendiente de Aprobación Parental y se notificó a tu tutor. Podrás iniciar sesión tan pronto como un Directivo o Administrador la apruebe.'
+          'Tu cuenta fue registrada exitosamente. Al ser menor de edad, el estado de tu cuenta es Pendiente de Aprobación Parental y se registró el email de tu tutor. Podrás iniciar sesión tan pronto como un Directivo o Administrador active tu cuenta.'
         );
       } else {
         setSuccessMessage('¡Inscripción y cuenta creadas con éxito! Iniciando sesión...');
         const loginData = await usuariosApi.login({ email, password });
+        queryClient.clear();
         setUsuario(loginData);
+        if (res?.aulaId) {
+          useSessionStore.getState().setAulaActivaId(res.aulaId);
+          useSessionStore.getState().setCodigoInvitacion(codigoInvitacion.trim().toUpperCase());
+        }
         setTimeout(() => redirectByRole(loginData.rol), 1000);
       }
     } catch (err) {
@@ -161,7 +224,22 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-base)] px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-base)] px-3 sm:px-4 py-8 sm:py-12 relative overflow-hidden">
+      {/* Botón para volver a la Landing */}
+      <div className="absolute top-4 left-4 z-10">
+        <button
+          type="button"
+          onClick={() => {
+            playParchment();
+            navigate('/');
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-panel)] text-xs font-display font-bold text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-accent)] transition-all cursor-pointer shadow-xs"
+        >
+          <ArrowLeft size={14} />
+          <span className="hidden sm:inline">Volver al Inicio</span>
+        </button>
+      </div>
+
       {/* Controles de barra superior */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <SoundToggle />
@@ -173,36 +251,33 @@ function AuthPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex flex-col items-center gap-3 mb-8 text-center"
+        className="flex flex-col items-center gap-2.5 mb-6 sm:mb-8 text-center max-w-md px-2"
       >
-        <div className="w-16 h-16 flex items-center justify-center rounded-[18px_24px_20px_22px] bg-[var(--brand-primary)] shadow-[4px_4px_0px_var(--border)] animate-float">
-          <Swords size={32} strokeWidth={2} style={{ color: '#FCD34D' }} />
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[16px_22px_18px_20px] bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-gold)] flex items-center justify-center text-white shadow-lg border-2 border-white/40">
+          <Swords size={28} className="sm:size-8" />
         </div>
-
-        <div>
-          <h1 className="font-display font-black text-4xl sm:text-5xl text-[var(--text-primary)] tracking-tight">
-            EduQuest
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] font-medium mt-1">
-            Plataforma de Gamificación Educativa
-          </p>
-        </div>
+        <h1 className="font-display font-black text-2xl sm:text-3xl text-[var(--text-primary)] tracking-wide">
+          EduQuest
+        </h1>
+        <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
+          Portal de acceso y registro para la comunidad educativa de la UNNE
+        </p>
       </motion.div>
 
-      {/* ── Tarjeta principal de autenticación ── */}
+      {/* ── Tarjeta Principal de Autenticación ── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="w-full max-w-md p-6 sm:p-8 rounded-[20px_28px_22px_26px] bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-card-hover)] flex flex-col gap-6"
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-lg p-5 sm:p-8 rounded-[20px_28px_22px_26px] bg-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-card)] flex flex-col gap-5 sm:gap-6"
       >
-        {/* Selector de pestañas */}
-        <div className="flex p-1 rounded-xl bg-[var(--bg-muted)] border border-[var(--border-muted)]">
+        {/* Selector de Pestañas (Tabs) */}
+        <div className="flex p-1 bg-[var(--bg-accent)] rounded-xl border border-[var(--border-muted)] gap-1">
           <button
             type="button"
             onClick={() => { setTab('login'); setError(null); setParentalNotice(null); }}
             className={[
-              'flex-1 py-2 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
+              'flex-1 py-2 rounded-lg text-xs font-display font-bold transition-all cursor-pointer text-center',
               tab === 'login'
                 ? 'bg-[var(--brand-primary)] text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)]',
@@ -214,7 +289,7 @@ function AuthPage() {
             type="button"
             onClick={() => { setTab('registro-docente'); setError(null); setParentalNotice(null); }}
             className={[
-              'flex-1 py-2 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
+              'flex-1 py-2 rounded-lg text-xs font-display font-bold transition-all cursor-pointer text-center',
               tab === 'registro-docente'
                 ? 'bg-[var(--brand-primary)] text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)]',
@@ -226,7 +301,7 @@ function AuthPage() {
             type="button"
             onClick={() => { setTab('registro-alumno'); setError(null); setParentalNotice(null); }}
             className={[
-              'flex-1 py-2 rounded-lg text-xs font-display font-bold transition-all cursor-pointer',
+              'flex-1 py-2 rounded-lg text-xs font-display font-bold transition-all cursor-pointer text-center',
               tab === 'registro-alumno'
                 ? 'bg-[var(--brand-primary)] text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)]',
@@ -338,9 +413,50 @@ function AuthPage() {
                 disabled={isPending}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Mín. 8 caracteres, mayúscula, minúscula, número y símbolo"
                 className="px-3.5 py-2.5 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] text-sm focus:border-[var(--brand-primary)] outline-none"
               />
+              <PasswordStrengthIndicator password={password} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                Confirmar Contraseña
+              </label>
+              <input
+                type="password"
+                required
+                disabled={isPending}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="Repite la contraseña"
+                className="px-3.5 py-2.5 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] text-sm focus:border-[var(--brand-primary)] outline-none"
+              />
+              {passwordConfirm && (
+                <span className={`text-[11px] font-semibold ${password === passwordConfirm ? 'text-[var(--brand-emerald)]' : 'text-[var(--brand-crimson)]'}`}>
+                  {password === passwordConfirm ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
+                </span>
+              )}
+            </div>
+
+            {/* Aviso y Consentimiento de Investigación */}
+            <div className="p-3.5 rounded-xl bg-[var(--bg-accent)] border border-[var(--border-muted)] flex flex-col gap-2">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aceptaInvestigacion}
+                  onChange={(e) => setAceptaInvestigacion(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-[var(--brand-primary)] border-[var(--border-muted)] focus:ring-[var(--brand-primary)]"
+                />
+                <div className="flex flex-col text-xs leading-relaxed">
+                  <span className="font-display font-bold text-[var(--text-primary)]">
+                    Consentimiento para Investigación Académica (UNNE)
+                  </span>
+                  <span className="text-[var(--text-secondary)] text-[11px] mt-0.5">
+                    Acepto que las métricas de uso pedagógico sean analizadas en forma anónima para la tesis y proyecto final de carrera. Podrás revocar o modificar este consentimiento en cualquier momento desde tu Perfil.
+                  </span>
+                </div>
+              </label>
             </div>
 
             <Button type="submit" variant="primary" size="lg" loading={isPending} className="mt-2 w-full justify-center">
@@ -368,7 +484,7 @@ function AuthPage() {
                 className="px-3.5 py-2.5 rounded-xl border-2 border-[var(--brand-primary)] bg-[var(--bg-base)] text-[var(--text-primary)] font-display font-bold tracking-widest text-sm focus:border-[var(--brand-gold)] outline-none uppercase"
               />
               <span className="text-[11px] text-[var(--text-muted)]">
-                Código de 8 caracteres provisto por tu docente
+                Código provisto por tu docente
               </span>
             </div>
 
@@ -419,7 +535,7 @@ function AuthPage() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)]">
-                  Contraseña
+                  Contraseña Segura
                 </label>
                 <input
                   type="password"
@@ -433,11 +549,35 @@ function AuthPage() {
               </div>
             </div>
 
+            {/* Indicador de Seguridad de Clave */}
+            <PasswordStrengthIndicator password={password} />
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                Confirmar Contraseña
+              </label>
+              <input
+                type="password"
+                required
+                disabled={isPending}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="Repite la contraseña"
+                className="px-3.5 py-2 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] text-xs focus:border-[var(--brand-primary)] outline-none"
+              />
+              {passwordConfirm && (
+                <span className={`text-[11px] font-semibold ${password === passwordConfirm ? 'text-[var(--brand-emerald)]' : 'text-[var(--brand-crimson)]'}`}>
+                  {password === passwordConfirm ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
+                </span>
+              )}
+            </div>
+
             {/* Campo condicional para menores de edad */}
             {esMenorDeEdad() && (
-              <div className="p-3 rounded-xl bg-[var(--bg-accent)] border border-[var(--brand-gold)] flex flex-col gap-1.5 animate-scale-in">
-                <label className="text-xs font-display font-bold uppercase tracking-wider text-[var(--brand-gold)]">
-                  Correo del Tutor / Padre / Madre (Requerido para menores de 18)
+              <div className="p-3.5 rounded-xl bg-[var(--bg-accent)] border border-[var(--brand-gold)] flex flex-col gap-1.5 animate-scale-in">
+                <label className="text-xs font-display font-bold uppercase tracking-wider text-[var(--brand-gold)] flex items-center gap-1.5">
+                  <ShieldCheck size={14} />
+                  Correo del Tutor / Padre / Madre (Requerido para menores)
                 </label>
                 <input
                   type="email"
@@ -449,10 +589,30 @@ function AuthPage() {
                   className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] text-[var(--text-primary)] text-xs outline-none focus:border-[var(--brand-gold)]"
                 />
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  Se enviará una notificación para la aprobación de tu cuenta por directivos.
+                  Al ser menor de 18 años, el equipo directivo de la institución verificará la autorización de tu tutor para habilitar tu cuenta.
                 </span>
               </div>
             )}
+
+            {/* Aviso y Consentimiento de Investigación */}
+            <div className="p-3.5 rounded-xl bg-[var(--bg-accent)] border border-[var(--border-muted)] flex flex-col gap-2">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aceptaInvestigacion}
+                  onChange={(e) => setAceptaInvestigacion(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-[var(--brand-primary)] border-[var(--border-muted)] focus:ring-[var(--brand-primary)]"
+                />
+                <div className="flex flex-col text-xs leading-relaxed">
+                  <span className="font-display font-bold text-[var(--text-primary)]">
+                    Consentimiento para Investigación Académica (UNNE)
+                  </span>
+                  <span className="text-[var(--text-secondary)] text-[11px] mt-0.5">
+                    Autorizo el uso anónimo de mis estadísticas de resolución de misiones, tiempo y recompensas con fines de investigación pedagógica en el Proyecto Final de Carrera. Puedes revocar este consentimiento en cualquier momento desde tu Perfil.
+                  </span>
+                </div>
+              </label>
+            </div>
 
             <Button type="submit" variant="primary" size="lg" loading={isPending} className="mt-2 w-full justify-center">
               <GraduationCap size={16} />

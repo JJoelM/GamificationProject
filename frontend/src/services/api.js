@@ -32,6 +32,27 @@ async function apiFetch(endpoint, options = {}) {
         };
       }
 
+      if (response.status === 401) {
+        errorData.title = errorData.title || 'Sesión no autorizada (っ- ‸ - ς)';
+        errorData.detail =
+          errorData.detail ||
+          'Tu sesión ha expirado o no tienes permisos para acceder a esta aula.';
+      }
+
+      if (response.status === 403) {
+        errorData.title = errorData.title || 'Acceso restringido (´• ω •`)ﾉ';
+        errorData.detail =
+          errorData.detail ||
+          'No estás inscripto en esta aula o tu sesión no tiene los permisos necesarios (っ- ‸ - ς).';
+      }
+
+      if (!errorData.detail && errorData.errors) {
+        const errorList = Object.values(errorData.errors).flat();
+        if (errorList.length > 0) {
+          errorData.detail = errorList.join(' · ');
+        }
+      }
+
       const problemError = new Error(errorData.detail || errorData.title || `HTTP Error ${response.status}`);
       problemError.status = response.status;
       problemError.title = errorData.title || 'Error en la solicitud';
@@ -75,14 +96,19 @@ export const usuariosApi = {
     }),
 
   // POST /api/usuarios/registro/docente
-  registrarDocente: ({ email, nombreCompleto, password }) =>
+  registrarDocente: ({ email, nombreCompleto, password, aceptaUsoInvestigacion }) =>
     apiFetch('/api/usuarios/registro/docente', {
       method: 'POST',
-      body: JSON.stringify({ email, nombreCompleto, password }),
+      body: JSON.stringify({
+        email,
+        nombreCompleto,
+        password,
+        aceptaUsoInvestigacion: Boolean(aceptaUsoInvestigacion),
+      }),
     }),
 
   // POST /api/usuarios/registro/alumno
-  registrarAlumno: ({ codigoInvitacion, email, nombreCompleto, password, fechaNacimiento, emailTutor }) =>
+  registrarAlumno: ({ codigoInvitacion, email, nombreCompleto, password, fechaNacimiento, emailTutor, aceptaUsoInvestigacion }) =>
     apiFetch('/api/usuarios/registro/alumno', {
       method: 'POST',
       body: JSON.stringify({
@@ -92,6 +118,7 @@ export const usuariosApi = {
         password,
         fechaNacimiento,
         emailTutor: emailTutor || null,
+        aceptaUsoInvestigacion: Boolean(aceptaUsoInvestigacion),
       }),
     }),
 
@@ -104,21 +131,45 @@ export const usuariosApi = {
       method: 'POST',
       body: JSON.stringify({ nuevoEstado }),
     }),
+
+  // GET /api/usuarios/mis-datos (Usuario autenticado vía JWT)
+  getMisDatos: () => apiFetch('/api/usuarios/mis-datos'),
+
+  // PUT /api/usuarios/mis-datos (Usuario autenticado vía JWT)
+  actualizarMisDatos: ({ nombreCompleto, aceptaUsoInvestigacion }) =>
+    apiFetch('/api/usuarios/mis-datos', {
+      method: 'PUT',
+      body: JSON.stringify({ nombreCompleto, aceptaUsoInvestigacion }),
+    }),
+
+  // POST /api/usuarios/mis-datos/cambiar-password
+  cambiarPassword: ({ passwordActual, passwordNueva }) =>
+    apiFetch('/api/usuarios/mis-datos/cambiar-password', {
+      method: 'POST',
+      body: JSON.stringify({ passwordActual, passwordNueva }),
+    }),
+
+  // DELETE /api/usuarios/mis-datos
+  eliminarMiCuenta: () =>
+    apiFetch('/api/usuarios/mis-datos', {
+      method: 'DELETE',
+    }),
 };
 
 // ── Servicios de API de Misiones ──
 export const misionesApi = {
-  // GET /api/misiones/borradores (Docente - propios vía JWT)
-  getBorradores: () => apiFetch('/api/misiones/borradores'),
+  // GET /api/misiones/borradores (Docente - propios vía JWT, con filtro opcional de aula)
+  getBorradores: (aulaId) =>
+    apiFetch(`/api/misiones/borradores${aulaId ? `?aulaId=${aulaId}` : ''}`),
 
   // GET /api/misiones/activas/{aulaId} (Alumno inscripto)
   getActivas: (aulaId) => apiFetch(`/api/misiones/activas/${aulaId}`),
 
   // POST /api/misiones/generar-con-ia
-  generarConIa: ({ aulaId, temaCurricular, textoFuente }) =>
+  generarConIa: ({ aulaId, temaCurricular, textoFuente, tipoPlantilla }) =>
     apiFetch('/api/misiones/generar-con-ia', {
       method: 'POST',
-      body: JSON.stringify({ aulaId, temaCurricular, textoFuente }),
+      body: JSON.stringify({ aulaId, temaCurricular, textoFuente, tipoPlantilla }),
     }),
 
   // PUT /api/misiones/{id}/editar
@@ -144,12 +195,80 @@ export const misionesApi = {
       method: 'POST',
       body: JSON.stringify({ motivo }),
     }),
+
+  // GET /api/misiones/aulas/{aulaId}/camino (Docente)
+  getCaminoDocente: (aulaId) => apiFetch(`/api/misiones/aulas/${aulaId}/camino`),
+
+  // PUT /api/misiones/{id}/sugeridas (Docente)
+  definirSugeridas: (id, { misionesSugeridas }) =>
+    apiFetch(`/api/misiones/${id}/sugeridas`, {
+      method: 'PUT',
+      body: JSON.stringify({ misionesSugeridas }),
+    }),
+
+  // POST /api/misiones/{id}/ocultar (Docente)
+  ocultar: (id) =>
+    apiFetch(`/api/misiones/${id}/ocultar`, {
+      method: 'POST',
+    }),
+
+  // POST /api/misiones/{id}/republicar (Docente)
+  republicar: (id) =>
+    apiFetch(`/api/misiones/${id}/republicar`, {
+      method: 'POST',
+    }),
 };
 
 // ── Servicios de API de Alumnos ──
 export const alumnosApi = {
   // GET /api/alumnos/personaje/{aulaId} (Alumno vía JWT)
   getPersonaje: (aulaId) => apiFetch(`/api/alumnos/personaje/${aulaId}`),
+
+  // GET /api/alumnos/ranking/{aulaId} (Alumno vía JWT)
+  getRanking: (aulaId) => apiFetch(`/api/alumnos/ranking/${aulaId}`),
+
+  // GET /api/alumnos/grimorio/{aulaId} (Alumno vía JWT)
+  getGrimorio: (aulaId) => apiFetch(`/api/alumnos/grimorio/${aulaId}`),
+
+  // GET /api/alumnos/bazar/catalogo
+  getCatalogoBazar: () => apiFetch('/api/alumnos/bazar/catalogo'),
+
+  // POST /api/alumnos/bazar/{aulaId}/comprar
+  // Body: { articuloId }
+  comprarArticulo: (aulaId, { articuloId }) =>
+    apiFetch(`/api/alumnos/bazar/${aulaId}/comprar`, {
+      method: 'POST',
+      body: JSON.stringify({
+        articuloId,
+      }),
+    }),
+
+  // PUT /api/alumnos/personaje/{aulaId}/personalizacion
+  // Body: { avatarId, marco, mascota, titulo }
+  personalizarPersonaje: (aulaId, { avatarId, marco, mascota, titulo }) =>
+    apiFetch(`/api/alumnos/personaje/${aulaId}/personalizacion`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        avatarId: avatarId ?? null,
+        marco: marco ?? null,
+        mascota: mascota ?? null,
+        titulo: titulo ?? null,
+      }),
+    }),
+
+  // POST /api/alumnos/misiones/{misionId}/pista (Alumno vía JWT)
+  // Body: { indicePregunta, opcionesYaDescartadas }
+  usarPista: (misionId, { indicePregunta, opcionesYaDescartadas }) =>
+    apiFetch(`/api/alumnos/misiones/${misionId}/pista`, {
+      method: 'POST',
+      body: JSON.stringify({
+        indicePregunta: Number(indicePregunta),
+        opcionesYaDescartadas: opcionesYaDescartadas || [],
+      }),
+    }),
+
+  // GET /api/alumnos/camino/{aulaId} (Alumno vía JWT)
+  getCamino: (aulaId) => apiFetch(`/api/alumnos/camino/${aulaId}`),
 
   // POST /api/alumnos/misiones/{misionId}/resolver (Alumno vía JWT)
   resolverMision: (misionId, { respuestas }) =>
@@ -184,4 +303,30 @@ export const aulasApi = {
       method: 'POST',
       body: JSON.stringify({ codigoInvitacion }),
     }),
+};
+
+// ── Servicios de API de Docentes ──
+export const docentesApi = {
+  // GET /api/docentes/metricas/{aulaId} (Docente vía JWT)
+  getMetricas: (aulaId) => apiFetch(`/api/docentes/metricas/${aulaId}`),
+
+  // GET /api/docentes/aulas/{aulaId}/alumnos (Docente vía JWT)
+  getAlumnos: (aulaId) => apiFetch(`/api/docentes/aulas/${aulaId}/alumnos`),
+
+  // GET /api/docentes/aulas/{aulaDestinoId}/misiones-importables
+  getMisionesImportables: (aulaDestinoId) =>
+    apiFetch(`/api/docentes/aulas/${aulaDestinoId}/misiones-importables`),
+
+  // POST /api/docentes/aulas/{aulaDestinoId}/importar-misiones
+  importarMisiones: (aulaDestinoId, { misionesIds }) =>
+    apiFetch(`/api/docentes/aulas/${aulaDestinoId}/importar-misiones`, {
+      method: 'POST',
+      body: JSON.stringify({ misionesIds }),
+    }),
+};
+
+// ── Servicios de API de Directivo ──
+export const directivoApi = {
+  // GET /api/directivo/metricas (Directivo / Admin vía JWT)
+  getMetricas: () => apiFetch('/api/directivo/metricas'),
 };

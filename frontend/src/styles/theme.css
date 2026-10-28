@@ -16,6 +16,7 @@
 
 /* 1. Tailwind — directiva obligatoria en v4 */
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
    TAILWIND v4 — @theme block (genera clases automáticamente)
@@ -33,7 +34,7 @@
 
   --color-text-primary:   #1E293B;   /* Pizarra oscuro — máximo contraste */
   --color-text-secondary: #475569;   /* Pizarra medio */
-  --color-text-muted:     #94A3B8;   /* Pizarra claro */
+  --color-text-muted:     #64748B;   /* Pizarra medio-oscuro para alto contraste en modo claro (WCAG AA > 4.5:1) */
   --color-text-inverse:   #FFFFFF;   /* Texto sobre botones oscuros */
 
   /* Marca — Azul como adorno principal, morado como detalle */
@@ -166,6 +167,12 @@ html {
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
   scrollbar-color: var(--border-muted) var(--bg-muted);
+}
+
+/* Soporte accesible y herencia de contraste para el elemento nativo <dialog> */
+dialog {
+  color: var(--text-primary);
+  background-color: transparent;
 }
 
 body {

@@ -1,5 +1,6 @@
 using Core.Application.Common;
 using Core.Domain.Entidades;
+using Core.Domain.SeedWork;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +38,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Resultad
         }
 
         if (usuario.EstadoCuenta != EstadoCuenta.Activa)
-            throw new InvalidOperationException($"La cuenta no está activa (estado: {usuario.EstadoCuenta}).");
+            throw new TransicionDeEstadoInvalidaException($"La cuenta no está activa (estado: {usuario.EstadoCuenta}).");
 
         var token = _generadorDeTokens.GenerarToken(usuario.Id, usuario.Email, usuario.Rol.Nombre);
 

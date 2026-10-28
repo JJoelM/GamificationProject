@@ -1,3 +1,5 @@
+using Core.Domain.Agregados.Misiones;
+
 namespace WebApi.Endpoints.Misiones;
 
 // DocenteId no viaja en ningun request: sale del claim usuarioId del JWT.
@@ -9,4 +11,5 @@ public sealed record EditarMisionRequest(string Narrativa, string PayloadJson, i
 
 public sealed record RechazarMisionRequest(string Motivo);
 
-public sealed record SolicitarGeneracionRequest(Guid AulaId, string TemaCurricular, string TextoFuente);
+public sealed record SolicitarGeneracionRequest(
+    Guid AulaId, string TemaCurricular, string TextoFuente, TipoPlantilla TipoPlantilla = TipoPlantilla.OpcionMultiple);

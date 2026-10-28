@@ -5,6 +5,8 @@ using MediatR;
 
 namespace WebApi.Endpoints.Misiones;
 
+public sealed record DefinirMisionesSugeridasRequest(List<Guid> MisionesSugeridas);
+
 public static class MisionesEndpoints
 {
     public static void MapMisionesEndpoints(this WebApplication app)
@@ -14,9 +16,15 @@ public static class MisionesEndpoints
         grupo.MapPost("/", async (GenerarMisionRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
             var comando = new GenerarMisionCommand(
-                usuario.ObtenerUsuarioId(), request.AulaId, request.TemaCurricular, request.TextoFuente,
-                request.Narrativa, request.TipoPlantilla, request.PayloadJson,
-                request.NivelConfianzaIA, request.RecompensaXpSugerida);
+                usuario.ObtenerUsuarioId(),
+                request.AulaId,
+                request.TemaCurricular,
+                request.TextoFuente,
+                request.Narrativa,
+                request.TipoPlantilla,
+                request.PayloadJson,
+                request.NivelConfianzaIA,
+                request.RecompensaXpSugerida);
 
             var misionId = await mediator.Send(comando);
             return Results.Created($"/api/misiones/{misionId}", new { misionId });
@@ -27,7 +35,11 @@ public static class MisionesEndpoints
         grupo.MapPost("/generar-con-ia", async (SolicitarGeneracionRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
             var comando = new SolicitarGeneracionDeMisionCommand(
-                usuario.ObtenerUsuarioId(), request.AulaId, request.TemaCurricular, request.TextoFuente);
+                usuario.ObtenerUsuarioId(),
+                request.AulaId,
+                request.TemaCurricular,
+                request.TextoFuente,
+                request.TipoPlantilla);
 
             var misionId = await mediator.Send(comando);
             return Results.Created($"/api/misiones/{misionId}", new { misionId });
@@ -38,7 +50,12 @@ public static class MisionesEndpoints
         grupo.MapPut("/{id:guid}/editar", async (Guid id, EditarMisionRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
             await mediator.Send(new EditarMisionCommand(
-                id, usuario.ObtenerUsuarioId(), request.Narrativa, request.PayloadJson, request.RecompensaXp));
+                id,
+                usuario.ObtenerUsuarioId(),
+                request.Narrativa,
+                request.PayloadJson,
+                request.RecompensaXp));
+
             return Results.NoContent();
         })
         .WithName("EditarMision")
@@ -60,14 +77,48 @@ public static class MisionesEndpoints
         .WithName("RechazarMision")
         .RequireAuthorization(p => p.RequireRole("Docente"));
 
-        // Sin route param docenteId: siempre "mis propios" borradores, nunca
-        // los de otro docente pasado a mano en la URL.
-        grupo.MapGet("/borradores", async (ClaimsPrincipal usuario, IMediator mediator) =>
+        grupo.MapPost("/{id:guid}/ocultar", async (Guid id, ClaimsPrincipal usuario, IMediator mediator) =>
         {
-            var borradores = await mediator.Send(new ObtenerBorradoresPendientesQuery(usuario.ObtenerUsuarioId()));
+            await mediator.Send(new OcultarMisionCommand(id, usuario.ObtenerUsuarioId()));
+            return Results.NoContent();
+        })
+        .WithName("OcultarMision")
+        .RequireAuthorization(p => p.RequireRole("Docente"));
+
+        grupo.MapPost("/{id:guid}/republicar", async (Guid id, ClaimsPrincipal usuario, IMediator mediator) =>
+        {
+            await mediator.Send(new RepublicarMisionCommand(id, usuario.ObtenerUsuarioId()));
+            return Results.NoContent();
+        })
+        .WithName("RepublicarMision")
+        .RequireAuthorization(p => p.RequireRole("Docente"));
+
+        grupo.MapPut("/{id:guid}/sugeridas", async (
+            Guid id, DefinirMisionesSugeridasRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
+        {
+            await mediator.Send(new DefinirMisionesSugeridasCommand(
+                id, usuario.ObtenerUsuarioId(), request.MisionesSugeridas ?? new List<Guid>()));
+            return Results.NoContent();
+        })
+        .WithName("DefinirMisionesSugeridas")
+        .RequireAuthorization(p => p.RequireRole("Docente"));
+
+        // Sin route param docenteId: siempre "mis propios" borradores, con filtro opcional por aula
+        grupo.MapGet("/borradores", async (
+            [Microsoft.AspNetCore.Mvc.FromQuery] Guid? aulaId,
+            ClaimsPrincipal usuario,
+            IMediator mediator) =>
+        {
+            var borradores = await mediator.Send(new ObtenerBorradoresPendientesQuery(usuario.ObtenerUsuarioId(), aulaId));
             return Results.Ok(borradores);
         })
         .WithName("ObtenerBorradoresPendientes")
+        .RequireAuthorization(p => p.RequireRole("Docente"));
+
+        // Vista del docente: todas las misiones no rechazadas del Aula + sus conexiones.
+        grupo.MapGet("/aulas/{aulaId:guid}/camino", async (Guid aulaId, ClaimsPrincipal usuario, IMediator mediator) =>
+            Results.Ok(await mediator.Send(new ObtenerCaminoParaDocenteQuery(aulaId, usuario.ObtenerUsuarioId()))))
+        .WithName("ObtenerCaminoDocente")
         .RequireAuthorization(p => p.RequireRole("Docente"));
 
         grupo.MapGet("/activas/{aulaId:guid}", async (Guid aulaId, ClaimsPrincipal usuario, IMediator mediator) =>

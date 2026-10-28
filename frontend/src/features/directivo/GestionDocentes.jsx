@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, ShieldCheck, UserCheck, UserX, RefreshCw, Search,
-  Clock, CheckCircle2, XCircle, AlertTriangle, Shield, Filter,
-  ChevronDown, ChevronUp, Mail,
+  Clock, CheckCircle2, XCircle, AlertTriangle, Shield,
+  ChevronDown, ChevronUp, Mail, GraduationCap, BookOpen, AlertCircle
 } from 'lucide-react';
 import { usuariosApi } from '../../services/api';
 import Card from '../../components/ui/Card';
@@ -16,14 +16,14 @@ import Modal from '../../components/ui/Modal';
 import { playSuccess, playParchment } from '../../utils/audio';
 
 /**
- * GestionDocentes v2 — Panel completo de gestión de cuentas para Directivos.
+ * GestionDocentes v3 — Panel completo de gestión de cuentas (Docentes y Alumnos) para Directivos.
  *
  * Funcionalidades:
- * - Tabs de filtro por estado (Todas / Pendientes / Activas / Suspendidas)
- * - Búsqueda por nombre o email
- * - Confirmación modal antes de acciones destructivas
- * - Stats en cards animadas
- * - Fila expandible con detalles
+ * - Filtros por rol (Todos / Docentes / Alumnos) y estado (Todas / Pendientes / Activas / Suspendidas)
+ * - Visualización de email de tutores para alumnos menores de edad
+ * - Activación, Aprobación y Suspensión reactiva vía React Query
+ * - Mensajes kaomoji amigables ante excepciones
+ * - Diseño táctil Painterly RPG completamente responsivo en móviles
  */
 
 const ESTADOS = [
@@ -33,14 +33,21 @@ const ESTADOS = [
   { key: 'Suspendida', label: 'Suspendidas', icon: XCircle },
 ];
 
+const ROLES = [
+  { key: 'todos', label: 'Todos los Roles' },
+  { key: 'Docente', label: 'Docentes' },
+  { key: 'Alumno', label: 'Alumnos' },
+];
+
 const estadoBadge = (estado) => {
   if (estado === 'Activa') return 'correcto';
-  if (estado === 'Pendiente' || estado === 'PendienteDeAprobacionParental') return 'xp';
+  if (estado === 'Pendiente' || estado === 'PendienteDeAprobacion' || estado === 'PendienteDeAprobacionParental') return 'xp';
   if (estado === 'Suspendida') return 'incorrecto';
   return 'info';
 };
 
 const estadoLabel = (estado) => {
+  if (estado === 'PendienteDeAprobacion') return 'Pendiente de Aprobación';
   if (estado === 'PendienteDeAprobacionParental') return 'Pendiente (Parental)';
   return estado;
 };
@@ -49,28 +56,15 @@ function GestionDocentes() {
   const queryClient = useQueryClient();
 
   const [filtro, setFiltro] = useState('todas');
+  const [filtroRol, setFiltroRol] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // { usuario, nuevoEstado }
+  const [errorAccion, setErrorAccion] = useState(null);
 
-  const { data: docentes, isLoading, error, refetch } = useQuery({
+  const { data: usuarios, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['usuarios', 'docentes'],
-    queryFn: async () => {
-      try {
-        return await usuariosApi.getDocentes();
-      } catch (err) {
-        if (!err.isApiError) {
-          return [
-            { usuarioId: '11111111-1111-1111-1111-111111111111', email: 'docente@unne.edu.ar', nombreCompleto: 'Prof. Arduino Marcori', estadoCuenta: 'Activa', rol: 'Docente', fechaRegistro: '2025-03-15' },
-            { usuarioId: '55555555-5555-5555-5555-555555555555', email: 'laura.garcia@unne.edu.ar', nombreCompleto: 'Prof. Laura García', estadoCuenta: 'Pendiente', rol: 'Docente', fechaRegistro: '2025-09-10' },
-            { usuarioId: '66666666-6666-6666-6666-666666666666', email: 'carlos.mendez@unne.edu.ar', nombreCompleto: 'Prof. Carlos Méndez', estadoCuenta: 'Suspendida', rol: 'Docente', fechaRegistro: '2025-06-22' },
-            { usuarioId: '77777777-7777-7777-7777-777777777777', email: 'maria.lopez@unne.edu.ar', nombreCompleto: 'Prof. María López', estadoCuenta: 'Activa', rol: 'Docente', fechaRegistro: '2025-04-01' },
-            { usuarioId: '88888888-8888-8888-8888-888888888888', email: 'pedro.alumno@unne.edu.ar', nombreCompleto: 'Pedro Ramírez', estadoCuenta: 'PendienteDeAprobacionParental', rol: 'Alumno', fechaRegistro: '2025-09-13' },
-          ];
-        }
-        throw err;
-      }
-    },
+    queryFn: () => usuariosApi.getDocentes(),
   });
 
   const { mutate: cambiarEstado, isPending: isUpdating } = useMutation({
@@ -80,47 +74,66 @@ function GestionDocentes() {
       playSuccess();
       queryClient.invalidateQueries({ queryKey: ['usuarios', 'docentes'] });
       setConfirmAction(null);
+      setErrorAccion(null);
     },
-    onError: () => {
-      setConfirmAction(null);
+    onError: (err) => {
+      setErrorAccion(
+        err?.message ||
+        'No se pudo actualizar el estado de la cuenta en este momento (´;ω;｀). Por favor, intenta de nuevo.'
+      );
     },
   });
 
   // Filtrado y búsqueda
-  const docentesFiltrados = useMemo(() => {
-    if (!docentes) return [];
-    let resultado = docentes;
+  const usuariosFiltrados = useMemo(() => {
+    if (!usuarios) return [];
+    let resultado = usuarios;
+
+    if (filtroRol !== 'todos') {
+      resultado = resultado.filter((u) => u.rol === filtroRol);
+    }
 
     if (filtro !== 'todas') {
-      resultado = resultado.filter((d) => {
-        if (filtro === 'Pendiente') return d.estadoCuenta === 'Pendiente' || d.estadoCuenta === 'PendienteDeAprobacionParental';
-        return d.estadoCuenta === filtro;
+      resultado = resultado.filter((u) => {
+        if (filtro === 'Pendiente') {
+          return u.estadoCuenta === 'Pendiente' ||
+                 u.estadoCuenta === 'PendienteDeAprobacion' ||
+                 u.estadoCuenta === 'PendienteDeAprobacionParental';
+        }
+        return u.estadoCuenta === filtro;
       });
     }
 
     if (busqueda.trim()) {
       const q = busqueda.toLowerCase();
       resultado = resultado.filter(
-        (d) => d.nombreCompleto?.toLowerCase().includes(q) || d.email?.toLowerCase().includes(q)
+        (u) => u.nombreCompleto?.toLowerCase().includes(q) ||
+               u.email?.toLowerCase().includes(q) ||
+               u.emailTutor?.toLowerCase().includes(q)
       );
     }
 
     return resultado;
-  }, [docentes, filtro, busqueda]);
+  }, [usuarios, filtro, filtroRol, busqueda]);
 
   // Stats
   const stats = useMemo(() => {
-    if (!docentes) return { total: 0, activas: 0, pendientes: 0, suspendidas: 0 };
+    if (!usuarios) return { total: 0, activas: 0, pendientes: 0, suspendidas: 0 };
     return {
-      total: docentes.length,
-      activas: docentes.filter((d) => d.estadoCuenta === 'Activa').length,
-      pendientes: docentes.filter((d) => d.estadoCuenta === 'Pendiente' || d.estadoCuenta === 'PendienteDeAprobacionParental').length,
-      suspendidas: docentes.filter((d) => d.estadoCuenta === 'Suspendida').length,
+      total: usuarios.length,
+      activas: usuarios.filter((u) => u.estadoCuenta === 'Activa').length,
+      pendientes: usuarios.filter((u) =>
+        u.estadoCuenta === 'Pendiente' ||
+        u.estadoCuenta === 'PendienteDeAprobacion' ||
+        u.estadoCuenta === 'PendienteDeAprobacionParental'
+      ).length,
+      suspendidas: usuarios.filter((u) => u.estadoCuenta === 'Suspendida').length,
     };
-  }, [docentes]);
+  }, [usuarios]);
 
   const handleAction = (usuario, nuevoEstado) => {
     playParchment();
+    setErrorAccion(null);
     setConfirmAction({ usuario, nuevoEstado });
   };
 
@@ -139,280 +152,336 @@ function GestionDocentes() {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            <ShieldCheck className="text-[var(--brand-primary)]" size={24} />
-            <h1 className="font-display font-bold text-2xl text-[var(--text-primary)]">
+            <ShieldCheck className="text-[var(--brand-primary)] shrink-0" size={24} />
+            <h1 className="font-display font-bold text-xl sm:text-2xl text-[var(--text-primary)]">
               Panel de Gestión de Cuentas
             </h1>
           </div>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Supervisá los accesos, aprobá registros pendientes y gestioná el estado de las cuentas del cuerpo docente y alumnos.
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
+            Aprobación parental, supervisión de docentes y control institucional de accesos.
           </p>
         </div>
 
-        <Button variant="ghost" size="sm" onClick={() => refetch()}>
-          <RefreshCw size={14} />
-          Actualizar
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
+            <span>{isFetching ? 'Actualizando...' : 'Refrescar'}</span>
+          </Button>
+        </div>
       </div>
 
-      {error && <ErrorBanner error={error} onDismiss={() => refetch()} />}
+      {/* ── Métricas rápidas ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <Card variant="default" className="p-3 sm:p-4 text-center">
+          <span className="text-xl sm:text-2xl font-display font-black text-[var(--brand-primary)] block">
+            {stats.total}
+          </span>
+          <span className="text-[10px] sm:text-xs font-display font-semibold uppercase text-[var(--text-muted)]">
+            Total Cuentas
+          </span>
+        </Card>
 
-      {isLoading ? (
-        <div className="py-24 flex justify-center items-center">
-          <Spinner size="lg" label="Consultando nómina de cuentas..." />
-        </div>
-      ) : (
-        <>
-          {/* ── Stats Cards ── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: 'Total', value: stats.total, icon: Users, color: 'text-[var(--brand-primary)]', bg: 'bg-[color-mix(in_oklch,var(--brand-primary)_10%,var(--bg-panel))]' },
-              { label: 'Activas', value: stats.activas, icon: CheckCircle2, color: 'text-[var(--brand-emerald)]', bg: 'bg-[color-mix(in_oklch,var(--brand-emerald)_10%,var(--bg-panel))]' },
-              { label: 'Pendientes', value: stats.pendientes, icon: Clock, color: 'text-[var(--brand-gold)]', bg: 'bg-[color-mix(in_oklch,var(--brand-gold)_10%,var(--bg-panel))]' },
-              { label: 'Suspendidas', value: stats.suspendidas, icon: XCircle, color: 'text-[var(--brand-crimson)]', bg: 'bg-[color-mix(in_oklch,var(--brand-crimson)_10%,var(--bg-panel))]' },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, type: 'spring', stiffness: 200, damping: 22 }}
-              >
-                <Card className="flex items-center gap-3 p-4">
-                  <div className={`w-10 h-10 rounded-[8px_12px_10px_10px] ${stat.bg} flex items-center justify-center ${stat.color}`}>
-                    <stat.icon size={20} />
-                  </div>
-                  <div>
-                    <span className="font-display font-black text-2xl text-[var(--text-primary)]">{stat.value}</span>
-                    <p className="text-[10px] font-display font-bold uppercase tracking-wider text-[var(--text-muted)]">{stat.label}</p>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+        <Card variant="default" className="p-3 sm:p-4 text-center">
+          <span className="text-xl sm:text-2xl font-display font-black text-[var(--brand-emerald)] block">
+            {stats.activas}
+          </span>
+          <span className="text-[10px] sm:text-xs font-display font-semibold uppercase text-[var(--text-muted)]">
+            Activas
+          </span>
+        </Card>
 
-          {/* ── Filtros + Búsqueda ── */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            {/* Tabs de estado */}
-            <div className="flex p-1 rounded-xl bg-[var(--bg-muted)] border border-[var(--border-muted)] gap-0.5">
-              {ESTADOS.map(({ key, label, icon: TabIcon }) => (
+        <Card variant="default" className="p-3 sm:p-4 text-center">
+          <span className="text-xl sm:text-2xl font-display font-black text-[var(--brand-gold)] block">
+            {stats.pendientes}
+          </span>
+          <span className="text-[10px] sm:text-xs font-display font-semibold uppercase text-[var(--text-muted)]">
+            Por Aprobar
+          </span>
+        </Card>
+
+        <Card variant="default" className="p-3 sm:p-4 text-center">
+          <span className="text-xl sm:text-2xl font-display font-black text-[var(--brand-crimson)] block">
+            {stats.suspendidas}
+          </span>
+          <span className="text-[10px] sm:text-xs font-display font-semibold uppercase text-[var(--text-muted)]">
+            Suspendidas
+          </span>
+        </Card>
+      </div>
+
+      {/* ── Controles: Filtros por Rol, Estado y Buscador ── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Tabs de Filtro de Estado */}
+          <div className="flex items-center gap-1 p-1 bg-[var(--bg-accent)] rounded-xl border border-[var(--border-muted)] overflow-x-auto">
+            {ESTADOS.map(({ key, label, icon: Icon }) => {
+              const activo = filtro === key;
+              return (
                 <button
                   key={key}
-                  onClick={() => setFiltro(key)}
+                  type="button"
+                  onClick={() => { playParchment(); setFiltro(key); }}
                   className={[
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display font-semibold transition-all cursor-pointer',
-                    filtro === key
-                      ? 'bg-[var(--brand-primary)] text-white shadow-sm'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-accent)]',
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display font-bold transition-all cursor-pointer whitespace-nowrap shrink-0',
+                    activo
+                      ? 'bg-[var(--bg-panel)] text-[var(--brand-primary)] shadow-xs border border-[var(--border)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]',
                   ].join(' ')}
                 >
-                  <TabIcon size={13} />
-                  {label}
-                  {key !== 'todas' && (
-                    <span className={`text-[10px] font-bold ${filtro === key ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
-                      ({key === 'Pendiente' ? stats.pendientes : key === 'Activa' ? stats.activas : stats.suspendidas})
-                    </span>
-                  )}
+                  <Icon size={13} />
+                  <span>{label}</span>
                 </button>
-              ))}
-            </div>
-
-            {/* Búsqueda */}
-            <div className="relative flex-1 max-w-xs">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o email..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-[8px_12px_10px_10px] border border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-primary)] text-xs font-sans focus:border-[var(--brand-primary)] outline-none transition-colors"
-              />
-            </div>
+              );
+            })}
           </div>
 
-          {/* ── Tabla de cuentas ── */}
-          <Card className="flex flex-col gap-0 p-0 overflow-hidden">
-            {/* Header de tabla */}
-            <div className="p-4 bg-[var(--bg-muted)] border-b border-[var(--border-muted)] flex items-center justify-between">
-              <span className="font-display font-bold text-xs uppercase tracking-wider text-[var(--text-primary)]">
-                {docentesFiltrados.length} {docentesFiltrados.length === 1 ? 'cuenta' : 'cuentas'}
-                {filtro !== 'todas' && ` — ${ESTADOS.find((e) => e.key === filtro)?.label}`}
-              </span>
-              <Badge variant="violet">
-                <Shield size={10} /> Panel Directivo
-              </Badge>
-            </div>
+          {/* Filtro por Rol */}
+          <div className="flex items-center gap-1.5 self-start sm:self-auto">
+            {ROLES.map(({ key, label }) => {
+              const activo = filtroRol === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { playParchment(); setFiltroRol(key); }}
+                  className={[
+                    'px-2.5 py-1 rounded-lg text-xs font-display font-bold transition-all cursor-pointer border',
+                    activo
+                      ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)] shadow-xs'
+                      : 'bg-[var(--bg-panel)] text-[var(--text-secondary)] border-[var(--border-muted)] hover:border-[var(--brand-primary)]',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* Filas */}
-            {docentesFiltrados.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-sm text-[var(--text-muted)]">
-                  No se encontraron cuentas con los filtros aplicados.
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-[var(--border-muted)]">
-                <AnimatePresence>
-                  {docentesFiltrados.map((d, idx) => {
-                    const isActiva = d.estadoCuenta === 'Activa';
-                    const isPendiente = d.estadoCuenta === 'Pendiente' || d.estadoCuenta === 'PendienteDeAprobacionParental';
-                    const isExpanded = expandedId === d.usuarioId;
+        {/* Buscador */}
+        <div className="relative">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre, email o correo del tutor..."
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-[var(--bg-panel)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--brand-primary)] transition-colors"
+          />
+        </div>
+      </div>
 
-                    return (
-                      <motion.div
-                        key={d.usuarioId}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ delay: idx * 0.03 }}
+      {/* ── Lista de Cuentas ── */}
+      {isLoading ? (
+        <div className="py-16 flex flex-col items-center justify-center gap-3">
+          <Spinner size="lg" />
+          <p className="text-xs font-display font-semibold text-[var(--text-muted)]">
+            Consultando registros de cuentas institucionales...
+          </p>
+        </div>
+      ) : error ? (
+        <ErrorBanner error={error} onRetry={() => refetch()} />
+      ) : usuariosFiltrados.length === 0 ? (
+        <Card variant="parchment" className="p-8 text-center flex flex-col items-center gap-2">
+          <Users size={32} className="text-[var(--text-muted)]" />
+          <p className="font-display font-bold text-sm text-[var(--text-primary)]">
+            No se encontraron cuentas
+          </p>
+          <p className="text-xs text-[var(--text-secondary)] max-w-sm">
+            {busqueda
+              ? `No hay resultados para "${busqueda}". Intenta con otro término o limpia los filtros.`
+              : 'No hay cuentas registradas que coincidan con los filtros seleccionados.'}
+          </p>
+        </Card>
+      ) : (
+        <Card variant="default" className="divide-y divide-[var(--border-muted)] overflow-hidden">
+          <div className="flex flex-col">
+            <AnimatePresence>
+              {usuariosFiltrados.map((u) => {
+                const isActiva = u.estadoCuenta === 'Activa';
+                const isPendiente =
+                  u.estadoCuenta === 'Pendiente' ||
+                  u.estadoCuenta === 'PendienteDeAprobacion' ||
+                  u.estadoCuenta === 'PendienteDeAprobacionParental';
+                const isExpanded = expandedId === u.usuarioId;
+                const isDocente = u.rol === 'Docente';
+
+                return (
+                  <motion.div
+                    key={u.usuarioId}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col border-b border-[var(--border-muted)] last:border-b-0"
+                  >
+                    {/* Fila principal */}
+                    <div className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[var(--bg-accent)] transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : u.usuarioId)}
+                        className="flex items-center gap-3 text-left cursor-pointer flex-1 min-w-0"
                       >
-                        {/* Fila principal */}
-                        <div
-                          className={[
-                            'p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors',
-                            isExpanded ? 'bg-[var(--bg-accent)]' : 'hover:bg-[var(--bg-accent)]',
-                          ].join(' ')}
-                        >
-                          <button
-                            onClick={() => setExpandedId(isExpanded ? null : d.usuarioId)}
-                            className="flex items-center gap-3.5 text-left cursor-pointer flex-1 min-w-0"
-                          >
-                            {/* Avatar */}
-                            <div className={[
-                              'w-10 h-10 rounded-[10px_14px_12px_12px] flex items-center justify-center shrink-0 font-display font-bold text-sm',
-                              isActiva
-                                ? 'bg-[var(--brand-primary)] text-white'
-                                : isPendiente
-                                  ? 'bg-[var(--brand-gold)] text-[#1C0A00]'
-                                  : 'bg-[var(--border-muted)] text-[var(--text-muted)]',
-                            ].join(' ')}>
-                              {d.nombreCompleto?.charAt(0) || 'U'}
-                            </div>
-
-                            <div className="min-w-0">
-                              <h4 className="font-display font-bold text-sm text-[var(--text-primary)] truncate">
-                                {d.nombreCompleto}
-                              </h4>
-                              <p className="text-xs text-[var(--text-muted)] truncate">{d.email}</p>
-                            </div>
-
-                            {isExpanded ? (
-                              <ChevronUp size={14} className="text-[var(--text-muted)] shrink-0" />
-                            ) : (
-                              <ChevronDown size={14} className="text-[var(--text-muted)] shrink-0" />
-                            )}
-                          </button>
-
-                          <div className="flex items-center gap-3 self-end sm:self-center">
-                            {d.rol && d.rol !== 'Docente' && (
-                              <Badge variant="violet">{d.rol}</Badge>
-                            )}
-                            <Badge variant={estadoBadge(d.estadoCuenta)}>
-                              {estadoLabel(d.estadoCuenta)}
-                            </Badge>
-
-                            {isPendiente ? (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="primary"
-                                  disabled={isUpdating}
-                                  onClick={() => handleAction(d, 'Activa')}
-                                >
-                                  <UserCheck size={14} />
-                                  Aprobar
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  disabled={isUpdating}
-                                  onClick={() => handleAction(d, 'Suspendida')}
-                                >
-                                  <UserX size={14} />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant={isActiva ? 'danger' : 'primary'}
-                                disabled={isUpdating}
-                                onClick={() => handleAction(d, isActiva ? 'Suspendida' : 'Activa')}
-                              >
-                                {isActiva ? (
-                                  <>
-                                    <UserX size={14} />
-                                    Suspender
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCheck size={14} />
-                                    Reactivar
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                          </div>
+                        {/* Avatar / Inicial */}
+                        <div className={[
+                          'w-9 h-9 sm:w-10 sm:h-10 rounded-[10px_14px_12px_12px] flex items-center justify-center shrink-0 font-display font-bold text-sm shadow-xs',
+                          isActiva
+                            ? 'bg-[var(--brand-primary)] text-white'
+                            : isPendiente
+                              ? 'bg-[var(--brand-gold)] text-[#1C0A00]'
+                              : 'bg-[var(--border-muted)] text-[var(--text-muted)]',
+                        ].join(' ')}>
+                          {u.nombreCompleto?.charAt(0) || 'U'}
                         </div>
 
-                        {/* Fila expandida con detalles */}
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-display font-bold text-sm text-[var(--text-primary)] truncate">
+                              {u.nombreCompleto}
+                            </h4>
+                            {isDocente ? (
+                              <BookOpen size={12} className="text-[var(--brand-primary)] shrink-0" title="Docente" />
+                            ) : (
+                              <GraduationCap size={12} className="text-amber-500 shrink-0" title="Alumno" />
+                            )}
+                          </div>
+                          <p className="text-xs text-[var(--text-muted)] truncate">{u.email}</p>
+                        </div>
+
+                        {isExpanded ? (
+                          <ChevronUp size={14} className="text-[var(--text-muted)] shrink-0 ml-auto" />
+                        ) : (
+                          <ChevronDown size={14} className="text-[var(--text-muted)] shrink-0 ml-auto" />
+                        )}
+                      </button>
+
+                      {/* Badges y Acciones */}
+                      <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center shrink-0">
+                        {u.rol && (
+                          <Badge variant={isDocente ? 'info' : 'violet'}>
+                            {u.rol}
+                          </Badge>
+                        )}
+                        <Badge variant={estadoBadge(u.estadoCuenta)}>
+                          {estadoLabel(u.estadoCuenta)}
+                        </Badge>
+
+                        {isPendiente ? (
+                          <div className="flex gap-1.5 sm:gap-2">
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              disabled={isUpdating}
+                              onClick={() => handleAction(u, 'Activa')}
+                              title="Aprobar y activar cuenta"
                             >
-                              <div className="px-5 pb-4 pt-1 flex flex-wrap gap-4 text-xs text-[var(--text-secondary)] bg-[var(--bg-accent)] border-t border-[var(--border-muted)]">
-                                <div className="flex items-center gap-1.5">
-                                  <Mail size={12} className="text-[var(--text-muted)]" />
-                                  <span>{d.email}</span>
-                                </div>
-                                {d.rol && (
-                                  <div className="flex items-center gap-1.5">
-                                    <Shield size={12} className="text-[var(--text-muted)]" />
-                                    <span>Rol: <strong>{d.rol}</strong></span>
-                                  </div>
-                                )}
-                                {d.fechaRegistro && (
-                                  <div className="flex items-center gap-1.5">
-                                    <Clock size={12} className="text-[var(--text-muted)]" />
-                                    <span>Registro: {new Date(d.fechaRegistro).toLocaleDateString('es-AR')}</span>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[var(--text-muted)]">ID:</span>
-                                  <code className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-base)] px-1.5 py-0.5 rounded">
-                                    {d.usuarioId?.substring(0, 8)}...
-                                  </code>
-                                </div>
+                              <UserCheck size={14} />
+                              <span className="hidden xs:inline">Aprobar</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              disabled={isUpdating}
+                              onClick={() => handleAction(u, 'Suspendida')}
+                              title="Rechazar o suspender cuenta"
+                            >
+                              <UserX size={14} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant={isActiva ? 'danger' : 'primary'}
+                            disabled={isUpdating}
+                            onClick={() => handleAction(u, isActiva ? 'Suspendida' : 'Activa')}
+                          >
+                            {isActiva ? (
+                              <>
+                                <UserX size={14} />
+                                <span>Suspender</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck size={14} />
+                                <span>Reactivar</span>
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Fila expandida con detalles */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 sm:px-6 pb-4 pt-1.5 flex flex-wrap gap-4 text-xs text-[var(--text-secondary)] bg-[var(--bg-accent)] border-t border-[var(--border-muted)]">
+                            <div className="flex items-center gap-1.5">
+                              <Mail size={12} className="text-[var(--text-muted)]" />
+                              <span>Email: <strong>{u.email}</strong></span>
+                            </div>
+
+                            {u.emailTutor && (
+                              <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+                                <Shield size={12} />
+                                <span>Email del Tutor (Menor de edad): <strong>{u.emailTutor}</strong></span>
                               </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
-            )}
-          </Card>
-        </>
+                            )}
+
+                            {u.fechaNacimiento && (
+                              <div className="flex items-center gap-1.5">
+                                <Clock size={12} className="text-[var(--text-muted)]" />
+                                <span>Nacimiento: {u.fechaNacimiento}</span>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[var(--text-muted)]">ID:</span>
+                              <code className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-base)] px-1.5 py-0.5 rounded">
+                                {u.usuarioId}
+                              </code>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </Card>
       )}
 
-      {/* ── Modal de Confirmación ── */}
+      {/* ── Modal de Confirmación de Cambio de Estado ── */}
       <Modal
         isOpen={Boolean(confirmAction)}
-        onClose={() => setConfirmAction(null)}
+        onClose={() => { if (!isUpdating) setConfirmAction(null); }}
         title={
           confirmAction?.nuevoEstado === 'Activa'
             ? 'Confirmar Activación de Cuenta'
             : 'Confirmar Suspensión de Cuenta'
         }
-        size="sm"
       >
         {confirmAction && (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
+            {errorAccion && (
+              <div className="p-3 rounded-xl bg-crimson-500/10 border border-crimson-500/30 text-[var(--brand-crimson)] text-xs font-semibold flex items-center gap-2">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{errorAccion}</span>
+              </div>
+            )}
+
             <div className="flex items-start gap-3">
               <div className={[
                 'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
@@ -428,16 +497,25 @@ function GestionDocentes() {
                     ? `¿Activar la cuenta de ${confirmAction.usuario.nombreCompleto}?`
                     : `¿Suspender la cuenta de ${confirmAction.usuario.nombreCompleto}?`}
                 </p>
-                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
                   {confirmAction.nuevoEstado === 'Activa'
-                    ? 'La cuenta podrá iniciar sesión y acceder a la plataforma inmediatamente.'
-                    : 'La cuenta perderá acceso a la plataforma hasta que sea reactivada por un directivo.'}
+                    ? 'La cuenta podrá iniciar sesión y acceder a la plataforma de inmediato con sus permisos correspondientes.'
+                    : 'La cuenta perderá acceso al sistema y no podrá iniciar sesión hasta que sea reactivada por la dirección escolar.'}
                 </p>
+                {confirmAction.usuario.emailTutor && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 font-semibold">
+                    Cuenta de menor registrada con tutor: {confirmAction.usuario.emailTutor}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2 border-t border-[var(--border-muted)]">
-              <Button variant="ghost" onClick={() => setConfirmAction(null)} disabled={isUpdating}>
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--border-muted)]">
+              <Button
+                variant="ghost"
+                disabled={isUpdating}
+                onClick={() => setConfirmAction(null)}
+              >
                 Cancelar
               </Button>
               <Button
@@ -455,6 +533,7 @@ function GestionDocentes() {
           </div>
         )}
       </Modal>
+
     </div>
   );
 }

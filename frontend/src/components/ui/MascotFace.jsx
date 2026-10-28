@@ -35,6 +35,11 @@ const EXPRESSIONS = {
     subtitle: 'Acción no permitida',
     aura: 'rgba(43, 20, 84, 0.08)',
   },
+  forbidden: {
+    face: '(´• ω •`)ﾉ ⛔',
+    subtitle: 'Acceso restringido al aula',
+    aura: 'rgba(220, 38, 38, 0.08)',
+  },
   disconnected: {
     face: '( ˘︹˘ )⚡',
     subtitle: 'Sin señal con el servidor',

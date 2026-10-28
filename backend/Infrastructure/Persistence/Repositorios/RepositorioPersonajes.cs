@@ -18,6 +18,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
         [nameof(ProgresoActualizado)] = typeof(ProgresoActualizado),
         [nameof(ArticuloComprado)] = typeof(ArticuloComprado),
         [nameof(ArticuloEquipado)] = typeof(ArticuloEquipado),
+        [nameof(PistaUsada)] = typeof(PistaUsada),
     };
 
     private readonly ApplicationDbContext _db;
@@ -107,8 +108,19 @@ public class RepositorioPersonajes : IRepositorioPersonajes
             case ArticuloEquipado:
                 var resumenBazar = await _db.PersonajesResumen
                     .FirstOrDefaultAsync(p => p.PersonajeId == personaje.Id, ct);
-                resumenBazar?.ActualizarPersonalizacion(
-                    personaje.AvatarEquipado, personaje.MarcoEquipado, personaje.MascotaEquipada, personaje.TituloEquipado);
+                if (resumenBazar is not null)
+                {
+                    resumenBazar.ActualizarProgreso(
+                        personaje.ExperienciaXP,
+                        personaje.PuntosAccionAP,
+                        personaje.RachaDiasActivos,
+                        personaje.MisionesCompletadas);
+                    resumenBazar.ActualizarPersonalizacion(
+                        personaje.AvatarEquipado,
+                        personaje.MarcoEquipado,
+                        personaje.MascotaEquipada,
+                        personaje.TituloEquipado);
+                }
                 break;
         }
     }

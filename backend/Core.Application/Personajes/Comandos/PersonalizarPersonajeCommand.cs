@@ -19,16 +19,16 @@ public sealed class PersonalizarPersonajeCommandHandler : IRequestHandler<Person
     {
         var personajeId = IdentidadCompuesta.Combinar(request.AlumnoId, request.AulaId);
         var personaje = await _repositorio.ObtenerPorIdAsync(personajeId, cancellationToken)
-            ?? throw new InvalidOperationException("El personaje aún no tiene progreso registrado en esta Aula.");
+            ?? Personaje.Iniciar(request.AlumnoId, request.AulaId);
 
-        // Equipar (no ComprarArticulo) -- el artículo ya debe estar en _cosmeticosComprados.
-        if (request.AvatarId is not null)
+        // Equipar sólo los cosméticos que hayan sido especificados y difieran de lo equipado actualmente
+        if (request.AvatarId is not null && request.AvatarId != personaje.AvatarEquipado)
             personaje.EquiparArticulo(request.AvatarId, TipoArticulo.Avatar, request.AvatarId);
-        if (request.Marco is not null)
+        if (request.Marco is not null && request.Marco != personaje.MarcoEquipado)
             personaje.EquiparArticulo(request.Marco, TipoArticulo.Marco, request.Marco);
-        if (request.Mascota is not null)
+        if (request.Mascota is not null && request.Mascota != personaje.MascotaEquipada)
             personaje.EquiparArticulo(request.Mascota, TipoArticulo.Mascota, request.Mascota);
-        if (request.Titulo is not null)
+        if (request.Titulo is not null && request.Titulo != personaje.TituloEquipado)
             personaje.EquiparArticulo(request.Titulo, TipoArticulo.Titulo, request.Titulo);
 
         await _repositorio.GuardarAsync(personaje, cancellationToken);

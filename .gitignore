@@ -32,7 +32,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
-# ── Carpetas archivadas / spike ──
+# ── Carpetas archivadas / spike / temporales ──
 archive/
 spike/
 
@@ -46,6 +46,10 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# ── Material de defensa y documentos personales ──
+presentacion/
+*.pdf
 
 # ── Logs ──
 *.log

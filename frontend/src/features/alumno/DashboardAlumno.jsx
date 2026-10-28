@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { Swords, ArrowRight, Compass, Sparkles, Map, RefreshCw, BookOpen, Zap } from 'lucide-react';
 import { useMisionesActivas } from '../../hooks/useMisiones';
 import { usePersonaje } from '../../hooks/usePersonaje';
+import { useMisAulas } from '../../hooks/useAulas';
 import useSessionStore from '../../store/useSessionStore';
 import HojaPersonaje from './components/HojaPersonaje';
 import RankingAula from './components/RankingAula';
+import TarjetaCompanero from './components/TarjetaCompanero';
 import VitrinaLogros from './components/VitrinaLogros';
 import TarjetaMision from './components/TarjetaMision';
 import ResolverMision from './components/ResolverMision';
@@ -22,9 +24,13 @@ import ArtFrame from '../../components/ui/ArtFrame';
  */
 function DashboardAlumno() {
   const navigate = useNavigate();
+  const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const { data: aulas, isLoading: isLoadingAulas } = useMisAulas();
   usePersonaje(); // Sincroniza XP, AP y racha con backend
-  const { data: misiones, isLoading } = useMisionesActivas();
+  const { data: misiones, isLoading: isLoadingMisiones } = useMisionesActivas();
   const [misionSeleccionada, setMisionSeleccionada] = useState(null);
+
+  const isLoading = isLoadingAulas || isLoadingMisiones;
 
   const misionesResueltas = useSessionStore((s) => s.misionesResueltas) || {};
 
@@ -35,7 +41,8 @@ function DashboardAlumno() {
     const resueltas = [];
 
     misiones.forEach((m) => {
-      if (misionesResueltas[m.misionId]?.completada) {
+      const esCompletada = Boolean(m.completada || misionesResueltas[m.misionId]?.completada);
+      if (esCompletada) {
         resueltas.push(m);
       } else {
         nuevas.push(m);
@@ -156,13 +163,14 @@ function DashboardAlumno() {
           )}
         </div>
 
-        {/* Columna derecha (1/3): Ranking */}
+        {/* Columna derecha (1/3): Compañero Leal + Ranking */}
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.15 }}
-          className="lg:col-span-1"
+          className="lg:col-span-1 flex flex-col gap-6"
         >
+          <TarjetaCompanero />
           <RankingAula mejoraSemanal={28} />
         </motion.div>
       </div>

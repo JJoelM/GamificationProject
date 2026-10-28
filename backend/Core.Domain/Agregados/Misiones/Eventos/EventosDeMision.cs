@@ -21,7 +21,8 @@ public sealed record MisionGenerada(
     string PayloadJson,
     int NivelConfianzaIA,
     int RecompensaXpSugerida,
-    DateTime OcurridoEn) : IEventoDominio;
+    DateTime OcurridoEn,
+    Guid? MisionOrigenId = null) : IEventoDominio;
 
 // Se dispara cada vez que el docente guarda un cambio sobre una mision todavia
 // pendiente de revision. Es intencional que sea un evento propio y no parte de
@@ -54,4 +55,12 @@ public sealed record MisionOcultada(
 public sealed record MisionRepublicada(
     Guid MisionId,
     Guid DocenteId,
+    DateTime OcurridoEn) : IEventoDominio;
+
+// Reemplaza el conjunto completo de misiones sugeridas a continuacion de esta
+// (sugerencia, nunca bloqueo: ocultar la mision sigue siendo la forma de bloquear).
+public sealed record MisionesSugeridasDefinidas(
+    Guid MisionId,
+    Guid DocenteId,
+    List<Guid> MisionesSugeridas,
     DateTime OcurridoEn) : IEventoDominio;

@@ -24,7 +24,6 @@ public sealed class RegistrarAlumnoConInvitacionCommandHandler
     // conservador propio, para disparar revisión humana, no una regla legal
     // confirmada. Verificar con una fuente real antes de un entorno de producción.
     private const int EdadMinimaSinAprobacionParental = 16;
-    private const int LongitudMinimaPassword = 8;
 
     private readonly IApplicationDbContext _db;
     private readonly PasswordHasher<Usuario> _hasher = new();
@@ -34,8 +33,7 @@ public sealed class RegistrarAlumnoConInvitacionCommandHandler
     public async Task<ResultadoRegistroAlumno> Handle(
         RegistrarAlumnoConInvitacionCommand request, CancellationToken cancellationToken)
     {
-        if (request.Password.Length < LongitudMinimaPassword)
-            throw new ArgumentException($"La contraseña debe tener al menos {LongitudMinimaPassword} caracteres.");
+        ValidadorPassword.Validar(request.Password);
 
         var aula = await _db.Aulas.FirstOrDefaultAsync(a => a.CodigoInvitacion == request.CodigoInvitacion, cancellationToken)
             ?? throw new ArgumentException("El código de invitación no es válido.");

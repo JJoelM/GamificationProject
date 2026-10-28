@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { misionesApi } from '../services/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { misionesApi, docentesApi } from '../services/api';
 import useSessionStore from '../store/useSessionStore';
 
 // ── Mock data (solo activos si VITE_USE_MOCK=true en .env.development) ──────
@@ -11,7 +11,7 @@ const MOCK_BORRADORES = [
     narrativa:
       'El virrey Cisneros ha convocado al pueblo ante los rumores de España. Los patriotas se reúnen en la plaza para exigir un cabildo abierto que decida el futuro de la nación.',
     tipoPlantilla: 'OpcionMultiple',
-    nivelConfianzaIA: 0.94,
+    nivelConfianzaIA: 94,
     recompensaXpSugerida: 150,
     payloadJson: JSON.stringify({
       preguntas: [
@@ -127,17 +127,17 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
  * useBorradoresDocente — Query de misiones en borrador pendientes de revisión (HITL)
  * GET /api/misiones/borradores (extrae docenteId del JWT en cookie)
  */
-export function useBorradoresDocente() {
+export function useBorradoresDocente(aulaIdOverride) {
   const usuario = useSessionStore((s) => s.usuario);
+  const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const aulaId = aulaIdOverride || aulaActivaId;
 
   return useQuery({
-    queryKey: ['misiones', 'borradores'],
+    queryKey: ['misiones', 'borradores', aulaId],
     queryFn: USE_MOCK
       ? () => Promise.resolve(MOCK_BORRADORES)
-      : () => misionesApi.getBorradores(),
+      : () => misionesApi.getBorradores(aulaId),
     enabled: Boolean(usuario && usuario.rol === 'Docente'),
-    // React Query maneja reintentos y el estado isError automáticamente —
-    // no catch manual aquí para que los errores de API se propaguen correctamente.
   });
 }
 
@@ -148,12 +148,65 @@ export function useBorradoresDocente() {
 export function useMisionesActivas() {
   const aulaId = useSessionStore((s) => s.aulaActivaId);
   const usuario = useSessionStore((s) => s.usuario);
+  const registrarMisionResuelta = useSessionStore((s) => s.registrarMisionResuelta);
 
   return useQuery({
     queryKey: ['misiones', 'activas', aulaId],
-    queryFn: USE_MOCK
-      ? () => Promise.resolve(MOCK_MISIONES_ACTIVAS)
-      : () => misionesApi.getActivas(aulaId),
+    queryFn: async () => {
+      const data = USE_MOCK
+        ? await Promise.resolve(MOCK_MISIONES_ACTIVAS)
+        : await misionesApi.getActivas(aulaId);
+
+      // Hidratar misiones resueltas en Zustand si vienen del backend tras un refresh
+      if (Array.isArray(data)) {
+        data.forEach((m) => {
+          if (m.completada) {
+            registrarMisionResuelta({
+              misionId: m.misionId,
+              porcentaje: m.mejorPorcentaje ?? 100,
+              xpGanado: m.recompensaXp ?? 0,
+              apGanado: 0,
+            });
+          }
+        });
+      }
+
+      return data;
+    },
     enabled: Boolean(aulaId && (!usuario || usuario.rol === 'Alumno')),
+  });
+}
+
+/**
+ * useMisionesImportables — Consulta misiones validadas u ocultas en otras aulas del docente
+ * GET /api/docentes/aulas/{aulaDestinoId}/misiones-importables
+ */
+export function useMisionesImportables(aulaDestinoId) {
+  const usuario = useSessionStore((s) => s.usuario);
+  const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const targetId = aulaDestinoId || aulaActivaId;
+
+  return useQuery({
+    queryKey: ['docentes', 'misiones-importables', targetId],
+    queryFn: () => docentesApi.getMisionesImportables(targetId),
+    enabled: Boolean(targetId && usuario?.rol === 'Docente'),
+  });
+}
+
+/**
+ * useImportarMisiones — Importa misiones de otras aulas hacia el aula activa
+ * POST /api/docentes/aulas/{aulaDestinoId}/importar-misiones
+ */
+export function useImportarMisiones() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ aulaDestinoId, misionesIds }) =>
+      docentesApi.importarMisiones(aulaDestinoId, { misionesIds }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['misiones', 'borradores', variables.aulaDestinoId] });
+      queryClient.invalidateQueries({ queryKey: ['camino-docente', variables.aulaDestinoId] });
+      queryClient.invalidateQueries({ queryKey: ['docentes', 'misiones-importables', variables.aulaDestinoId] });
+    },
   });
 }

@@ -1,13 +1,15 @@
-using System.Text.Json;
 using Core.Application.Common;
 using Core.Domain.Agregados.Misiones;
+using Core.Domain.Entidades;
 using Core.Domain.SeedWork;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Core.Application.Misiones.Comandos;
 
 public sealed record SolicitarGeneracionDeMisionCommand(
-    Guid DocenteId, Guid AulaId, string TemaCurricular, string TextoFuente) : IRequest<Guid>;
+    Guid DocenteId, Guid AulaId, string TemaCurricular, string TextoFuente,
+    TipoPlantilla TipoPlantilla = TipoPlantilla.OpcionMultiple) : IRequest<Guid>;
 
 public sealed class SolicitarGeneracionDeMisionCommandHandler
     : IRequestHandler<SolicitarGeneracionDeMisionCommand, Guid>
@@ -19,40 +21,33 @@ public sealed class SolicitarGeneracionDeMisionCommandHandler
 
     private readonly IGeneradorDeMisiones _generador;
     private readonly IRepositorioMisiones _repositorio;
+    private readonly IApplicationDbContext _db;
 
     public SolicitarGeneracionDeMisionCommandHandler(
-        IGeneradorDeMisiones generador, IRepositorioMisiones repositorio)
+        IGeneradorDeMisiones generador, IRepositorioMisiones repositorio, IApplicationDbContext db)
     {
         _generador = generador;
         _repositorio = repositorio;
+        _db = db;
     }
 
     public async Task<Guid> Handle(SolicitarGeneracionDeMisionCommand request, CancellationToken cancellationToken)
     {
-        var contenido = await _generador.GenerarAsync(request.TemaCurricular, request.TextoFuente, cancellationToken);
+        var aula = await _db.Aulas.FirstOrDefaultAsync(a => a.Id == request.AulaId, cancellationToken)
+            ?? throw new AgregadoNoEncontradoException(nameof(Aula), request.AulaId);
 
-        // Traduce del shape de Application (lo que devuelve el microservicio)
-        // al shape que Mision.Calificar espera deserializar -- son tipos
-        // distintos a propósito: el dominio no debería conocer el contrato
-        // HTTP con Python, y Application no debería conocer los detalles de
-        // cómo el dominio califica una OpcionMultiple.
-        var payload = new ContenidoOpcionMultiple(
-            contenido.Preguntas
-                .Select(p => new PreguntaOpcionMultiple(p.Enunciado, p.Opciones, p.RespuestaCorrecta, p.Explicacion))
-                .ToList());
+        if (aula.DocenteId != request.DocenteId)
+            throw new UnauthorizedAccessException("El aula indicada no pertenece al docente autenticado.");
 
-        // Misma fuente de opciones que usa Mision.Calificar para leer -- así
-        // lo que este comando escribe y lo que el dominio (y el frontend)
-        // esperan leer nunca pueden desincronizarse entre sí.
-        var payloadJson = JsonSerializer.Serialize(payload, OpcionesJsonMision.Instancia);
+        var contenido = await _generador.GenerarAsync(
+            request.TipoPlantilla, request.TemaCurricular, request.TextoFuente, cancellationToken);
 
-        // 20 XP por pregunta generada: es una fórmula simple y determinística,
-        // no un número mágico -- fácil de justificar y de recalibrar en la defensa.
-        var recompensaXp = payload.Preguntas.Count * 20;
+        // 20 XP por elemento generado (preguntas, fases, eventos): fórmula determinística
+        var recompensaXp = contenido.CantidadDeElementos * 20;
 
         var mision = Mision.Generar(
             request.DocenteId, request.AulaId, request.TemaCurricular, request.TextoFuente,
-            contenido.Narrativa, "OpcionMultiple", payloadJson,
+            contenido.Narrativa, request.TipoPlantilla.ToString(), contenido.PayloadJson,
             NivelConfianzaProvisorio, recompensaXp);
 
         await _repositorio.GuardarAsync(mision, cancellationToken);

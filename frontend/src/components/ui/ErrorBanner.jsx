@@ -20,6 +20,11 @@ import Card from './Card';
  */
 
 const MESSAGES = {
+  403: {
+    title: 'Acceso no permitido (´• ω •`)ﾉ',
+    description: 'No estás inscripto en esta aula o tu personaje no tiene autorización para esta zona (っ- ‸ - ς).',
+    expression: 'forbidden',
+  },
   404: {
     title: 'No encontramos ese recurso',
     description: 'Parece que esta misión o página ya no existe o fue movida.',
