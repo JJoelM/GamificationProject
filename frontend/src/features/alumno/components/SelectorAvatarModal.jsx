@@ -57,7 +57,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
   const cosmeticosComprados = personaje?.cosmeticosComprados || [];
   const nivelInfo = calcularNivel(xpTotal);
 
-  const [subTab, setSubTab] = useState('arquetipo'); // 'arquetipo' | 'marcos' | 'mascotas' | 'titulos'
+  const [subTab, setSubTab] = useState('avatares'); // 'avatares' | 'marcos' | 'mascotas' | 'titulos'
   const [selectedAvatarId, setSelectedAvatarId] = useState(avatarEquipado);
   const [selectedMarco, setSelectedMarco] = useState(marcoEstiloActual);
   const [selectedMascota, setSelectedMascota] = useState(mascotaEquipadaActual);
@@ -176,7 +176,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
         {/* ── Pestañas de Personalización ── */}
         <div className="flex items-center gap-2 border-b-2 border-[var(--border-muted)] pb-2 overflow-x-auto">
           {[
-            { id: 'arquetipo', label: 'Arquetipo', Icon: User },
+            { id: 'avatares', label: 'Avatares', Icon: User },
             { id: 'marcos', label: 'Marcos', Icon: Layers },
             { id: 'mascotas', label: 'Mascotas', Icon: Heart },
             { id: 'titulos', label: 'Títulos', Icon: Crown },
@@ -201,8 +201,8 @@ function SelectorAvatarModal({ isOpen, onClose }) {
           })}
         </div>
 
-        {/* ── CONTENIDO: 1. ARQUETIPOS ── */}
-        {subTab === 'arquetipo' && (
+        {/* ── CONTENIDO: 1. AVATARES ── */}
+        {subTab === 'avatares' && (
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
               {AVATARES_RPG.map((avatar) => {

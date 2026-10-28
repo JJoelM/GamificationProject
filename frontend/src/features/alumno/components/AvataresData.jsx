@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * AVATARES_RPG — Colección de arquetipos y avatares con ilustraciones SVG Painterly RPG
+ * AVATARES_RPG — Colección de avatares con ilustraciones SVG Painterly RPG
  */
 export const AVATARES_RPG = [
   {

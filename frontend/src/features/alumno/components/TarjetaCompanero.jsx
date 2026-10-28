@@ -12,7 +12,7 @@ const MASCOTAS_INFO = {
   buho: {
     id: 'buho',
     nombre: 'Búho Erudito',
-    arquetipo: 'Centinela de la Sabiduría',
+    rol: 'Centinela de la Sabiduría',
     imagenSrc: '/images/mascotas/buho.png',
     colorAura: 'from-amber-500/20 to-sky-500/20',
     colorBorde: 'border-amber-500',
@@ -22,7 +22,7 @@ const MASCOTAS_INFO = {
   dragon: {
     id: 'dragon',
     nombre: 'Dragón Guardián',
-    arquetipo: 'Protector del Coraje',
+    rol: 'Protector del Coraje',
     imagenSrc: '/images/mascotas/dragon.png',
     colorAura: 'from-red-500/20 to-orange-500/20',
     colorBorde: 'border-orange-500',
@@ -32,7 +32,7 @@ const MASCOTAS_INFO = {
   gato: {
     id: 'gato',
     nombre: 'Gato Místico',
-    arquetipo: 'Guía de la Serenidad',
+    rol: 'Guía de la Serenidad',
     imagenSrc: '/images/mascotas/gato.png',
     colorAura: 'from-pink-500/20 to-purple-500/20',
     colorBorde: 'border-pink-500',
@@ -132,7 +132,7 @@ function TarjetaCompanero() {
             {infoMascota.nombre}
           </h4>
           <span className="text-xs font-display font-bold text-[var(--text-secondary)]">
-            {infoMascota.arquetipo}
+            {infoMascota.rol}
           </span>
 
           <button
