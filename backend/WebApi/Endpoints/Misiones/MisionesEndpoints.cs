@@ -103,11 +103,13 @@ public static class MisionesEndpoints
         .WithName("DefinirMisionesSugeridas")
         .RequireAuthorization(p => p.RequireRole("Docente"));
 
-        // Sin route param docenteId: siempre "mis propios" borradores, nunca
-        // los de otro docente pasado a mano en la URL.
-        grupo.MapGet("/borradores", async (ClaimsPrincipal usuario, IMediator mediator) =>
+        // Sin route param docenteId: siempre "mis propios" borradores, con filtro opcional por aula
+        grupo.MapGet("/borradores", async (
+            [Microsoft.AspNetCore.Mvc.FromQuery] Guid? aulaId,
+            ClaimsPrincipal usuario,
+            IMediator mediator) =>
         {
-            var borradores = await mediator.Send(new ObtenerBorradoresPendientesQuery(usuario.ObtenerUsuarioId()));
+            var borradores = await mediator.Send(new ObtenerBorradoresPendientesQuery(usuario.ObtenerUsuarioId(), aulaId));
             return Results.Ok(borradores);
         })
         .WithName("ObtenerBorradoresPendientes")

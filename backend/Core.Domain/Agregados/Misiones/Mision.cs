@@ -15,6 +15,7 @@ public sealed class Mision : AgregadoRaiz
     public string PayloadJson { get; private set; } = default!;
     public int NivelConfianzaIA { get; private set; }
     public int RecompensaXp { get; private set; }
+    public Guid? MisionOrigenId { get; private set; }
 
     private readonly List<Guid> _misionesSugeridas = new();
     public IReadOnlyList<Guid> MisionesSugeridas => _misionesSugeridas;
@@ -40,7 +41,8 @@ public sealed class Mision : AgregadoRaiz
         string payloadJson,
         int nivelConfianzaIA,
         int recompensaXpSugerida,
-        Guid? misionId = null)
+        Guid? misionId = null,
+        Guid? misionOrigenId = null)
     {
         if (nivelConfianzaIA is < 0 or > 100)
             throw new ArgumentOutOfRangeException(nameof(nivelConfianzaIA), "Debe estar entre 0 y 100.");
@@ -50,7 +52,7 @@ public sealed class Mision : AgregadoRaiz
         var mision = new Mision { Id = misionId ?? Guid.NewGuid() };
         mision.RegistrarEvento(new MisionGenerada(
             mision.Id, docenteId, aulaId, temaCurricular, textoFuente, narrativa,
-            tipoPlantilla, payloadJson, nivelConfianzaIA, recompensaXpSugerida, DateTime.UtcNow));
+            tipoPlantilla, payloadJson, nivelConfianzaIA, recompensaXpSugerida, DateTime.UtcNow, misionOrigenId));
         return mision;
     }
 
@@ -266,6 +268,7 @@ public sealed class Mision : AgregadoRaiz
                 NivelConfianzaIA = e.NivelConfianzaIA;
                 RecompensaXp = e.RecompensaXpSugerida;
                 Estado = EstadoMision.Generada;
+                MisionOrigenId = e.MisionOrigenId;
                 break;
 
             case MisionEditada e:

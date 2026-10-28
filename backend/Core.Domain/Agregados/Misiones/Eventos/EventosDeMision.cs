@@ -21,7 +21,8 @@ public sealed record MisionGenerada(
     string PayloadJson,
     int NivelConfianzaIA,
     int RecompensaXpSugerida,
-    DateTime OcurridoEn) : IEventoDominio;
+    DateTime OcurridoEn,
+    Guid? MisionOrigenId = null) : IEventoDominio;
 
 // Se dispara cada vez que el docente guarda un cambio sobre una mision todavia
 // pendiente de revision. Es intencional que sea un evento propio y no parte de

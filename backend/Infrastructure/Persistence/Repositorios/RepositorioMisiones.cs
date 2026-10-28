@@ -69,7 +69,8 @@ public class RepositorioMisiones : IRepositorioMisiones
             case MisionGenerada e:
                 _db.BorradoresIA.Add(new BorradorIA(
                     e.MisionId, e.DocenteId, e.AulaId, e.TemaCurricular, e.Narrativa,
-                    e.TipoPlantilla, e.PayloadJson, e.NivelConfianzaIA, e.RecompensaXpSugerida));
+                    e.TipoPlantilla, e.PayloadJson, e.NivelConfianzaIA, e.RecompensaXpSugerida,
+                    e.MisionOrigenId));
                 break;
 
             case MisionEditada e:
@@ -106,7 +107,8 @@ public class RepositorioMisiones : IRepositorioMisiones
                     _db.MisionesActivas.Add(new MisionActiva(
                         e.MisionId, borradorValidado.DocenteId, borradorValidado.AulaId,
                         borradorValidado.Narrativa, borradorValidado.TipoPlantilla,
-                        payloadAlumno, borradorValidado.RecompensaXpSugerida));
+                        payloadAlumno, borradorValidado.RecompensaXpSugerida,
+                        borradorValidado.MisionOrigenId));
                 }
 
                 // Generación automática de FichaGrimorio si no existe

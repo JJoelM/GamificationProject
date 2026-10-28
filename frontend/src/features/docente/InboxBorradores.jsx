@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Inbox, Sparkles, Plus, PartyPopper, CheckCircle2, EyeOff, BookOpen, Clock, AlertTriangle
+  Inbox, Sparkles, Plus, PartyPopper, CheckCircle2, EyeOff, BookOpen, Clock, AlertTriangle, Download
 } from 'lucide-react';
 
 import { useBorradoresDocente } from '../../hooks/useMisiones';
@@ -10,15 +10,19 @@ import { useOcultarMision, useRepublicarMision } from '../../hooks/useCamino';
 import TarjetaBorrador from './components/TarjetaBorrador';
 import FormGenerarMision from './components/FormGenerarMision';
 import ModalPreviewAlumno from './components/ModalPreviewAlumno';
+import ModalImportarMisiones from './components/ModalImportarMisiones';
 import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
 import Spinner from '../../components/ui/Spinner';
 import ErrorBanner from '../../components/ui/ErrorBanner';
 import Modal from '../../components/ui/Modal';
-import { playParchment } from '../../utils/audio';
+import { playParchment, playSuccess } from '../../utils/audio';
 
 /**
- * InboxBorradores v3 — Bandeja de entrada de misiones y gestión curricular para Docentes.
- * - Subpestañas: Por Validar (Borradores IA) | Validadas (Activas en Aula) | Ocultas
+ * InboxBorradores v4 — Bandeja de entrada de misiones y gestión curricular para Docentes.
+ * - Subpestañas claras: Por Validar (Borradores IA) | Validadas (Activas en Aula) | Ocultas
+ * - Misiones filtradas por el aula activa seleccionada
+ * - Importación de misiones entre aulas propias con remapeo de DAG
  * - Previsualizador interactivo de misiones como alumno
  * - Acciones de ciclo de vida: Validar, Rechazar, Editar, Ocultar, Republicar
  */
@@ -31,6 +35,7 @@ function InboxBorradores() {
 
   const [tabActiva, setTabActiva] = useState('Pendiente'); // 'Pendiente' | 'Validado' | 'Oculto'
   const [isGenerarOpen, setIsGenerarOpen] = useState(false);
+  const [isImportarOpen, setIsImportarOpen] = useState(false);
   const [misionARechazar, setMisionARechazar] = useState(null);
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [actionMisionId, setActionMisionId] = useState(null);
@@ -110,14 +115,26 @@ function InboxBorradores() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <Inbox className="text-[var(--brand-primary)]" size={24} />
+          <div className="flex flex-wrap items-center gap-2.5 mb-1">
+            <Inbox className="text-[var(--brand-primary)] shrink-0" size={24} />
             <h1 className="font-display font-bold text-2xl text-[var(--text-primary)]">
               Inbox de Misiones
             </h1>
+            <Badge variant="info">
+              {todos.length} {todos.length === 1 ? 'misión en total' : 'misiones en total'}
+            </Badge>
+            {pendientes.length > 0 ? (
+              <Badge variant="racha" glow>
+                {pendientes.length} {pendientes.length === 1 ? 'por validar' : 'por validar'}
+              </Badge>
+            ) : (
+              <Badge variant="correcto">Al día</Badge>
+            )}
           </div>
           <p className="text-sm text-[var(--text-secondary)]">
-            Gestión y revisión pedagógica: validá borradores generados por la IA o administrá las misiones activas y ocultas de tus aulas.
+            {pendientes.length > 0
+              ? `Tenés ${todos.length} ${todos.length === 1 ? 'misión registrada' : 'misiones registradas'} en este aula (${pendientes.length} ${pendientes.length === 1 ? 'borrador pendiente de validación' : 'borradores pendientes de validación'}).`
+              : `Tenés ${todos.length} ${todos.length === 1 ? 'misión registrada' : 'misiones registradas'} en este aula. Todas las misiones están al día.`}
           </p>
           {tabActiva === 'Pendiente' && cantBajaConfianza > 0 && (
             <p className="text-xs text-[var(--brand-gold)] font-display font-semibold mt-1">
@@ -126,10 +143,31 @@ function InboxBorradores() {
           )}
         </div>
 
-        <Button variant="primary" onClick={() => setIsGenerarOpen(true)} className="whitespace-nowrap">
-          <Sparkles size={16} className="text-[#FCD34D]" />
-          Generar con IA
-        </Button>
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2.5 self-start sm:self-auto shrink-0">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              playParchment();
+              setIsImportarOpen(true);
+            }}
+            className="w-full sm:w-auto whitespace-nowrap justify-center"
+          >
+            <Download size={16} />
+            <span>Importar Misiones</span>
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => {
+              playParchment();
+              setIsGenerarOpen(true);
+            }}
+            className="w-full sm:w-auto whitespace-nowrap justify-center"
+          >
+            <Sparkles size={16} className="text-[#FCD34D]" />
+            <span>Generar con IA</span>
+          </Button>
+        </div>
       </div>
 
       {currentError && <ErrorBanner error={currentError} onDismiss={dismissError} />}
@@ -138,7 +176,7 @@ function InboxBorradores() {
       <div className="flex items-center gap-2 border-b-2 border-[var(--border-muted)] pb-2 overflow-x-auto">
         <button
           onClick={() => handleCambiarTab('Pendiente')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-display font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-display font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             tabActiva === 'Pendiente'
               ? 'bg-[var(--brand-primary)] text-white shadow-[0_2px_8px_rgba(230,81,0,0.3)]'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel)]'
@@ -159,7 +197,7 @@ function InboxBorradores() {
 
         <button
           onClick={() => handleCambiarTab('Validado')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-display font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-display font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             tabActiva === 'Validado'
               ? 'bg-[var(--brand-emerald)] text-white shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel)]'
@@ -180,7 +218,7 @@ function InboxBorradores() {
 
         <button
           onClick={() => handleCambiarTab('Oculto')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-display font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-display font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             tabActiva === 'Oculto'
               ? 'bg-slate-700 text-white shadow-[0_2px_8px_rgba(71,85,105,0.3)]'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel)]'
@@ -208,25 +246,15 @@ function InboxBorradores() {
       ) : listaFiltrada.length === 0 ? (
         /* Estados vacíos según pestaña */
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 22 }}
-          className="flex flex-col items-center justify-center text-center p-12 gap-5 rounded-[16px_20px_18px_18px] border-2 border-dashed border-[var(--border)] bg-[var(--bg-panel)]"
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center justify-center p-12 text-center rounded-[24px_32px_26px_30px] border-2 border-dashed border-[var(--border-muted)] bg-[var(--bg-panel)] mt-2"
         >
           {tabActiva === 'Pendiente' ? (
             <>
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-2 border-[var(--brand-emerald)] flex items-center justify-center">
-                  <PartyPopper size={34} className="text-[var(--brand-emerald)]" />
-                </div>
-                {['top-0 right-0', 'bottom-1 left-0', 'top-2 left-[-4px]'].map((pos, i) => (
-                  <motion.div
-                    key={i}
-                    className={`absolute ${pos} w-3 h-3 rounded-full bg-[var(--brand-gold)]`}
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.6, 1, 0.6] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
-                  />
-                ))}
+              <div className="w-16 h-16 rounded-full bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] flex items-center justify-center mb-4 text-[var(--brand-emerald)]">
+                <PartyPopper size={32} />
               </div>
 
               <div className="max-w-sm">
@@ -234,11 +262,15 @@ function InboxBorradores() {
                   ¡Bandeja al día! 🎉
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  No hay misiones pendientes de revisión. Tu criterio pedagógico está al día. Podés pedirle a la IA que genere un nuevo borrador a partir de material educativo.
+                  No hay misiones pendientes de revisión en este aula. Podés pedirle a la IA que genere un nuevo borrador o importar misiones ya validadas de tus otras aulas.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <Button variant="ghost" onClick={() => setIsImportarOpen(true)}>
+                  <Download size={16} />
+                  Importar misiones
+                </Button>
                 <Button variant="primary" onClick={() => setIsGenerarOpen(true)}>
                   <Plus size={16} />
                   Crear nueva misión
@@ -302,6 +334,16 @@ function InboxBorradores() {
         onClose={() => setIsGenerarOpen(false)}
       />
 
+      {/* Modal de Importar Misiones entre Aulas */}
+      <ModalImportarMisiones
+        isOpen={isImportarOpen}
+        onClose={() => setIsImportarOpen(false)}
+        onImportada={() => {
+          setTabActiva('Pendiente');
+          refetch();
+        }}
+      />
+
       {/* Modal de Rechazo */}
       <Modal
         isOpen={Boolean(misionARechazar)}
@@ -310,21 +352,18 @@ function InboxBorradores() {
         size="md"
       >
         <form onSubmit={handleConfirmRechazar} className="flex flex-col gap-4">
-          <p className="text-sm text-[var(--text-secondary)]">
-            Indicá el motivo del rechazo. Esto le permite al sistema mejorar los prompts de generación con el tiempo.
+          <p className="text-xs text-[var(--text-secondary)]">
+            Al rechazar este borrador, dejará de figurar en tu bandeja y quedará registrado el motivo en el Ledger de auditoría HITL.
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="motivo"
-              className="text-xs font-display font-semibold text-[var(--text-primary)] uppercase tracking-wider"
-            >
-              Motivo de rechazo
+            <label htmlFor="motivo" className="text-xs font-display font-bold uppercase tracking-wider text-[var(--text-primary)]">
+              Motivo del rechazo
             </label>
             <textarea
               id="motivo"
-              required
               rows={3}
+              required
               value={motivoRechazo}
               onChange={(e) => setMotivoRechazo(e.target.value)}
               placeholder="Ej: El contenido no corresponde al nivel pedagógico de este grado..."

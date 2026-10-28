@@ -13,12 +13,14 @@ public class BorradorIA
     public int RecompensaXpSugerida { get; private set; }
     public string EstadoValidacion { get; private set; } = "Pendiente";
     public string? MotivoRechazo { get; private set; }
+    public Guid? MisionOrigenId { get; private set; }
 
     private BorradorIA() { }
 
     public BorradorIA(
         Guid misionId, Guid docenteId, Guid aulaId, string temaCurricular, string narrativa,
-        string tipoPlantilla, string payloadJson, int nivelConfianzaIA, int recompensaXpSugerida)
+        string tipoPlantilla, string payloadJson, int nivelConfianzaIA, int recompensaXpSugerida,
+        Guid? misionOrigenId = null)
     {
         MisionId = misionId;
         DocenteId = docenteId;
@@ -29,6 +31,7 @@ public class BorradorIA
         PayloadJson = payloadJson;
         NivelConfianzaIA = nivelConfianzaIA;
         RecompensaXpSugerida = recompensaXpSugerida;
+        MisionOrigenId = misionOrigenId;
     }
 
     public void Actualizar(string narrativa, string payloadJson, int recompensaXp)
@@ -62,12 +65,14 @@ public class MisionActiva
     public string PayloadJson { get; private set; } = default!;
     public int RecompensaXp { get; private set; }
     public bool EstaVisible { get; private set; } = true;
+    public Guid? MisionOrigenId { get; private set; }
 
     private MisionActiva() { }
 
     public MisionActiva(
         Guid misionId, Guid docenteId, Guid aulaId, string narrativa,
-        string tipoPlantilla, string payloadJson, int recompensaXp)
+        string tipoPlantilla, string payloadJson, int recompensaXp,
+        Guid? misionOrigenId = null)
     {
         MisionId = misionId;
         DocenteId = docenteId;
@@ -76,6 +81,7 @@ public class MisionActiva
         TipoPlantilla = tipoPlantilla;
         PayloadJson = payloadJson;
         RecompensaXp = recompensaXp;
+        MisionOrigenId = misionOrigenId;
     }
 
     // Al editar una misión ya validada, los alumnos
