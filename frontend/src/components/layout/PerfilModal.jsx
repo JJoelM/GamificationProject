@@ -59,7 +59,12 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
   return (
     <>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {errorDatos && <ErrorBanner error={errorDatos} />}
+        {errorDatos && (
+          <div className="p-3 rounded-xl bg-[var(--brand-crimson)]/10 border border-[var(--brand-crimson)]/30 text-[var(--brand-crimson)] text-xs font-display font-semibold flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0" />
+            <span>{errorDatos.detail || errorDatos.title || errorDatos.message || 'Error al actualizar los datos.'}</span>
+          </div>
+        )}
         {exito && (
           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-display font-bold flex items-center gap-2">
             <Check size={16} />
@@ -206,7 +211,7 @@ export default function PerfilModal({ isOpen, onClose }) {
   const { data: misDatos, isLoading, isError, error, refetch } = useMisDatos();
   const { mutate: actualizarDatos, isPending: isGuardandoDatos, error: errorDatos } = useActualizarMisDatos();
   const { mutate: cambiarPassword, isPending: isCambiandoPass, error: errorPass } = useCambiarPassword();
-  const { mutate: eliminarCuenta, isPending: isEliminando } = useEliminarMiCuenta();
+  const { mutate: eliminarCuenta, isPending: isEliminando, error: errorEliminar } = useEliminarMiCuenta();
 
   const [tabActiva, setTabActiva] = useState('datos'); // 'datos' | 'seguridad' | 'peligro'
 
@@ -336,7 +341,12 @@ export default function PerfilModal({ isOpen, onClose }) {
             {/* ── TAB 2: SEGURIDAD & CONTRASEÑA ── */}
             {tabActiva === 'seguridad' && (
               <form onSubmit={handleCambiarPassword} className="flex flex-col gap-4">
-                {errorPass && <ErrorBanner error={errorPass} />}
+                {errorPass && (
+                  <div className="p-3 rounded-xl bg-[var(--brand-crimson)]/10 border border-[var(--brand-crimson)]/30 text-[var(--brand-crimson)] text-xs font-display font-semibold flex items-center gap-2">
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>{errorPass.detail || errorPass.title || errorPass.message || 'La contraseña actual no es correcta.'}</span>
+                  </div>
+                )}
                 {errorLocalPass && (
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-display font-semibold flex items-center gap-2">
                     <AlertTriangle size={16} className="shrink-0" />
@@ -418,6 +428,13 @@ export default function PerfilModal({ isOpen, onClose }) {
             {/* ── TAB 3: ZONA DE PELIGRO (ELIMINAR CUENTA) ── */}
             {tabActiva === 'peligro' && (
               <div className="flex flex-col gap-4">
+                {errorEliminar && (
+                  <div className="p-3 rounded-xl bg-[var(--brand-crimson)]/10 border border-[var(--brand-crimson)]/30 text-[var(--brand-crimson)] text-xs font-display font-semibold flex items-center gap-2">
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>{errorEliminar.detail || errorEliminar.title || errorEliminar.message || 'No se pudo dar de baja la cuenta.'}</span>
+                  </div>
+                )}
+
                 <div className="p-4 rounded-xl border-2 border-[var(--brand-crimson)]/30 bg-[var(--brand-crimson)]/5 flex flex-col gap-2">
                   <div className="flex items-center gap-2 text-[var(--brand-crimson)] font-display font-bold text-sm">
                     <AlertTriangle size={18} />
