@@ -81,8 +81,8 @@ const METADATOS_VISUALES = {
     rareza: 'Compañero Místico',
     colorRareza: 'text-[var(--brand-primary)]',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-1 overflow-hidden shadow-sm`}>
-        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-xl" />
+      <div className={`${className} flex items-center justify-center rounded-full bg-amber-500/10 border-2 border-[var(--brand-gold)] p-0.5 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-full" />
       </div>
     ),
   },
@@ -91,8 +91,8 @@ const METADATOS_VISUALES = {
     rareza: 'Compañero Místico',
     colorRareza: 'text-orange-500',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-orange-500/10 border-2 border-orange-500/40 p-1 overflow-hidden shadow-sm`}>
-        <img src="/images/mascotas/dragon.png" alt="Dragón Guardián" className="w-full h-full object-cover rounded-xl" />
+      <div className={`${className} flex items-center justify-center rounded-full bg-orange-500/10 border-2 border-orange-500 p-0.5 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/dragon.png" alt="Dragón Guardián" className="w-full h-full object-cover rounded-full" />
       </div>
     ),
   },
@@ -101,8 +101,8 @@ const METADATOS_VISUALES = {
     rareza: 'Compañero Místico',
     colorRareza: 'text-pink-500',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-pink-500/10 border-2 border-pink-500/40 p-1 overflow-hidden shadow-sm`}>
-        <img src="/images/mascotas/gato.png" alt="Gato Místico" className="w-full h-full object-cover rounded-xl" />
+      <div className={`${className} flex items-center justify-center rounded-full bg-pink-500/10 border-2 border-pink-500 p-0.5 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/gato.png" alt="Gato Místico" className="w-full h-full object-cover rounded-full" />
       </div>
     ),
   },
@@ -111,8 +111,8 @@ const METADATOS_VISUALES = {
     rareza: 'Compañero Místico',
     colorRareza: 'text-[var(--brand-primary)]',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-1 overflow-hidden shadow-sm`}>
-        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-xl" />
+      <div className={`${className} flex items-center justify-center rounded-full bg-amber-500/10 border-2 border-[var(--brand-gold)] p-0.5 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-full" />
       </div>
     ),
   },

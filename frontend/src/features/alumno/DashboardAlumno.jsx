@@ -8,6 +8,7 @@ import { useMisAulas } from '../../hooks/useAulas';
 import useSessionStore from '../../store/useSessionStore';
 import HojaPersonaje from './components/HojaPersonaje';
 import RankingAula from './components/RankingAula';
+import TarjetaCompanero from './components/TarjetaCompanero';
 import VitrinaLogros from './components/VitrinaLogros';
 import TarjetaMision from './components/TarjetaMision';
 import ResolverMision from './components/ResolverMision';
@@ -162,13 +163,14 @@ function DashboardAlumno() {
           )}
         </div>
 
-        {/* Columna derecha (1/3): Ranking */}
+        {/* Columna derecha (1/3): Compañero Leal + Ranking */}
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.15 }}
-          className="lg:col-span-1"
+          className="lg:col-span-1 flex flex-col gap-6"
         >
+          <TarjetaCompanero />
           <RankingAula mejoraSemanal={28} />
         </motion.div>
       </div>

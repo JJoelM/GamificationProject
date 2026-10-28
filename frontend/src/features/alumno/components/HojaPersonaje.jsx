@@ -139,14 +139,14 @@ function HojaPersonaje() {
             {mascotaVisual && (
               <motion.div
                 initial={{ y: 0 }}
-                animate={{ y: [-3, 3, -3] }}
-                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                className="absolute -top-3 -right-3 z-20 flex items-center justify-center p-1.5 rounded-2xl bg-[var(--bg-panel)] border-2 border-[var(--brand-violet)] shadow-[3px_3px_0px_var(--brand-violet)] cursor-pointer group-hover:scale-110 transition-transform"
-                title={`Mascota leal: ${mascotaVisual.nombre}`}
+                animate={{ y: [-4, 4, -4] }}
+                transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
+                className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 z-20 flex items-center justify-center p-1 rounded-full bg-[var(--bg-panel)] border-3 border-[var(--brand-gold)] shadow-[0_6px_16px_rgba(0,0,0,0.35),2px_2px_0px_#000] cursor-pointer hover:scale-115 transition-transform"
+                title={`Compañero leal: ${mascotaVisual.nombre}`}
               >
-                <div className="w-10 h-10 overflow-hidden rounded-xl flex items-center justify-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 overflow-hidden rounded-full flex items-center justify-center bg-gradient-to-tr from-amber-500/20 to-purple-500/20">
                   {mascotaVisual.imagenSrc ? (
-                    <img src={mascotaVisual.imagenSrc} alt={mascotaVisual.nombre} className="w-full h-full object-cover rounded-xl" />
+                    <img src={mascotaVisual.imagenSrc} alt={mascotaVisual.nombre} className="w-full h-full object-cover rounded-full" />
                   ) : (
                     <mascotaVisual.IconoVisual className="w-full h-full" />
                   )}

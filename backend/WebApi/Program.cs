@@ -219,14 +219,6 @@ if (app.Environment.IsDevelopment())
     if (personaje is null)
     {
         personaje = Core.Domain.Agregados.Personajes.Personaje.Iniciar(alumnoId, aulaId);
-        personaje.RegistrarResolucionDeMision(
-            Guid.NewGuid(), 150, 750, 100, DateOnly.FromDateTime(DateTime.UtcNow));
-        repoPersonajes.GuardarAsync(personaje).GetAwaiter().GetResult();
-    }
-    else if (personaje.PuntosAccionAP < 250)
-    {
-        personaje.RegistrarResolucionDeMision(
-            Guid.NewGuid(), 0, 750, 100, DateOnly.FromDateTime(DateTime.UtcNow));
         repoPersonajes.GuardarAsync(personaje).GetAwaiter().GetResult();
     }
 

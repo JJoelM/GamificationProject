@@ -25,6 +25,7 @@ public sealed class Personaje : AgregadoRaiz
 
     private readonly Dictionary<Guid, int> _intentosPorMision = new();
     private int _misionesCompletadas;
+    public int MisionesCompletadas => _misionesCompletadas;
 
     private Personaje() { }
 

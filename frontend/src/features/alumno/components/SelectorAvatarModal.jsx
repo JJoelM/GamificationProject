@@ -149,7 +149,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
             {/* Mascota en la esquina si está seleccionada */}
             {mascotaObj?.imagenSrc && (
               <div
-                className="absolute -top-2 -right-2 z-20 w-10 h-10 rounded-full border-2 border-[var(--brand-gold)] shadow-md overflow-hidden bg-[var(--bg-panel)] p-0.5"
+                className="absolute -top-2.5 -right-2.5 z-20 w-12 h-12 rounded-full border-3 border-[var(--brand-gold)] shadow-[0_4px_12px_rgba(0,0,0,0.35)] overflow-hidden bg-[var(--bg-panel)] p-0.5"
                 title={`Mascota: ${mascotaObj.nombre}`}
               >
                 <img src={mascotaObj.imagenSrc} alt={mascotaObj.nombre} className="w-full h-full object-cover rounded-full" />
