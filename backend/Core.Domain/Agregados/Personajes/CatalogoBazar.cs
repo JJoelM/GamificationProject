@@ -12,7 +12,9 @@ public static class CatalogoBazar
         new("pista", "Pista", TipoArticulo.Pista, 15),
         new("escudo-racha", "Escudo de racha", TipoArticulo.EscudoRacha, 50),
 
-        // Avatares RPG Oficiales (sin duplicados)
+        // Avatares RPG Oficiales (7 avatares únicos coincidentes con Personalizar Identidad)
+        new("erudito_arcano", "Erudito Arcano", TipoArticulo.Avatar, 0),
+        new("exploradora_reliquias", "Exploradora de Reliquias", TipoArticulo.Avatar, 0),
         new("alquimista_botanica", "Alquimista Botánica", TipoArticulo.Avatar, 40),
         new("avatar_arquera", "Arquera Silvana", TipoArticulo.Avatar, 50),
         new("artifice_runico", "Artífice Rúnico", TipoArticulo.Avatar, 60),

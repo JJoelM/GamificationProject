@@ -119,20 +119,77 @@ public class PersonajeBazarTests
     }
 
     [Fact]
-    public void CatalogoBazar_ArqueraYAlquimistaSonArticulosDistintos()
+    public void CatalogoBazar_AvataresOficiales_SonExactamenteSiete_SinDuplicados()
     {
+        var avatares = CatalogoBazar.Todos.Where(a => a.Tipo == TipoArticulo.Avatar).ToList();
+
+        // Exactamente 7 avatares oficiales (coincidentes 1:1 con la grilla de personalización)
+        Assert.Equal(7, avatares.Count);
+
+        // Sin duplicados de identificador ni de nombre
+        var idsUnicos = avatares.Select(a => a.Id).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var nombresUnicos = avatares.Select(a => a.Nombre).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        Assert.Equal(7, idsUnicos.Count);
+        Assert.Equal(7, nombresUnicos.Count);
+
+        // Ningún identificador antiguo/duplicado debe estar expuesto en el catálogo
+        var idsProhibidos = new[] { "avatar_guerrero", "avatar-explorador", "avatar_mago", "mago_sideral" };
+        foreach (var idProhibido in idsProhibidos)
+        {
+            Assert.DoesNotContain(avatares, a => string.Equals(a.Id, idProhibido, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Cada arquetipo oficial debe estar presente
+        var idsEsperados = new[]
+        {
+            "erudito_arcano",
+            "exploradora_reliquias",
+            "alquimista_botanica",
+            "avatar_arquera",
+            "artifice_runico",
+            "caballera_astral",
+            "archimago_solar"
+        };
+        foreach (var idEsperado in idsEsperados)
+        {
+            Assert.Contains(avatares, a => string.Equals(a.Id, idEsperado, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    [Fact]
+    public void CatalogoBazar_MapeoDeAliasesHeredados_ResuelveArquetipoOficial()
+    {
+        // Aliases heredados resuelven a sus arquetipos oficiales y no colisionan
+        Assert.Equal("exploradora_reliquias", CatalogoBazar.Buscar("avatar-explorador")?.Id);
+        Assert.Equal("caballera_astral", CatalogoBazar.Buscar("avatar_guerrero")?.Id);
+        Assert.Equal("erudito_arcano", CatalogoBazar.Buscar("avatar_mago")?.Id);
+        Assert.Equal("archimago_solar", CatalogoBazar.Buscar("mago_sideral")?.Id);
+        Assert.Equal("avatar_arquera", CatalogoBazar.Buscar("arquera_silvana")?.Id);
+        Assert.Equal("avatar_arquera", CatalogoBazar.Buscar("arquera")?.Id);
+
+        // Arquera y Alquimista son entidades estrictamente independientes
         var arquera = CatalogoBazar.Buscar("avatar_arquera");
         var alquimista = CatalogoBazar.Buscar("alquimista_botanica");
-
         Assert.NotNull(arquera);
         Assert.NotNull(alquimista);
         Assert.NotEqual(arquera.Id, alquimista.Id);
         Assert.Equal("Arquera Silvana", arquera.Nombre);
         Assert.Equal("Alquimista Botánica", alquimista.Nombre);
+    }
 
-        // Alias
-        var aliasArquera = CatalogoBazar.Buscar("arquera_silvana");
-        Assert.NotNull(aliasArquera);
-        Assert.Equal(arquera.Id, aliasArquera.Id);
+    [Fact]
+    public void CatalogoBazar_MascotasYConsumibles_CumplenEspecificacionOficial()
+    {
+        var mascotas = CatalogoBazar.Todos.Where(a => a.Tipo == TipoArticulo.Mascota).ToList();
+        Assert.Equal(3, mascotas.Count);
+        Assert.All(mascotas, m => Assert.Equal(250, m.CostoAp));
+        Assert.Contains(mascotas, m => m.Id == "buho");
+        Assert.Contains(mascotas, m => m.Id == "dragon");
+        Assert.Contains(mascotas, m => m.Id == "gato");
+
+        var consumibles = CatalogoBazar.Todos.Where(a => a.Tipo is TipoArticulo.Pista or TipoArticulo.EscudoRacha).ToList();
+        Assert.Equal(2, consumibles.Count);
+        Assert.Equal(15, CatalogoBazar.Buscar("pista")?.CostoAp);
+        Assert.Equal(50, CatalogoBazar.Buscar("escudo-racha")?.CostoAp);
     }
 }
