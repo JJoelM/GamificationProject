@@ -62,8 +62,47 @@ const navLinkActive = [
   'shadow-[2px_2px_0px_var(--brand-primary)]',
 ].join(' ');
 
+function MentorHombreSvg({ className = 'w-full h-full' }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} fill="none">
+      <circle cx="50" cy="50" r="46" fill="#1E1B4B" />
+      <path d="M22 88 Q50 64 78 88 L72 100 L28 100 Z" fill="#1E3A8A" />
+      <path d="M50 70 L50 96 M36 82 L50 88 M64 82 L50 88" stroke="#93C5FD" strokeWidth="1.5" />
+      <circle cx="50" cy="46" r="18" fill="#FDE68A" />
+      <circle cx="43" cy="45" r="2" fill="#1E1B4B" />
+      <circle cx="57" cy="45" r="2" fill="#1E1B4B" />
+      <path d="M40 40 Q44 38 47 41" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M60 40 Q56 38 53 41" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M38 48 Q50 76 62 48 Q58 58 50 64 Q42 58 38 48 Z" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="1" />
+      <path d="M26 36 Q50 20 74 36 L70 42 Q50 28 30 42 Z" fill="#2563EB" stroke="#60A5FA" strokeWidth="1.5" />
+      <circle cx="50" cy="24" r="4" fill="#FCD34D" stroke="#D97706" strokeWidth="1" />
+    </svg>
+  );
+}
+
+function MentoraMujerSvg({ className = 'w-full h-full' }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} fill="none">
+      <circle cx="50" cy="50" r="46" fill="#2E1065" />
+      <path d="M22 88 Q50 64 78 88 L72 100 L28 100 Z" fill="#581C87" />
+      <path d="M50 70 L50 96 M36 82 L50 88 M64 82 L50 88" stroke="#C084FC" strokeWidth="1.5" />
+      <path d="M32 38 Q24 64 32 76 Q38 56 36 38 Z" fill="#3B0764" />
+      <path d="M68 38 Q76 64 68 76 Q62 56 64 38 Z" fill="#3B0764" />
+      <circle cx="50" cy="46" r="18" fill="#FDE68A" />
+      <circle cx="43" cy="45" r="2.5" fill="#2E1065" />
+      <circle cx="57" cy="45" r="2.5" fill="#2E1065" />
+      <circle cx="44" cy="44" r="1" fill="#FFFFFF" />
+      <circle cx="58" cy="44" r="1" fill="#FFFFFF" />
+      <path d="M46 54 Q50 57 54 54" stroke="#9A3412" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M28 36 Q50 24 72 36" stroke="#FCD34D" strokeWidth="2.5" fill="none" />
+      <polygon points="50,22 54,28 50,34 46,28" fill="#A855F7" stroke="#FCD34D" strokeWidth="1" />
+      <circle cx="50" cy="28" r="1.5" fill="#FFFFFF" />
+    </svg>
+  );
+}
+
 function SidebarContent({ onCloseMobile }) {
-  const { usuario, clearUsuario, resetearProgreso } = useSessionStore();
+  const { usuario, logout, mentorAvatar = 'hombre', setMentorAvatar } = useSessionStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
@@ -91,9 +130,7 @@ function SidebarContent({ onCloseMobile }) {
     }
     // Limpiar caché completa de React Query y storage local para evitar fugas entre cuentas
     queryClient.clear();
-    useSessionStore.persist.clearStorage();
-    resetearProgreso();
-    clearUsuario();
+    logout();
     onCloseMobile?.();
     navigate('/');
   };
@@ -181,15 +218,47 @@ function SidebarContent({ onCloseMobile }) {
       </nav>
 
       {/* ── ArtFrame decorativo ── */}
-      <div className="px-5 pb-2">
+      <div className="px-5 pb-2 flex flex-col items-center gap-1.5">
         <ArtFrame
-          label={rol === 'Alumno' ? 'Tu Personaje' : 'Arte: Mentor'}
+          label={rol === 'Alumno' ? 'Tu Personaje' : `Arte: Mentor (${mentorAvatar === 'mujer' ? 'Mentora' : 'Mentor'})`}
           shape="scroll"
           aspectRatio="1/1"
           avatarId={rol === 'Alumno' ? (useSessionStore.getState().avatarEquipado || 'erudito_arcano') : null}
           auraColor={rol === 'Alumno' ? useSessionStore.getState().auraColor : null}
-          className="w-20 mx-auto opacity-90"
-        />
+          className="w-20 mx-auto opacity-95 shadow-sm"
+        >
+          {rol === 'Docente' && (
+            mentorAvatar === 'mujer' ? <MentoraMujerSvg /> : <MentorHombreSvg />
+          )}
+        </ArtFrame>
+
+        {/* Selector de Mentor interactivo para Docente */}
+        {rol === 'Docente' && (
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-muted)] text-[10px] font-display font-bold">
+            <button
+              type="button"
+              onClick={() => { playParchment(); setMentorAvatar('hombre'); }}
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                mentorAvatar === 'hombre'
+                  ? 'bg-[var(--brand-primary)] text-white shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              🧙‍♂️ Mentor
+            </button>
+            <button
+              type="button"
+              onClick={() => { playParchment(); setMentorAvatar('mujer'); }}
+              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                mentorAvatar === 'mujer'
+                  ? 'bg-[var(--brand-violet)] text-white shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              🧙‍♀️ Mentora
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Footer: Mi Perfil y Cerrar sesión ── */}

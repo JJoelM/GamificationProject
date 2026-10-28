@@ -58,8 +58,9 @@ const useSessionStore = create(
     (set, get) => ({
       // ── Sesión y Preferencias Persistidas ──
       usuario: null,
-      aulaActivaId: MOCK_IDS.aulaId || '33333333-3333-3333-3333-333333333333',
+      aulaActivaId: null,
       codigoInvitacionAula: null,
+      mentorAvatar: 'hombre', // 'hombre' | 'mujer'
       theme: 'light',
       soundEnabled: true,
 
@@ -69,18 +70,45 @@ const useSessionStore = create(
       // ── Acciones de autenticación y sesión ──
       setUsuario: (usuario) => {
         if (!usuario) {
-          set({ usuario: null, ...PROGRESION_BASE });
+          try {
+            useSessionStore.persist.clearStorage();
+          } catch {
+            /* ignore */
+          }
+          set({
+            usuario: null,
+            aulaActivaId: null,
+            codigoInvitacionAula: null,
+            ...PROGRESION_BASE,
+            levelUpPendiente: null,
+          });
           return;
         }
+
+        const prevUsuario = get().usuario;
+        const usuarioCambio = !prevUsuario || prevUsuario.usuarioId !== usuario.usuarioId;
+
         set({
           usuario,
+          ...(usuarioCambio ? { aulaActivaId: null, codigoInvitacionAula: null } : {}),
           ...PROGRESION_BASE,
           levelUpPendiente: null,
         });
       },
 
       clearUsuario: () => {
-        set({ usuario: null, ...PROGRESION_BASE });
+        try {
+          useSessionStore.persist.clearStorage();
+        } catch {
+          /* ignore */
+        }
+        set({
+          usuario: null,
+          aulaActivaId: null,
+          codigoInvitacionAula: null,
+          ...PROGRESION_BASE,
+          levelUpPendiente: null,
+        });
       },
 
       logout: () => {
@@ -91,8 +119,10 @@ const useSessionStore = create(
         }
         set({
           usuario: null,
+          aulaActivaId: null,
           codigoInvitacionAula: null,
           ...PROGRESION_BASE,
+          levelUpPendiente: null,
         });
       },
 
@@ -122,6 +152,8 @@ const useSessionStore = create(
       setAulaActiva: (aulaId) => set({ aulaActivaId: aulaId }),
 
       setCodigoInvitacion: (codigo) => set({ codigoInvitacionAula: codigo }),
+
+      setMentorAvatar: (avatar) => set({ mentorAvatar: avatar }),
 
       // Tema claro / oscuro
       setTheme: (theme) => {
@@ -285,12 +317,18 @@ const useSessionStore = create(
         usuario: state.usuario,
         aulaActivaId: state.aulaActivaId,
         codigoInvitacionAula: state.codigoInvitacionAula,
+        mentorAvatar: state.mentorAvatar,
         theme: state.theme,
         soundEnabled: state.soundEnabled,
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.theme === 'dark' && typeof document !== 'undefined') {
           document.documentElement.classList.add('dark');
+        }
+        // Si no hay usuario activo tras rehidratación, asegurar que no queden datos de aula previa
+        if (!state?.usuario) {
+          state?.setAulaActivaId?.(null);
+          state?.setCodigoInvitacion?.(null);
         }
       },
     }

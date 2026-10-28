@@ -11,6 +11,7 @@ import { useMisAulas } from '../../hooks/useAulas';
 import { useMetricasAula } from '../../hooks/useMetricas';
 import useSessionStore from '../../store/useSessionStore';
 import FormGenerarMision from './components/FormGenerarMision';
+import ListaAlumnosAula from './components/ListaAlumnosAula';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -96,7 +97,9 @@ function DashboardDocente() {
   const { data: borradores } = useBorradoresDocente();
   const { data: metricas } = useMetricasAula();
 
-  const cantBorradores = borradores?.length ?? 0;
+  const totalMisiones = borradores?.length ?? 0;
+  const cantPendientes = borradores?.filter((b) => (b.estadoValidacion || 'Pendiente') === 'Pendiente').length ?? 0;
+  const cantValidadas = borradores?.filter((b) => b.estadoValidacion === 'Validado').length ?? 0;
   const tasaParticipacion = metricas ? `${Math.round(metricas.tasaCompletitud * 100)}%` : '--';
 
   const tip = TIPS[tipIdx];
@@ -158,17 +161,22 @@ function DashboardDocente() {
 
       {/* ── Grid de métricas ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {/* Stat 1: Borradores */}
+        {/* Stat 1: Misiones del Aula y Borradores */}
         <StatCard
           index={0}
           icon={Inbox}
           iconBg="bg-[var(--brand-primary)]"
           iconColor="text-white"
-          label="Borradores por Validar"
-          value={cantBorradores}
+          label="Misiones del Aula"
+          value={totalMisiones}
+          sub={
+            cantPendientes > 0
+              ? `${cantPendientes} ${cantPendientes === 1 ? 'borrador por validar' : 'borradores por validar'}`
+              : `${cantValidadas} activas · Sin pendientes`
+          }
           badge={
-            cantBorradores > 0 ? (
-              <Badge variant="racha" glow>{cantBorradores} pendientes</Badge>
+            cantPendientes > 0 ? (
+              <Badge variant="racha" glow>{cantPendientes} por validar</Badge>
             ) : (
               <Badge variant="correcto">Al día</Badge>
             )
@@ -243,10 +251,14 @@ function DashboardDocente() {
         </motion.div>
       </div>
 
+      {/* ── Expediente y Avances Individuales de Alumnos ── */}
+      <ListaAlumnosAula />
+
       {/* ── Sección inferior: ArtFrame + Tip pedagógico ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         <ArtFrame
-          label="Ilustración: Grimorio del Mentor Docente"
+          src="/images/docente/grimorio-profesor.webp"
+          label="Grimorio del Mentor Docente"
           shape="scroll"
           aspectRatio="16/9"
         />

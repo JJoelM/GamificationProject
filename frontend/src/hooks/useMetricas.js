@@ -29,3 +29,19 @@ export function useMetricasAula(customAulaId) {
     staleTime: 1000 * 60 * 2, // 2 minutos de caché
   });
 }
+
+/**
+ * useAlumnosAula — Consulta la lista de alumnos inscriptos con sus avatares y progreso individual.
+ * Endpoint: GET /api/docentes/aulas/{aulaId}/alumnos
+ */
+export function useAlumnosAula(customAulaId) {
+  const storeAulaId = useSessionStore((s) => s.aulaActivaId);
+  const aulaId = customAulaId || storeAulaId;
+
+  return useQuery({
+    queryKey: ['alumnos-aula', aulaId],
+    queryFn: () => docentesApi.getAlumnos(aulaId),
+    enabled: Boolean(aulaId),
+    staleTime: 1000 * 60 * 2,
+  });
+}
