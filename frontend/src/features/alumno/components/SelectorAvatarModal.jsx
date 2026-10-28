@@ -215,12 +215,13 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                   cosmeticosComprados.includes(`avatar_${avatar.id}`) ||
                   (avatar.id === 'exploradora_reliquias' && cosmeticosComprados.includes('avatar-explorador')) ||
                   (avatar.id === 'erudito_arcano' && cosmeticosComprados.includes('avatar_mago')) ||
-                  (avatar.id === 'alquimista_botanica' && cosmeticosComprados.includes('avatar_arquera')) ||
+                  (avatar.id === 'avatar_arquera' && (cosmeticosComprados.includes('avatar_arquera') || cosmeticosComprados.includes('arquera_silvana') || cosmeticosComprados.includes('arquera'))) ||
+                  (avatar.id === 'alquimista_botanica' && cosmeticosComprados.includes('alquimista_botanica')) ||
                   (avatar.id === 'caballera_astral' && cosmeticosComprados.includes('avatar_guerrero')) ||
                   (avatar.id === 'archimago_solar' && cosmeticosComprados.includes('mago_sideral'));
 
                 const isUnlocked = isBase || isPurchased;
-                const isSelected = selectedAvatarId === avatar.id;
+                const isSelected = selectedAvatarId === avatar.id || getAvatarPorId(selectedAvatarId)?.id === avatar.id;
                 const IconComp = avatar.IconoPreview;
 
                 return (

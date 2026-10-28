@@ -117,4 +117,22 @@ public class PersonajeBazarTests
         Assert.Equal(1, reconstruido.PistasDisponibles);
         Assert.Equal(70, reconstruido.PuntosAccionAP);
     }
+
+    [Fact]
+    public void CatalogoBazar_ArqueraYAlquimistaSonArticulosDistintos()
+    {
+        var arquera = CatalogoBazar.Buscar("avatar_arquera");
+        var alquimista = CatalogoBazar.Buscar("alquimista_botanica");
+
+        Assert.NotNull(arquera);
+        Assert.NotNull(alquimista);
+        Assert.NotEqual(arquera.Id, alquimista.Id);
+        Assert.Equal("Arquera Silvana", arquera.Nombre);
+        Assert.Equal("Alquimista Botánica", alquimista.Nombre);
+
+        // Alias
+        var aliasArquera = CatalogoBazar.Buscar("arquera_silvana");
+        Assert.NotNull(aliasArquera);
+        Assert.Equal(arquera.Id, aliasArquera.Id);
+    }
 }

@@ -14,6 +14,7 @@ public static class CatalogoBazar
 
         // Avatares RPG Oficiales (sin duplicados)
         new("alquimista_botanica", "Alquimista Botánica", TipoArticulo.Avatar, 40),
+        new("avatar_arquera", "Arquera Silvana", TipoArticulo.Avatar, 50),
         new("artifice_runico", "Artífice Rúnico", TipoArticulo.Avatar, 60),
         new("caballera_astral", "Caballera Astral", TipoArticulo.Avatar, 80),
         new("archimago_solar", "Archimago Solar", TipoArticulo.Avatar, 100),
@@ -51,7 +52,7 @@ public static class CatalogoBazar
             "marco_dorado" => "orlado_dorado",
             "titulo_centinela_saber" => "titulo_centinela",
             "mago_sideral" => "archimago_solar",
-            "avatar_arquera" => "alquimista_botanica",
+            "arquera_silvana" or "arquera" => "avatar_arquera",
             "avatar_guerrero" => "caballera_astral",
             "avatar_mago" => "erudito_arcano",
             "avatar-explorador" => "exploradora_reliquias",
