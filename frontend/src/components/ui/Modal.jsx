@@ -13,10 +13,10 @@ import { motion, AnimatePresence } from 'framer-motion';
  */
 
 const sizeStyles = {
-  sm:   'max-w-sm',
-  md:   'max-w-lg',
-  lg:   'max-w-2xl',
-  full: 'max-w-5xl',
+  sm:   'sm:max-w-sm',
+  md:   'sm:max-w-lg',
+  lg:   'sm:max-w-2xl',
+  full: 'sm:max-w-5xl',
 };
 
 function Modal({
@@ -69,14 +69,13 @@ function Modal({
       aria-modal="true"
       aria-labelledby="modal-title"
       className={[
-        'p-0 m-auto w-full border-0 bg-transparent text-[var(--text-primary)]',
+        'p-0 m-auto w-[calc(100vw-1.5rem)] sm:w-full max-w-[calc(100vw-1.5rem)] border-0 bg-transparent text-[var(--text-primary)]',
         'backdrop:bg-[color-mix(in_oklch,var(--color-dark-bg-base)_70%,transparent)]',
         'backdrop:backdrop-blur-sm',
-        'max-w-[calc(100vw-1.5rem)] sm:max-w-none',
         sizeStyles[size] ?? sizeStyles.md,
         'open:flex open:flex-col',
       ].join(' ')}
-      style={{ maxHeight: '92svh', overflow: 'visible', color: 'var(--text-primary)' }}
+      style={{ maxHeight: '92svh', color: 'var(--text-primary)' }}
     >
       <AnimatePresence>
         {isOpen && (
@@ -86,7 +85,7 @@ function Modal({
             exit={{ opacity: 0, scale: 0.94, y: 16 }}
             transition={{ type: 'spring', stiffness: 340, damping: 28 }}
             className={[
-              'w-full flex flex-col overflow-hidden text-[var(--text-primary)]',
+              'w-full flex flex-col max-h-[90svh] overflow-hidden text-[var(--text-primary)]',
               'bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-base)]',
               'border-2 border-[var(--border)]',
               'rounded-[16px_22px_18px_20px]',
@@ -94,17 +93,17 @@ function Modal({
             ].join(' ')}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--border-muted)]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--border-muted)] gap-2">
               <h2
                 id="modal-title"
-                className="font-display text-base sm:text-lg font-bold text-[var(--text-primary)]"
+                className="font-display text-sm sm:text-base md:text-lg font-bold text-[var(--text-primary)] truncate"
               >
                 {title}
               </h2>
               <button
                 onClick={onClose}
                 className={[
-                  'w-8 h-8 flex items-center justify-center rounded-lg text-sm cursor-pointer',
+                  'w-8 h-8 flex items-center justify-center rounded-lg text-sm cursor-pointer shrink-0',
                   'text-[var(--text-muted)] border border-[var(--border-muted)]',
                   'hover:bg-[var(--bg-accent)] hover:text-[var(--brand-crimson)] hover:border-[var(--brand-crimson)]',
                   'transition-colors',

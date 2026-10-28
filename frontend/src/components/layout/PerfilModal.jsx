@@ -69,19 +69,19 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
 
         {/* Resumen de Cuenta (Read-only) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--bg-base)] border border-[var(--border-muted)]">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Mail size={16} className="text-[var(--text-muted)] shrink-0" />
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Email</span>
-              <span className="text-xs text-[var(--text-primary)] font-semibold truncate">{misDatos.email}</span>
+              <span className="text-xs text-[var(--text-primary)] font-semibold truncate" title={misDatos.email}>{misDatos.email}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Shield size={16} className="text-[var(--text-muted)] shrink-0" />
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Rol y Estado</span>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <Badge variant="info">{misDatos.rol}</Badge>
                 <Badge variant={misDatos.estadoCuenta === 'Activa' ? 'correcto' : 'xp'}>
                   {misDatos.estadoCuenta}
@@ -91,9 +91,9 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
           </div>
 
           {misDatos.fechaNacimiento && (
-            <div className="flex items-center gap-2.5 sm:col-span-2">
+            <div className="flex items-center gap-2.5 sm:col-span-2 min-w-0">
               <Calendar size={16} className="text-[var(--text-muted)] shrink-0" />
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-display font-bold uppercase text-[var(--text-muted)]">Fecha de Nacimiento</span>
                 <span className="text-xs text-[var(--text-primary)] font-semibold">{misDatos.fechaNacimiento}</span>
               </div>
@@ -123,9 +123,9 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
               type="checkbox"
               checked={aceptaInvestigacion}
               onChange={handleCheckboxChange}
-              className="mt-0.5 w-4 h-4 rounded text-[var(--brand-primary)] border-[var(--border-muted)] focus:ring-[var(--brand-primary)]"
+              className="mt-0.5 w-4 h-4 rounded text-[var(--brand-primary)] border-[var(--border-muted)] focus:ring-[var(--brand-primary)] shrink-0"
             />
-            <div className="flex flex-col text-xs leading-relaxed">
+            <div className="flex flex-col text-xs leading-relaxed min-w-0">
               <span className="font-display font-bold text-[var(--text-primary)]">
                 Consentimiento para Investigación Académica (UNNE)
               </span>
@@ -148,6 +148,7 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
             type="submit"
             variant="primary"
             disabled={isGuardando || !nombreCompleto.trim()}
+            className="w-full sm:w-auto justify-center"
           >
             {isGuardando ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             <span>{isGuardando ? 'Guardando...' : 'Guardar Cambios'}</span>
@@ -159,7 +160,7 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
       <Modal
         isOpen={modalRevocarOpen}
         onClose={() => setModalRevocarOpen(false)}
-        title="Revocar Consentimiento de Investigación"
+        title="Revocar Consentimiento"
         size="sm"
       >
         <div className="flex flex-col gap-4">
@@ -167,7 +168,7 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
             <div className="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
               <ShieldAlert size={22} />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 min-w-0">
               <p className="text-sm font-bold text-[var(--text-primary)]">
                 ¿Estás seguro de que deseas retirar tu consentimiento?
               </p>
@@ -177,11 +178,12 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-muted)]">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-[var(--border-muted)]">
             <Button
               variant="primary"
               size="sm"
               onClick={() => setModalRevocarOpen(false)}
+              className="w-full sm:w-auto justify-center"
             >
               Mantener Consentimiento
             </Button>
@@ -189,6 +191,7 @@ function FormularioDatosPersonales({ misDatos, onGuardar, isGuardando, errorDato
               variant="danger"
               size="sm"
               onClick={confirmarRevocacion}
+              className="w-full sm:w-auto justify-center"
             >
               Confirmar Revocación
             </Button>
@@ -250,17 +253,17 @@ export default function PerfilModal({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Mi Perfil & Configuración de Cuenta"
+      title="Mi Perfil & Configuración"
       size="lg"
     >
       <div className="flex flex-col gap-5">
-        {/* ── Tabs de Navegación ── */}
+        {/* ── Tabs de Navegación Responsive ── */}
         <div className="flex border-b-2 border-[var(--border-muted)] gap-1 sm:gap-2 pb-1 overflow-x-auto">
           <button
             type="button"
             onClick={() => { playParchment(); setTabActiva('datos'); }}
             className={[
-              'flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0',
+              'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0 whitespace-nowrap',
               tabActiva === 'datos'
                 ? 'border-[var(--brand-primary)] text-[var(--brand-primary)] bg-[var(--brand-primary)]/10'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
@@ -274,7 +277,7 @@ export default function PerfilModal({ isOpen, onClose }) {
             type="button"
             onClick={() => { playParchment(); setTabActiva('seguridad'); }}
             className={[
-              'flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0',
+              'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0 whitespace-nowrap',
               tabActiva === 'seguridad'
                 ? 'border-[var(--brand-primary)] text-[var(--brand-primary)] bg-[var(--brand-primary)]/10'
                 : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
@@ -288,7 +291,7 @@ export default function PerfilModal({ isOpen, onClose }) {
             type="button"
             onClick={() => { playParchment(); setTabActiva('peligro'); }}
             className={[
-              'flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] ml-auto shrink-0',
+              'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-t-xl text-xs font-display font-bold transition-all cursor-pointer border-b-2 -mb-[6px] shrink-0 whitespace-nowrap sm:ml-auto',
               tabActiva === 'peligro'
                 ? 'border-[var(--brand-crimson)] text-[var(--brand-crimson)] bg-[var(--brand-crimson)]/10'
                 : 'border-transparent text-[var(--text-muted)] hover:text-[var(--brand-crimson)]',
@@ -403,6 +406,7 @@ export default function PerfilModal({ isOpen, onClose }) {
                     type="submit"
                     variant="primary"
                     disabled={isCambiandoPass || !passwordActual || !passwordNueva}
+                    className="w-full sm:w-auto justify-center"
                   >
                     {isCambiandoPass ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                     <span>{isCambiandoPass ? 'Actualizando...' : 'Cambiar Contraseña'}</span>
@@ -431,7 +435,7 @@ export default function PerfilModal({ isOpen, onClose }) {
                   <Button
                     variant="ghost"
                     onClick={() => setConfirmarEliminar(true)}
-                    className="self-start text-xs text-[var(--brand-crimson)] hover:bg-[var(--brand-crimson)]/10 border border-[var(--brand-crimson)]/40"
+                    className="self-start text-xs text-[var(--brand-crimson)] hover:bg-[var(--brand-crimson)]/10 border border-[var(--brand-crimson)]/40 w-full sm:w-auto justify-center"
                   >
                     Quiero dar de baja mi cuenta
                   </Button>
@@ -440,11 +444,12 @@ export default function PerfilModal({ isOpen, onClose }) {
                     <span className="text-xs font-display font-bold text-[var(--brand-crimson)]">
                       ¿Estás totalmente seguro? Esta acción es irreversible.
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setConfirmarEliminar(false)}
+                        className="w-full sm:w-auto justify-center"
                       >
                         Cancelar
                       </Button>
@@ -453,6 +458,7 @@ export default function PerfilModal({ isOpen, onClose }) {
                         size="sm"
                         onClick={() => eliminarCuenta()}
                         disabled={isEliminando}
+                        className="w-full sm:w-auto justify-center"
                       >
                         {isEliminando ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
                         <span>{isEliminando ? 'Eliminando...' : 'Sí, dar de baja definitivamente'}</span>
