@@ -9,6 +9,7 @@ import MetricasAula from './features/docente/MetricasAula';
 import SecuenciaCurricularDocente from './features/docente/SecuenciaCurricularDocente';
 import DashboardAlumno from './features/alumno/DashboardAlumno';
 import TableroMisiones from './features/alumno/TableroMisiones';
+import SalonAventureros from './features/alumno/SalonAventureros';
 import BazarRecompensas from './features/alumno/BazarRecompensas';
 import GrimorioSaber from './features/alumno/GrimorioSaber';
 import GestionDocentes from './features/directivo/GestionDocentes';
@@ -59,6 +60,7 @@ function App() {
           {/* Entorno Alumno */}
           <Route path="/alumno/dashboard" element={<DashboardAlumno />} />
           <Route path="/alumno/misiones" element={<TableroMisiones />} />
+          <Route path="/alumno/ranking" element={<SalonAventureros />} />
           <Route path="/alumno/bazar" element={<BazarRecompensas />} />
           <Route path="/alumno/grimorio" element={<GrimorioSaber />} />
 

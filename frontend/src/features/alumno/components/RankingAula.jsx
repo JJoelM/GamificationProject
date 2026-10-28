@@ -1,10 +1,12 @@
 import React from 'react';
-import { Trophy, TrendingUp, Crown, Medal, Loader2, Sparkles, Flame, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Trophy, TrendingUp, Crown, Medal, Loader2, Sparkles, Flame, CheckCircle2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Card from '../../../components/ui/Card';
 import Badge from '../../../components/ui/Badge';
 import { useRankingAula } from '../../../hooks/useRankingAula';
 import useSessionStore from '../../../store/useSessionStore';
+import { playParchment } from '../../../utils/audio';
 
 /**
  * RankingAula v3 — Ranking del aula conectado al backend real CQRS,
@@ -160,6 +162,16 @@ function RankingAula() {
           })}
         </div>
       )}
+
+      {/* Enlace al Salón de Aventureros completo */}
+      <Link
+        to="/alumno/ranking"
+        onClick={playParchment}
+        className="mt-1 pt-2.5 border-t border-[var(--border-muted)] flex items-center justify-between text-xs font-display font-bold text-[var(--brand-primary)] hover:underline cursor-pointer group"
+      >
+        <span>Explorar Salón de Aventureros completo</span>
+        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+      </Link>
     </Card>
   );
 }

@@ -37,6 +37,7 @@ const NAV_DOCENTE = [
 const NAV_ALUMNO = [
   { to: '/alumno/dashboard', label: 'Mi Personaje', Icon: GraduationCap },
   { to: '/alumno/misiones', label: 'Tablero de Misiones', Icon: Swords },
+  { to: '/alumno/ranking', label: 'Salón de Aventureros', Icon: Trophy },
   { to: '/alumno/grimorio', label: 'Grimorio del Saber', Icon: BookOpen },
   { to: '/alumno/bazar', label: 'Bazar del Alquimista', Icon: ShoppingBag },
 ];
