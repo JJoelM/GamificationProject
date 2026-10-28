@@ -169,8 +169,8 @@ function LandingPage() {
                 </div>
 
                 <svg className="hidden sm:block w-8 h-5 shrink-0" viewBox="0 0 34 20">
-                  <path d="M2 10h24" stroke="currentColor" strokeWidth="3" strokeDasharray="5 4" className="text-[#B45309] dark:text-[#FCD34D] animate-dash-flow" />
-                  <path d="M22 4l8 6-8 6" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" className="text-[#B45309] dark:text-[#FCD34D]" />
+                  <path d="M2 10h24" stroke="currentColor" strokeWidth="3" strokeDasharray="5 4" className="text-[#92400E] dark:text-[#FCD34D] animate-dash-flow" />
+                  <path d="M22 4l8 6-8 6" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" className="text-[#92400E] dark:text-[#FCD34D]" />
                 </svg>
 
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#FEF3C7] dark:bg-[#0F172A] border-2 border-[#0F172A] dark:border-[#FCD34D]">
@@ -300,7 +300,7 @@ function LandingPage() {
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-display font-extrabold uppercase tracking-wider text-[#B45309] dark:text-[#FCD34D]">
+                  <span className="text-xs font-display font-extrabold uppercase tracking-wider text-[#92400E] dark:text-[#FCD34D]">
                     Combate por Turnos
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-display font-extrabold bg-[#FEF3C7] text-[#78350F] border-2 border-[#0F172A]">
@@ -824,7 +824,7 @@ function LandingPage() {
                       </svg>
                     </div>
                     <div>
-                      <span className="text-[11px] font-display font-extrabold uppercase text-[#B45309] dark:text-[#FCD34D]">Diagnóstico Real</span>
+                      <span className="text-[11px] font-display font-extrabold uppercase text-[#92400E] dark:text-[#FCD34D]">Diagnóstico Real</span>
                       <h4 className="font-display font-extrabold text-lg text-[#0F172A] dark:text-white mt-0.5 mb-1">
                         Detectá Dudas a Tiempo
                       </h4>
@@ -883,7 +883,7 @@ function LandingPage() {
                     </div>
 
                     <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#F8FAFC] dark:bg-[#132232] border-2 border-[#0F172A] dark:border-[#475569] text-xs font-display font-extrabold">
-                      <span className="text-[#B45309] dark:text-[#FCD34D] flex items-center gap-1">
+                      <span className="text-[#92400E] dark:text-[#FCD34D] flex items-center gap-1">
                         <Flame size={15} /> Racha: 14 días
                       </span>
                       <span className="text-[#581C87] dark:text-[#38BDF8]">Nivel 12 · Erudito</span>
@@ -924,7 +924,7 @@ function LandingPage() {
                       />
                     </div>
                     <div>
-                      <span className="text-[11px] font-display font-extrabold uppercase text-[#B45309] dark:text-[#FCD34D]">Acción en Clase</span>
+                      <span className="text-[11px] font-display font-extrabold uppercase text-[#92400E] dark:text-[#FCD34D]">Acción en Clase</span>
                       <h4 className="font-display font-extrabold text-lg text-[#0F172A] dark:text-white mt-0.5 mb-1">
                         Estudiar es una Misión
                       </h4>
@@ -1065,7 +1065,7 @@ function LandingPage() {
                       </svg>
                     </div>
                     <div>
-                      <span className="text-[11px] font-display font-extrabold uppercase text-[#B45309] dark:text-[#FCD34D]">Cuidado Escolar</span>
+                      <span className="text-[11px] font-display font-extrabold uppercase text-[#92400E] dark:text-[#FCD34D]">Cuidado Escolar</span>
                       <h4 className="font-display font-extrabold text-lg text-[#0F172A] dark:text-white mt-0.5 mb-1">
                         Protección de Menores
                       </h4>
@@ -1123,16 +1123,16 @@ function LandingPage() {
       </section>
 
       {/* ── 6. BLOQUE DE CONFIANZA Y LLAMADO A LA ACCIÓN CON PERSONAJE ── */}
-      <section id="confianza" className="py-14 sm:py-16 px-4 sm:px-8 bg-[#1E1B4B] text-white border-b-3 border-[#0F172A]">
+      <section id="confianza" className="py-14 sm:py-16 px-4 sm:px-8 bg-[#EEF2FF] dark:bg-[#1E1B4B] text-[#0F172A] dark:text-white border-b-3 border-[#0F172A] dark:border-[#38BDF8]/50 transition-colors">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-7 flex flex-col gap-4 text-center lg:text-left">
-            <span className="inline-block self-center lg:self-start px-3 py-1 rounded-full bg-[#581C87] border-2 border-[#FCD34D] font-display font-extrabold text-xs uppercase tracking-wider text-[#FCD34D]">
+            <span className="inline-block self-center lg:self-start px-3 py-1 rounded-full bg-[#F3E8FF] dark:bg-[#581C87] border-2 border-[#0F172A] dark:border-[#FCD34D] font-display font-extrabold text-xs uppercase tracking-wider text-[#581C87] dark:text-[#FCD34D]">
               Tecnología al Servicio del Docente
             </span>
-            <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-white leading-tight">
+            <h2 className="font-display font-extrabold text-2xl sm:text-4xl text-[#0F172A] dark:text-white leading-tight">
               La IA sugiere. El docente educa.
             </h2>
-            <p className="text-sm sm:text-base text-[#F1F5F9] font-medium max-w-2xl mx-auto lg:mx-0">
+            <p className="text-sm sm:text-base text-[#1E293B] dark:text-[#F1F5F9] font-medium max-w-2xl mx-auto lg:mx-0">
               A diferencia de los generadores automáticos sin filtro, en <b>Aventuras del Saber</b> vos mantenés el control pedagógico de cada pregunta, cada pista y cada recompensa.
             </p>
 
@@ -1146,12 +1146,12 @@ function LandingPage() {
                 return (
                   <div
                     key={item.title}
-                    className="rounded-xl bg-[#0F172A] border-2 border-[#38BDF8] p-3.5 shadow-[3px_3px_0px_#000000] text-left flex items-start gap-2.5"
+                    className="rounded-xl bg-white dark:bg-[#0F172A] border-2 border-[#0F172A] dark:border-[#38BDF8] p-3.5 shadow-[3px_3px_0px_#0F172A] dark:shadow-[3px_3px_0px_#000000] text-left flex items-start gap-2.5"
                   >
-                    <Icon size={18} className="text-[#FCD34D] shrink-0 mt-0.5" />
+                    <Icon size={18} className="text-[#D97706] dark:text-[#FCD34D] shrink-0 mt-0.5" />
                     <div>
-                      <b className="block font-display text-xs sm:text-sm text-white">{item.title}</b>
-                      <span className="text-[11px] text-[#E2E8F0]">{item.sub}</span>
+                      <b className="block font-display text-xs sm:text-sm text-[#0F172A] dark:text-white">{item.title}</b>
+                      <span className="text-[11px] text-[#475569] dark:text-[#CBD5E1]">{item.sub}</span>
                     </div>
                   </div>
                 );
@@ -1160,7 +1160,7 @@ function LandingPage() {
           </div>
 
           {/* Invitación final con Mago Cutout flotando */}
-          <div className="lg:col-span-5 flex flex-col sm:flex-row items-center justify-center gap-4 bg-[#0F172A] border-3 border-[#FCD34D] rounded-2xl p-5 sm:p-6 shadow-[6px_6px_0px_#000000]">
+          <div className="lg:col-span-5 flex flex-col sm:flex-row items-center justify-center gap-4 bg-white dark:bg-[#0F172A] border-3 border-[#0F172A] dark:border-[#FCD34D] rounded-2xl p-5 sm:p-6 shadow-[6px_6px_0px_#0F172A] dark:shadow-[6px_6px_0px_#000000]">
             <img
               src="/images/landing/mago-cutout.png"
               alt="Arcanista invitando al aula"
@@ -1170,13 +1170,13 @@ function LandingPage() {
               className="w-28 sm:w-36 h-auto object-contain drop-shadow-[3px_4px_0_rgba(252,211,77,0.3)] shrink-0 animate-float"
             />
             <div className="flex flex-col gap-3 text-center sm:text-left">
-              <p className="font-display font-extrabold text-lg text-[#FCD34D] leading-snug">
+              <p className="font-display font-extrabold text-lg text-[#0F172A] dark:text-[#FCD34D] leading-snug">
                 ¿Listo para transformar tu próxima clase?
               </p>
               <button
                 type="button"
                 onClick={() => handleIrAAuth('registro-docente')}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-[#0F172A] bg-[#FCD34D] hover:bg-[#F59E0B] text-[#0F172A] font-display font-extrabold text-sm shadow-[3px_3px_0px_#581C87] hover:-translate-y-0.5 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-[#0F172A] bg-[#FCD34D] hover:bg-[#F59E0B] text-[#0F172A] font-display font-extrabold text-sm shadow-[3px_3px_0px_#0F172A] hover:-translate-y-0.5 transition-all cursor-pointer"
               >
                 <span>Crear Cuenta Docente</span>
                 <ArrowRight size={16} />
@@ -1184,7 +1184,7 @@ function LandingPage() {
               <button
                 type="button"
                 onClick={() => handleIrAAuth('login')}
-                className="text-xs font-display font-bold text-[#38BDF8] hover:underline cursor-pointer"
+                className="text-xs font-display font-extrabold text-[#1D4ED8] dark:text-[#38BDF8] hover:underline cursor-pointer"
               >
                 Ya tengo cuenta → Ingresar
               </button>

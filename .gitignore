@@ -35,7 +35,7 @@ frontend/.vite/
 # ── Carpetas archivadas / spike / temporales ──
 archive/
 spike/
-images/
+/images/
 
 # ── Sistema operativo ──
 .DS_Store
