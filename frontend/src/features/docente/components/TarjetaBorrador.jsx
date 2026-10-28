@@ -58,7 +58,10 @@ function TarjetaBorrador({
     ? (itemsCount === 1 ? 'evento secuencial' : 'eventos secuenciales')
     : 'elementos';
 
-  const confianza = borrador.nivelConfianzaIA != null ? Math.round(borrador.nivelConfianzaIA * 100) : null;
+  const rawConfianza = borrador.nivelConfianzaIA;
+  const confianza = rawConfianza != null
+    ? (rawConfianza <= 1 ? Math.round(rawConfianza * 100) : Math.round(rawConfianza))
+    : null;
   const confianzaColor = confianza == null ? 'info'
     : confianza >= 85 ? 'correcto'
     : confianza >= 60 ? 'xp'

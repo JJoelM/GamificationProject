@@ -102,13 +102,18 @@ function InboxBorradores() {
   const validadas = todos.filter((b) => b.estadoValidacion === 'Validado');
   const ocultas = todos.filter((b) => b.estadoValidacion === 'Oculto');
 
+  const parseConfianza = (val) => {
+    if (val == null) return 100;
+    return val <= 1 ? Math.round(val * 100) : Math.round(val);
+  };
+
   const listaFiltrada = tabActiva === 'Pendiente'
-    ? [...pendientes].sort((a, b) => (a.nivelConfianzaIA ?? 1) - (b.nivelConfianzaIA ?? 1))
+    ? [...pendientes].sort((a, b) => parseConfianza(a.nivelConfianzaIA) - parseConfianza(b.nivelConfianzaIA))
     : tabActiva === 'Validado'
     ? validadas
     : ocultas;
 
-  const cantBajaConfianza = pendientes.filter((b) => (b.nivelConfianzaIA ?? 1) < 0.7).length;
+  const cantBajaConfianza = pendientes.filter((b) => parseConfianza(b.nivelConfianzaIA) < 70).length;
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">

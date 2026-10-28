@@ -11,7 +11,7 @@ const MOCK_BORRADORES = [
     narrativa:
       'El virrey Cisneros ha convocado al pueblo ante los rumores de España. Los patriotas se reúnen en la plaza para exigir un cabildo abierto que decida el futuro de la nación.',
     tipoPlantilla: 'OpcionMultiple',
-    nivelConfianzaIA: 0.94,
+    nivelConfianzaIA: 94,
     recompensaXpSugerida: 150,
     payloadJson: JSON.stringify({
       preguntas: [

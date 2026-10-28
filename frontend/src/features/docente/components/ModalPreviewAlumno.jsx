@@ -36,7 +36,7 @@ export default function ModalPreviewAlumno({ mision, isOpen, onClose }) {
           {mision.nivelConfianzaIA != null && (
             <Badge variant="correcto">
               <Sparkles size={11} className="text-[#FCD34D]" />
-              Confianza IA {Math.round(mision.nivelConfianzaIA * 100)}%
+              Confianza IA {mision.nivelConfianzaIA <= 1 ? Math.round(mision.nivelConfianzaIA * 100) : Math.round(mision.nivelConfianzaIA)}%
             </Badge>
           )}
         </div>
