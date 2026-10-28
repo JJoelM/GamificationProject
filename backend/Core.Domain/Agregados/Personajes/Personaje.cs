@@ -123,6 +123,13 @@ public sealed class Personaje : AgregadoRaiz
         var articulo = CatalogoBazar.Buscar(articuloId);
         if (articulo != null && _cosmeticosComprados.Contains(articulo.Id)) return true;
 
+        if (_cosmeticosComprados.Any(c =>
+        {
+            var comprado = CatalogoBazar.Buscar(c);
+            return comprado != null && (string.Equals(comprado.Id, articuloId, StringComparison.OrdinalIgnoreCase) ||
+                                       (articulo != null && string.Equals(comprado.Id, articulo.Id, StringComparison.OrdinalIgnoreCase)));
+        })) return true;
+
         var porNombre = CatalogoBazar.Todos.FirstOrDefault(a =>
             string.Equals(a.Nombre, articuloId, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(a.Id, articuloId, StringComparison.OrdinalIgnoreCase));

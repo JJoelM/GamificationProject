@@ -12,18 +12,11 @@ public static class CatalogoBazar
         new("pista", "Pista", TipoArticulo.Pista, 15),
         new("escudo-racha", "Escudo de racha", TipoArticulo.EscudoRacha, 50),
 
-        // Avatares
-        new("erudito_arcano", "Erudito Arcano", TipoArticulo.Avatar, 40),
-        new("exploradora_reliquias", "Exploradora de Reliquias", TipoArticulo.Avatar, 40),
+        // Avatares RPG Oficiales (sin duplicados)
         new("alquimista_botanica", "Alquimista Botánica", TipoArticulo.Avatar, 40),
         new("artifice_runico", "Artífice Rúnico", TipoArticulo.Avatar, 60),
         new("caballera_astral", "Caballera Astral", TipoArticulo.Avatar, 80),
-        new("mago_sideral", "Mago Sideral", TipoArticulo.Avatar, 100),
         new("archimago_solar", "Archimago Solar", TipoArticulo.Avatar, 100),
-        new("avatar-explorador", "Explorador", TipoArticulo.Avatar, 40),
-        new("avatar_guerrero", "Guerrero", TipoArticulo.Avatar, 50),
-        new("avatar_mago", "Mago", TipoArticulo.Avatar, 60),
-        new("avatar_arquera", "Arquera", TipoArticulo.Avatar, 50),
 
         // Marcos
         new("scroll", "Marco de Pergamino", TipoArticulo.Marco, 30),
@@ -58,6 +51,10 @@ public static class CatalogoBazar
             "marco_dorado" => "orlado_dorado",
             "titulo_centinela_saber" => "titulo_centinela",
             "mago_sideral" => "archimago_solar",
+            "avatar_arquera" => "alquimista_botanica",
+            "avatar_guerrero" => "caballera_astral",
+            "avatar_mago" => "erudito_arcano",
+            "avatar-explorador" => "exploradora_reliquias",
             _ => id.Trim().ToLowerInvariant(),
         };
 
