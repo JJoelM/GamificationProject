@@ -123,9 +123,9 @@ builder.Services.AddHttpClient<IGeneradorDeMisiones, GeneradorDeMisionesHttp>(cl
 var app = builder.Build();
 
 
+app.UseCors("Frontend");
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
-app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -200,6 +200,11 @@ if (app.Environment.IsDevelopment())
         context.Usuarios.Add(directivo);
     }
 
+    context.Database.ExecuteSqlRaw(@"
+        ALTER TABLE borradores_ia ADD COLUMN IF NOT EXISTS mision_origen_id uuid;
+        ALTER TABLE misiones_activas ADD COLUMN IF NOT EXISTS mision_origen_id uuid;
+    ");
+
     if (!context.Aulas.Any(a => a.Id == aulaId))
     {
         context.Aulas.Add(new Aula(aulaId, "Laboratorio de Sistemas", docenteId));
@@ -207,6 +212,23 @@ if (app.Environment.IsDevelopment())
     }
 
     context.SaveChanges();
+
+    var repoPersonajes = scope.ServiceProvider.GetRequiredService<IRepositorioPersonajes>();
+    var personajeId = Core.Domain.SeedWork.IdentidadCompuesta.Combinar(alumnoId, aulaId);
+    var personaje = repoPersonajes.ObtenerPorIdAsync(personajeId).GetAwaiter().GetResult();
+    if (personaje is null)
+    {
+        personaje = Core.Domain.Agregados.Personajes.Personaje.Iniciar(alumnoId, aulaId);
+        personaje.RegistrarResolucionDeMision(
+            Guid.NewGuid(), 150, 750, 100, DateOnly.FromDateTime(DateTime.UtcNow));
+        repoPersonajes.GuardarAsync(personaje).GetAwaiter().GetResult();
+    }
+    else if (personaje.PuntosAccionAP < 250)
+    {
+        personaje.RegistrarResolucionDeMision(
+            Guid.NewGuid(), 0, 750, 100, DateOnly.FromDateTime(DateTime.UtcNow));
+        repoPersonajes.GuardarAsync(personaje).GetAwaiter().GetResult();
+    }
 
     var repoMisiones = scope.ServiceProvider.GetRequiredService<IRepositorioMisiones>();
 

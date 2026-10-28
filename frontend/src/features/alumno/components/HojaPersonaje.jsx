@@ -62,7 +62,14 @@ function HojaPersonaje() {
 
   // Buscar mascota equipada para renderizar su icono animado
   const mascotaVisual = ARTICULOS_BAZAR.find(
-    (a) => a.tipo === 'mascota' && (a.valor === mascotaEquipada || a.id === mascotaEquipada)
+    (a) => a.tipo === 'mascota' && (
+      a.valor === mascotaEquipada ||
+      a.id === mascotaEquipada ||
+      (mascotaEquipada?.includes('buho') && a.id === 'buho') ||
+      (mascotaEquipada?.includes('lechuza') && a.id === 'buho') ||
+      (mascotaEquipada?.includes('dragon') && a.id === 'dragon') ||
+      (mascotaEquipada?.includes('gato') && a.id === 'gato')
+    )
   );
 
   // Click-outside para cerrar el selector de títulos
@@ -137,8 +144,12 @@ function HojaPersonaje() {
                 className="absolute -top-3 -right-3 z-20 flex items-center justify-center p-1.5 rounded-2xl bg-[var(--bg-panel)] border-2 border-[var(--brand-violet)] shadow-[3px_3px_0px_var(--brand-violet)] cursor-pointer group-hover:scale-110 transition-transform"
                 title={`Mascota leal: ${mascotaVisual.nombre}`}
               >
-                <div className="w-9 h-9">
-                  <mascotaVisual.IconoVisual className="w-full h-full" />
+                <div className="w-10 h-10 overflow-hidden rounded-xl flex items-center justify-center">
+                  {mascotaVisual.imagenSrc ? (
+                    <img src={mascotaVisual.imagenSrc} alt={mascotaVisual.nombre} className="w-full h-full object-cover rounded-xl" />
+                  ) : (
+                    <mascotaVisual.IconoVisual className="w-full h-full" />
+                  )}
                 </div>
               </motion.div>
             )}

@@ -32,11 +32,25 @@ async function apiFetch(endpoint, options = {}) {
         };
       }
 
+      if (response.status === 401) {
+        errorData.title = errorData.title || 'Sesión no autorizada (っ- ‸ - ς)';
+        errorData.detail =
+          errorData.detail ||
+          'Tu sesión ha expirado o no tienes permisos para acceder a esta aula.';
+      }
+
       if (response.status === 403) {
         errorData.title = errorData.title || 'Acceso restringido (´• ω •`)ﾉ';
         errorData.detail =
           errorData.detail ||
           'No estás inscripto en esta aula o tu sesión no tiene los permisos necesarios (っ- ‸ - ς).';
+      }
+
+      if (!errorData.detail && errorData.errors) {
+        const errorList = Object.values(errorData.errors).flat();
+        if (errorList.length > 0) {
+          errorData.detail = errorList.join(' · ');
+        }
       }
 
       const problemError = new Error(errorData.detail || errorData.title || `HTTP Error ${response.status}`);
@@ -82,14 +96,19 @@ export const usuariosApi = {
     }),
 
   // POST /api/usuarios/registro/docente
-  registrarDocente: ({ email, nombreCompleto, password }) =>
+  registrarDocente: ({ email, nombreCompleto, password, aceptaUsoInvestigacion }) =>
     apiFetch('/api/usuarios/registro/docente', {
       method: 'POST',
-      body: JSON.stringify({ email, nombreCompleto, password }),
+      body: JSON.stringify({
+        email,
+        nombreCompleto,
+        password,
+        aceptaUsoInvestigacion: Boolean(aceptaUsoInvestigacion),
+      }),
     }),
 
   // POST /api/usuarios/registro/alumno
-  registrarAlumno: ({ codigoInvitacion, email, nombreCompleto, password, fechaNacimiento, emailTutor }) =>
+  registrarAlumno: ({ codigoInvitacion, email, nombreCompleto, password, fechaNacimiento, emailTutor, aceptaUsoInvestigacion }) =>
     apiFetch('/api/usuarios/registro/alumno', {
       method: 'POST',
       body: JSON.stringify({
@@ -99,6 +118,7 @@ export const usuariosApi = {
         password,
         fechaNacimiento,
         emailTutor: emailTutor || null,
+        aceptaUsoInvestigacion: Boolean(aceptaUsoInvestigacion),
       }),
     }),
 
@@ -138,8 +158,9 @@ export const usuariosApi = {
 
 // ── Servicios de API de Misiones ──
 export const misionesApi = {
-  // GET /api/misiones/borradores (Docente - propios vía JWT)
-  getBorradores: () => apiFetch('/api/misiones/borradores'),
+  // GET /api/misiones/borradores (Docente - propios vía JWT, con filtro opcional de aula)
+  getBorradores: (aulaId) =>
+    apiFetch(`/api/misiones/borradores${aulaId ? `?aulaId=${aulaId}` : ''}`),
 
   // GET /api/misiones/activas/{aulaId} (Alumno inscripto)
   getActivas: (aulaId) => apiFetch(`/api/misiones/activas/${aulaId}`),
@@ -288,6 +309,20 @@ export const aulasApi = {
 export const docentesApi = {
   // GET /api/docentes/metricas/{aulaId} (Docente vía JWT)
   getMetricas: (aulaId) => apiFetch(`/api/docentes/metricas/${aulaId}`),
+
+  // GET /api/docentes/aulas/{aulaId}/alumnos (Docente vía JWT)
+  getAlumnos: (aulaId) => apiFetch(`/api/docentes/aulas/${aulaId}/alumnos`),
+
+  // GET /api/docentes/aulas/{aulaDestinoId}/misiones-importables
+  getMisionesImportables: (aulaDestinoId) =>
+    apiFetch(`/api/docentes/aulas/${aulaDestinoId}/misiones-importables`),
+
+  // POST /api/docentes/aulas/{aulaDestinoId}/importar-misiones
+  importarMisiones: (aulaDestinoId, { misionesIds }) =>
+    apiFetch(`/api/docentes/aulas/${aulaDestinoId}/importar-misiones`, {
+      method: 'POST',
+      body: JSON.stringify({ misionesIds }),
+    }),
 };
 
 // ── Servicios de API de Directivo ──

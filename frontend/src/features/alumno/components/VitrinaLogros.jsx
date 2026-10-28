@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { Trophy, Lock, Sparkles, CheckCircle2, Compass, Flame, BookOpen, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Card from '../../../components/ui/Card';
 import Badge from '../../../components/ui/Badge';
 import useSessionStore from '../../../store/useSessionStore';
+import { useMisionesActivas } from '../../../hooks/useMisiones';
 
 /**
  * VitrinaLogros v2 — Galería de medallas con animación de desbloqueo,
@@ -76,7 +78,53 @@ const cardVariants = {
 };
 
 function VitrinaLogros() {
-  const logrosDesbloqueados = useSessionStore((s) => s.logrosDesbloqueados) || [];
+  const storeLogros = useSessionStore((s) => s.logrosDesbloqueados) || [];
+  const xpTotal = useSessionStore((s) => s.xpTotal) || 0;
+  const rachaDias = useSessionStore((s) => s.rachaDias) || 0;
+  const { data: misiones } = useMisionesActivas();
+  const misionesResueltasStore = useSessionStore((s) => s.misionesResueltas) || {};
+
+  const logrosDesbloqueados = useMemo(() => {
+    const setLogros = new Set(storeLogros);
+
+    const misionesArray = Array.isArray(misiones) ? misiones : [];
+    const completadas = misionesArray.filter(
+      (m) => m.completada || misionesResueltasStore[m.misionId]?.completada
+    );
+
+    // 1. Primer Paso: completó al menos una misión
+    if (completadas.length > 0) setLogros.add('primer_paso');
+
+    // 2. Mente Crítica: 100% de precisión
+    if (
+      completadas.some(
+        (m) => (m.mejorPorcentaje === 100) || (misionesResueltasStore[m.misionId]?.mejorPuntaje === 100)
+      )
+    ) {
+      setLogros.add('mente_critica');
+    }
+
+    // 3. Sabio Constante: 5 o más días de racha activa
+    if (rachaDias >= 5) setLogros.add('sabio_constante');
+
+    // 4. Explorador Curioso: 3 o más misiones completadas
+    if (completadas.length >= 3) setLogros.add('explorador_curioso');
+
+    // 5. Repaso Magistral: misión resuelta más de una vez
+    if (
+      completadas.some(
+        (m) => (m.intentos > 1) || (misionesResueltasStore[m.misionId]?.intentos > 1)
+      )
+    ) {
+      setLogros.add('repaso_magistral');
+    }
+
+    // 6. Maestro del Saber: alcanzar 1200+ XP
+    if (xpTotal >= 1200) setLogros.add('maestro_del_saber');
+
+    return Array.from(setLogros);
+  }, [storeLogros, misiones, misionesResueltasStore, rachaDias, xpTotal]);
+
   const countDesbloqueados = logrosDesbloqueados.length;
   const total = LOGROS_DISPONIBLES.length;
   const progreso = Math.round((countDesbloqueados / total) * 100);

@@ -36,57 +36,7 @@ const METADATOS_VISUALES = {
       </div>
     ),
   },
-  escudo_1: {
-    descripcion: 'Protege tu racha de días activos por 1 día si no puedes ingresar a estudiar.',
-    rareza: 'Consumible',
-    colorRareza: 'text-[var(--brand-emerald)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-2 border-[var(--brand-emerald)] text-[var(--brand-emerald)] shadow-sm`}>
-        <Shield size={30} className="animate-pulse" />
-      </div>
-    ),
-  },
-  'avatar-explorador': {
-    descripcion: 'Espíritu curioso y ágil que lidera las expediciones por el mapa curricular.',
-    rareza: 'Común',
-    colorRareza: 'text-[var(--brand-primary)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-blue-500/15 border-2 border-blue-500 text-blue-500 text-2xl`}>
-        🧭
-      </div>
-    ),
-  },
-  avatar_guerrero: {
-    descripcion: 'Defensor incansable que combate el error con persistencia y coraje.',
-    rareza: 'Raro',
-    colorRareza: 'text-[var(--brand-primary)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-red-500/15 border-2 border-red-500 text-red-500 text-2xl`}>
-        ⚔️
-      </div>
-    ),
-  },
-  avatar_mago: {
-    descripcion: 'Canalizador del saber arcano y la deducción lógica profunda.',
-    rareza: 'Épico',
-    colorRareza: 'text-[var(--brand-violet)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-purple-500/15 border-2 border-purple-500 text-purple-500 text-2xl`}>
-        🧙
-      </div>
-    ),
-  },
-  avatar_arquera: {
-    descripcion: 'Precisión milimétrica para acertar conceptos complejos a la distancia.',
-    rareza: 'Raro',
-    colorRareza: 'text-[var(--brand-emerald)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-emerald-500/15 border-2 border-emerald-500 text-emerald-500 text-2xl`}>
-        🏹
-      </div>
-    ),
-  },
-  'marco-pergamino': {
+  scroll: {
     descripcion: 'Borde clásico tejido con pergamino antiguo de los sabios.',
     rareza: 'Común',
     colorRareza: 'text-amber-700 dark:text-amber-400',
@@ -96,7 +46,7 @@ const METADATOS_VISUALES = {
       </div>
     ),
   },
-  marco_dorado: {
+  orlado_dorado: {
     descripcion: 'Orlado dorado con incrustaciones mágicas para estudiantes dedicados.',
     rareza: 'Legendario',
     colorRareza: 'text-[var(--brand-gold)]',
@@ -106,23 +56,83 @@ const METADATOS_VISUALES = {
       </div>
     ),
   },
-  'mascota-lechuza': {
-    descripcion: 'Acompaña tus sesiones de estudio y susurra sabiduría en las anomalías.',
-    rareza: 'Raro',
+  cristal_celeste: {
+    descripcion: 'Marco tallado en cristal astral con reflejos celestes y polvo de estrellas.',
+    rareza: 'Épico',
+    colorRareza: 'text-cyan-400',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-cyan-400 bg-cyan-500/15 text-cyan-400 text-xl shadow-[0_0_12px_rgba(34,211,238,0.4)]`}>
+        💎
+      </div>
+    ),
+  },
+  runa_violeta: {
+    descripcion: 'Marco rúnico arcano con glifos de poder que potencian tu concentración.',
+    rareza: 'Épico',
+    colorRareza: 'text-purple-400',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-purple-500 bg-purple-500/15 text-purple-400 text-xl shadow-[0_0_12px_rgba(168,85,247,0.4)]`}>
+        🔮
+      </div>
+    ),
+  },
+  buho: {
+    descripcion: 'Acompaña tus lecturas nocturnas y te susurra sabiduría antes de cada desafío.',
+    rareza: 'Compañero Místico',
     colorRareza: 'text-[var(--brand-primary)]',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-sky-500/15 border-2 border-sky-500 text-sky-500 text-2xl`}>
-        🦉
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-xl" />
+      </div>
+    ),
+  },
+  dragon: {
+    descripcion: 'Pequeño dragón guardián que enciende tu motivación y valentía ante los jefes.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-orange-500',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-orange-500/10 border-2 border-orange-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/dragon.png" alt="Dragón Guardián" className="w-full h-full object-cover rounded-xl" />
+      </div>
+    ),
+  },
+  gato: {
+    descripcion: 'Fiel compañero felino lleno de serenidad y cariño para tus horas de aprendizaje.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-pink-500',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-pink-500/10 border-2 border-pink-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/gato.png" alt="Gato Místico" className="w-full h-full object-cover rounded-xl" />
+      </div>
+    ),
+  },
+  'mascota-lechuza': {
+    descripcion: 'Acompaña tus lecturas nocturnas y te susurra sabiduría antes de cada desafío.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-[var(--brand-primary)]',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-xl" />
       </div>
     ),
   },
   mascota_dragon: {
-    descripcion: 'Pequeño dragón guardián que enciende tu motivación en cada desafío.',
-    rareza: 'Épico',
-    colorRareza: 'text-[var(--brand-crimson)]',
+    descripcion: 'Pequeño dragón guardián que enciende tu motivación y valentía ante los jefes.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-orange-500',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-rose-500/15 border-2 border-rose-500 text-rose-500 text-2xl`}>
-        🐲
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-orange-500/10 border-2 border-orange-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/dragon.png" alt="Dragón Guardián" className="w-full h-full object-cover rounded-xl" />
+      </div>
+    ),
+  },
+  mascota_gato: {
+    descripcion: 'Fiel compañero felino lleno de serenidad y cariño para tus horas de aprendizaje.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-pink-500',
+    IconoVisual: ({ className = 'w-14 h-14' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-pink-500/10 border-2 border-pink-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/gato.png" alt="Gato Místico" className="w-full h-full object-cover rounded-xl" />
       </div>
     ),
   },

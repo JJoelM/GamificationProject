@@ -6,165 +6,90 @@ import { Shield, Sparkles, Feather, Crown, Heart, Zap, Award } from 'lucide-reac
  */
 
 export const ARTICULOS_BAZAR = [
-  // ── 1. Consumibles Pedagógicos (Escudos de Constancia) ──
+  // ── 1. Consumibles Pedagógicos (Únicamente 2) ──
   {
-    id: 'escudo_constancia_1',
-    nombre: 'Escudo de Constancia',
+    id: 'pista',
+    nombre: 'Pista Didáctica',
+    categoria: 'consumibles',
+    tipo: 'pista',
+    valor: 1,
+    costoAp: 15,
+    descripcion: 'Descarta una opción errónea en tus desafíos para orientar tu razonamiento causal.',
+    rareza: 'Consumible',
+    colorRareza: 'text-amber-500',
+    IconoVisual: ({ className = 'w-12 h-12' }) => (
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/15 border-2 border-amber-500 text-amber-500 shadow-sm`}>
+        <Zap size={26} className="animate-pulse" />
+      </div>
+    ),
+  },
+  {
+    id: 'escudo-racha',
+    nombre: 'Escudo de Racha',
     categoria: 'consumibles',
     tipo: 'escudo',
     valor: 1,
     costoAp: 50,
     descripcion: 'Protege tu racha de días activos por 1 día si no puedes ingresar a estudiar. ¡Aprende a tu propio ritmo!',
-    rareza: 'Común',
+    rareza: 'Consumible',
     colorRareza: 'text-[var(--brand-emerald)]',
     IconoVisual: ({ className = 'w-12 h-12' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-2 border-[var(--brand-emerald)] text-[var(--brand-emerald)]`}>
-        <Shield size={28} className="animate-pulse" />
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))] border-2 border-[var(--brand-emerald)] text-[var(--brand-emerald)] shadow-sm`}>
+        <Shield size={26} className="animate-pulse" />
       </div>
     ),
   },
 
-  // ── 2. Mascotas Acompañantes ──
+  // ── 2. Mascotas Acompañantes Oficiales (Únicamente 3 mascotas a 250 AP c/u) ──
   {
-    id: 'mascota_buho_erudito',
+    id: 'buho',
     nombre: 'Búho Erudito',
     categoria: 'mascotas',
     tipo: 'mascota',
-    valor: 'buho_erudito',
-    costoAp: 80,
+    valor: 'buho',
+    costoAp: 250,
     descripcion: 'Acompaña tus lecturas nocturnas y te susurra ánimos antes de cada desafío.',
-    rareza: 'Raro',
+    rareza: 'Compañero Místico',
     colorRareza: 'text-[var(--brand-primary)]',
+    imagenSrc: '/images/mascotas/buho.png',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <svg viewBox="0 0 64 64" className={className} fill="none">
-        <circle cx="32" cy="34" r="22" fill="#1E293B" />
-        <circle cx="32" cy="34" r="18" fill="#334155" />
-        {/* Ojos grandes de búho */}
-        <circle cx="24" cy="30" r="7" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5" />
-        <circle cx="40" cy="30" r="7" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5" />
-        <circle cx="24" cy="30" r="3.5" fill="#0F172A" />
-        <circle cx="40" cy="30" r="3.5" fill="#0F172A" />
-        <circle cx="22" cy="28" r="1" fill="#FFFFFF" />
-        <circle cx="38" cy="28" r="1" fill="#FFFFFF" />
-        {/* Pico */}
-        <polygon points="32,34 29,40 35,40" fill="#F59E0B" />
-        {/* Pecho con plumas */}
-        <path d="M28 44 Q32 48 36 44" stroke="#94A3B8" strokeWidth="1.5" fill="none" />
-        <path d="M26 48 Q32 52 38 48" stroke="#94A3B8" strokeWidth="1.5" fill="none" />
-        {/* Birrete */}
-        <polygon points="32,10 16,18 32,26 48,18" fill="#2563EB" stroke="#60A5FA" strokeWidth="1" />
-        <line x1="48" y1="18" x2="48" y2="28" stroke="#FCD34D" strokeWidth="2" />
-        <circle cx="48" cy="29" r="1.5" fill="#FCD34D" />
-      </svg>
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/buho.png" alt="Búho Erudito" className="w-full h-full object-cover rounded-xl" />
+      </div>
     ),
   },
   {
-    id: 'mascota_fenix_tinta',
-    nombre: 'Fénix de Tinta',
+    id: 'dragon',
+    nombre: 'Dragón Guardián',
     categoria: 'mascotas',
     tipo: 'mascota',
-    valor: 'fenix_tinta',
-    costoAp: 150,
-    descripcion: 'Ave mística nacida de los manuscritos antiguos. Desprende chispas de inspiración.',
-    rareza: 'Épico',
-    colorRareza: 'text-[var(--brand-violet)]',
+    valor: 'dragon',
+    costoAp: 250,
+    descripcion: 'Pequeño dragón guardián que enciende tu motivación y coraje en cada batalla.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-orange-500',
+    imagenSrc: '/images/mascotas/dragon.png',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <svg viewBox="0 0 64 64" className={className} fill="none">
-        <circle cx="32" cy="32" r="22" fill="#2E1065" />
-        {/* Alas en llamas de tinta */}
-        <path d="M12 36 Q18 16 32 24 Q24 38 12 36 Z" fill="#7C3AED" />
-        <path d="M52 36 Q46 16 32 24 Q40 38 52 36 Z" fill="#7C3AED" />
-        {/* Cuerpo */}
-        <ellipse cx="32" cy="36" rx="8" ry="14" fill="#6D28D9" />
-        {/* Cabeza con cresta */}
-        <circle cx="32" cy="22" r="6" fill="#A78BFA" />
-        <path d="M32 16 Q34 8 38 12 Q36 18 32 16 Z" fill="#F59E0B" />
-        <polygon points="32,23 35,26 29,26" fill="#FCD34D" />
-        {/* Ojos */}
-        <circle cx="30" cy="21" r="1" fill="#FFFFFF" />
-        <circle cx="34" cy="21" r="1" fill="#FFFFFF" />
-        {/* Cola flamígera */}
-        <path d="M30 48 Q32 60 26 62 Q32 54 34 62 Q34 52 30 48" fill="#F59E0B" />
-      </svg>
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-orange-500/10 border-2 border-orange-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/dragon.png" alt="Dragón Guardián" className="w-full h-full object-cover rounded-xl" />
+      </div>
     ),
   },
   {
-    id: 'mascota_golem_arcilla',
-    nombre: 'Golem de Arcilla & Runa',
+    id: 'gato',
+    nombre: 'Gato Místico',
     categoria: 'mascotas',
     tipo: 'mascota',
-    valor: 'golem_arcilla',
-    costoAp: 100,
-    descripcion: 'Pequeño custodio leal esculpido con tierra y encendido con una runa de perseverancia.',
-    rareza: 'Raro',
-    colorRareza: 'text-[var(--brand-secondary)]',
+    valor: 'gato',
+    costoAp: 250,
+    descripcion: 'Fiel compañero felino lleno de cariño y serenidad para tus horas de estudio.',
+    rareza: 'Compañero Místico',
+    colorRareza: 'text-pink-500',
+    imagenSrc: '/images/mascotas/gato.png',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <svg viewBox="0 0 64 64" className={className} fill="none">
-        <circle cx="32" cy="32" r="22" fill="#451A03" />
-        {/* Cuerpo de piedra/arcilla */}
-        <rect x="20" y="22" width="24" height="26" rx="6" fill="#B45309" stroke="#78350F" strokeWidth="1.5" />
-        {/* Cabeza cuadrada */}
-        <rect x="22" y="14" width="20" height="14" rx="4" fill="#D97706" stroke="#92400E" strokeWidth="1.5" />
-        {/* Ojos rúnicos brillantes */}
-        <circle cx="27" cy="20" r="2" fill="#38BDF8" className="animate-pulse" />
-        <circle cx="37" cy="20" r="2" fill="#38BDF8" className="animate-pulse" />
-        {/* Runa en el pecho */}
-        <path d="M32 28 L32 40 M28 32 L36 36 M36 32 L28 36" stroke="#67E8F9" strokeWidth="1.5" strokeLinecap="round" />
-        {/* Manitos de arcilla */}
-        <circle cx="16" cy="34" r="4" fill="#92400E" />
-        <circle cx="48" cy="34" r="4" fill="#92400E" />
-      </svg>
-    ),
-  },
-  {
-    id: 'mascota-lechuza',
-    nombre: 'Lechuza Sabia',
-    categoria: 'mascotas',
-    tipo: 'mascota',
-    valor: 'mascota-lechuza',
-    costoAp: 60,
-    descripcion: 'Acompaña tus sesiones de estudio y susurra sabiduría en las anomalías.',
-    rareza: 'Raro',
-    colorRareza: 'text-[var(--brand-primary)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <svg viewBox="0 0 64 64" className={className} fill="none">
-        <circle cx="32" cy="34" r="22" fill="#0369A1" />
-        <circle cx="32" cy="34" r="18" fill="#0284C7" />
-        <circle cx="24" cy="30" r="7" fill="#FDE047" stroke="#CA8A04" strokeWidth="1.5" />
-        <circle cx="40" cy="30" r="7" fill="#FDE047" stroke="#CA8A04" strokeWidth="1.5" />
-        <circle cx="24" cy="30" r="3.5" fill="#0F172A" />
-        <circle cx="40" cy="30" r="3.5" fill="#0F172A" />
-        <circle cx="22" cy="28" r="1" fill="#FFFFFF" />
-        <circle cx="38" cy="28" r="1" fill="#FFFFFF" />
-        <polygon points="32,34 29,40 35,40" fill="#F59E0B" />
-        <path d="M28 44 Q32 48 36 44" stroke="#BAE6FD" strokeWidth="1.5" fill="none" />
-        <polygon points="32,10 16,18 32,26 48,18" fill="#0284C7" stroke="#38BDF8" strokeWidth="1" />
-      </svg>
-    ),
-  },
-  {
-    id: 'mascota_dragon',
-    nombre: 'Dragón Chispa',
-    categoria: 'mascotas',
-    tipo: 'mascota',
-    valor: 'mascota_dragon',
-    costoAp: 80,
-    descripcion: 'Pequeño dragón guardián que enciende tu motivación en cada desafío.',
-    rareza: 'Épico',
-    colorRareza: 'text-[var(--brand-crimson)]',
-    IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <svg viewBox="0 0 64 64" className={className} fill="none">
-        <circle cx="32" cy="32" r="22" fill="#7F1D1D" />
-        <path d="M14 34 Q20 18 32 24 Q24 38 14 34 Z" fill="#DC2626" />
-        <path d="M50 34 Q44 18 32 24 Q40 38 50 34 Z" fill="#DC2626" />
-        <ellipse cx="32" cy="36" rx="9" ry="14" fill="#B91C1C" />
-        <circle cx="32" cy="22" r="7" fill="#EF4444" />
-        <circle cx="29" cy="21" r="2" fill="#FDE047" />
-        <circle cx="35" cy="21" r="2" fill="#FDE047" />
-        <circle cx="29" cy="21" r="1" fill="#000000" />
-        <circle cx="35" cy="21" r="1" fill="#000000" />
-        <path d="M30 48 Q32 58 28 60 Q32 52 34 60 Q34 50 30 48" fill="#F59E0B" />
-      </svg>
+      <div className={`${className} flex items-center justify-center rounded-2xl bg-pink-500/10 border-2 border-pink-500/40 p-1 overflow-hidden shadow-sm`}>
+        <img src="/images/mascotas/gato.png" alt="Gato Místico" className="w-full h-full object-cover rounded-xl" />
+      </div>
     ),
   },
 
