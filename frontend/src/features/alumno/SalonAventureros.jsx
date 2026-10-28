@@ -552,6 +552,31 @@ export default function SalonAventureros() {
                     </div>
                   )}
 
+                  {/* Ilustración de Retrato / Cuerpo Completo (Tier Raro y Legendario) */}
+                  {avatar?.imagenFullSrc && (
+                    <div className="p-3.5 rounded-2xl bg-[var(--bg-accent)] border-2 border-[var(--border-muted)] flex flex-col items-center gap-2.5">
+                      <div className="flex items-center justify-between w-full px-1">
+                        <span className="text-[10px] font-display font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                          <Sparkles size={12} className="text-[var(--brand-gold)]" />
+                          Arte Oficial del Personaje ({avatar.nombre})
+                        </span>
+                        {avatar.tier && (
+                          <Badge variant={avatar.tier === 'legendario' ? 'gold' : 'violet'}>
+                            {avatar.tier === 'legendario' ? 'Legendario' : 'Raro'}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="w-full max-h-72 rounded-xl overflow-hidden flex items-center justify-center bg-[var(--bg-panel)] border border-[var(--border-muted)] p-2">
+                        <img
+                          src={avatar.imagenFullSrc}
+                          alt={avatar.nombre}
+                          className="max-h-68 w-auto object-contain rounded-lg transition-transform hover:scale-102 duration-300 filter drop-shadow-md"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-end pt-2">
                     <Button variant="secondary" size="sm" onClick={() => setSelectedAlumno(null)}>
                       Cerrar Ficha

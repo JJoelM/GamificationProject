@@ -119,18 +119,18 @@ public class PersonajeBazarTests
     }
 
     [Fact]
-    public void CatalogoBazar_AvataresOficiales_SonExactamenteSiete_SinDuplicados()
+    public void CatalogoBazar_AvataresOficiales_SonExactamenteTrece_SinDuplicados()
     {
         var avatares = CatalogoBazar.Todos.Where(a => a.Tipo == TipoArticulo.Avatar).ToList();
 
-        // Exactamente 7 avatares oficiales (coincidentes 1:1 con la grilla de personalización)
-        Assert.Equal(7, avatares.Count);
+        // Exactamente 13 avatares oficiales (7 esenciales/avanzados + 3 raros + 3 legendarios)
+        Assert.Equal(13, avatares.Count);
 
         // Sin duplicados de identificador ni de nombre
         var idsUnicos = avatares.Select(a => a.Id).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var nombresUnicos = avatares.Select(a => a.Nombre).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        Assert.Equal(7, idsUnicos.Count);
-        Assert.Equal(7, nombresUnicos.Count);
+        Assert.Equal(13, idsUnicos.Count);
+        Assert.Equal(13, nombresUnicos.Count);
 
         // Ningún identificador antiguo/duplicado debe estar expuesto en el catálogo
         var idsProhibidos = new[] { "avatar_guerrero", "avatar-explorador", "avatar_mago", "mago_sideral" };
@@ -148,7 +148,13 @@ public class PersonajeBazarTests
             "avatar_arquera",
             "artifice_runico",
             "caballera_astral",
-            "archimago_solar"
+            "archimago_solar",
+            "avatar_guerrero_veterano",
+            "avatar_sanadora_luz",
+            "avatar_hechicero_arcano",
+            "avatar_paladin_runico",
+            "avatar_archimaga_floresta",
+            "avatar_cazador_sombrio"
         };
         foreach (var idEsperado in idsEsperados)
         {
@@ -166,6 +172,14 @@ public class PersonajeBazarTests
         Assert.Equal("archimago_solar", CatalogoBazar.Buscar("mago_sideral")?.Id);
         Assert.Equal("avatar_arquera", CatalogoBazar.Buscar("arquera_silvana")?.Id);
         Assert.Equal("avatar_arquera", CatalogoBazar.Buscar("arquera")?.Id);
+
+        // Aliases de los tiers ilustrados
+        Assert.Equal("avatar_paladin_runico", CatalogoBazar.Buscar("paladin")?.Id);
+        Assert.Equal("avatar_archimaga_floresta", CatalogoBazar.Buscar("witch")?.Id);
+        Assert.Equal("avatar_cazador_sombrio", CatalogoBazar.Buscar("ranger")?.Id);
+        Assert.Equal("avatar_guerrero_veterano", CatalogoBazar.Buscar("guerrero_veterano")?.Id);
+        Assert.Equal("avatar_sanadora_luz", CatalogoBazar.Buscar("sanadora_luz")?.Id);
+        Assert.Equal("avatar_hechicero_arcano", CatalogoBazar.Buscar("hechicero_arcano")?.Id);
 
         // Arquera y Alquimista son entidades estrictamente independientes
         var arquera = CatalogoBazar.Buscar("avatar_arquera");

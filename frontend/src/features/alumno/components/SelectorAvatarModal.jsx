@@ -212,13 +212,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                 const isBase = avatar.base || avatar.id === 'erudito_arcano' || avatar.id === 'exploradora_reliquias';
                 const isPurchased =
                   cosmeticosComprados.includes(avatar.id) ||
-                  cosmeticosComprados.includes(`avatar_${avatar.id}`) ||
-                  (avatar.id === 'exploradora_reliquias' && cosmeticosComprados.includes('avatar-explorador')) ||
-                  (avatar.id === 'erudito_arcano' && cosmeticosComprados.includes('avatar_mago')) ||
-                  (avatar.id === 'avatar_arquera' && (cosmeticosComprados.includes('avatar_arquera') || cosmeticosComprados.includes('arquera_silvana') || cosmeticosComprados.includes('arquera'))) ||
-                  (avatar.id === 'alquimista_botanica' && cosmeticosComprados.includes('alquimista_botanica')) ||
-                  (avatar.id === 'caballera_astral' && cosmeticosComprados.includes('avatar_guerrero')) ||
-                  (avatar.id === 'archimago_solar' && cosmeticosComprados.includes('mago_sideral'));
+                  cosmeticosComprados.some((c) => getAvatarPorId(c)?.id === avatar.id);
 
                 const isUnlocked = isBase || isPurchased;
                 const isSelected = selectedAvatarId === avatar.id || getAvatarPorId(selectedAvatarId)?.id === avatar.id;
@@ -234,7 +228,11 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                       playParchment();
                       setSelectedAvatarId(avatar.id);
                     }}
-                    title={!isUnlocked ? `Bloqueado: Adquiérelo en el Bazar por ${avatar.costoAp} AP` : avatar.nombre}
+                    title={
+                      !isUnlocked
+                        ? `Bloqueado: Requiere Nivel ${avatar.nivelRequerido} y comprar en el Bazar por ${avatar.costoAp} AP`
+                        : avatar.nombre
+                    }
                     className={[
                       'relative p-3 rounded-[12px_16px_14px_14px] border-2 flex flex-col items-center gap-2 text-center transition-all cursor-pointer',
                       isSelected
@@ -257,8 +255,8 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                       ) : null}
                     </div>
 
-                    <div className="w-14 h-14 shrink-0">
-                      <IconComp className="w-full h-full object-contain" />
+                    <div className="w-14 h-14 shrink-0 flex items-center justify-center overflow-hidden">
+                      <IconComp className="w-full h-full object-cover rounded-lg" />
                     </div>
 
                     <div>
@@ -270,7 +268,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                           <span className="text-[var(--text-secondary)]">{avatar.clase}</span>
                         ) : (
                           <span className="text-amber-600 dark:text-amber-400 font-bold">
-                            Bazar ({avatar.costoAp} AP)
+                            Bazar ({avatar.costoAp} AP{avatar.nivelRequerido > 1 ? ` · Nv.${avatar.nivelRequerido}` : ''})
                           </span>
                         )}
                       </p>

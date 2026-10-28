@@ -1,13 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Core.Domain\Core.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MediatR" Version="14.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.*" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.*" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
   </ItemGroup>
 
   <PropertyGroup>

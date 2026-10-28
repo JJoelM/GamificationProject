@@ -46,7 +46,7 @@ function LandingPage() {
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#FEF3C7] border-3 border-[#0F172A] shadow-[3px_3px_0px_#0F172A] dark:shadow-[3px_3px_0px_#38BDF8] flex items-center justify-center p-1.5 group-hover:-translate-y-0.5 transition-transform">
               <img
                 src="/images/landing/logo.png"
-                alt="Logo Aventuras del Saber"
+                alt="Logo EduQuest"
                 width="32"
                 height="32"
                 className="w-full h-full object-contain"
@@ -54,7 +54,7 @@ function LandingPage() {
             </div>
             <div>
               <span className="font-display font-extrabold text-base sm:text-xl tracking-tight text-[#0F172A] dark:text-white block leading-none">
-                Aventuras <span className="text-[#1D4ED8] dark:text-[#38BDF8]">del Saber</span>
+                Edu<span className="text-[#1D4ED8] dark:text-[#38BDF8]">Quest</span>
               </span>
               <span className="hidden sm:block text-[11px] font-display font-bold uppercase tracking-widest text-[#581C87] dark:text-[#E9D5FF]">
                 Tu Aula Convertida en Juego de Rol

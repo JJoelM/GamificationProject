@@ -277,7 +277,7 @@ function BazarRecompensas() {
     if (articulo.tipo === 'Marco') return marcoEstilo === articulo.id;
     if (articulo.tipo === 'Mascota') return mascotaEquipada === articulo.id;
     if (articulo.tipo === 'Titulo') return tituloEquipado === articulo.id;
-    if (articulo.tipo === 'Avatar') return avatarEquipado === articulo.id;
+    if (articulo.tipo === 'Avatar') return getAvatarPorId(avatarEquipado)?.id === getAvatarPorId(articulo.id)?.id;
     return false;
   };
 
@@ -521,13 +521,26 @@ function BazarRecompensas() {
                   ? (() => {
                       const av = getAvatarPorId(articulo.id);
                       const IconComp = av.IconoPreview;
+                      const rarezaNombre =
+                        av.tier === 'legendario'
+                          ? 'Avatar Legendario'
+                          : av.tier === 'raro'
+                            ? 'Avatar Raro'
+                            : 'Avatar RPG';
+                      const colorRareza =
+                        av.tier === 'legendario'
+                          ? 'text-[var(--brand-gold)] font-bold'
+                          : av.tier === 'raro'
+                            ? 'text-purple-400 font-bold'
+                            : 'text-[var(--brand-primary)]';
+
                       return {
                         descripcion: av.descripcion,
-                        rareza: 'Avatar RPG',
-                        colorRareza: 'text-[var(--brand-primary)]',
+                        rareza: rarezaNombre,
+                        colorRareza,
                         IconoVisual: ({ className = 'w-14 h-14' }) => (
-                          <div className={`${className} flex items-center justify-center rounded-full overflow-hidden border-2 border-[var(--brand-primary)]/40 shadow-sm bg-[var(--bg-base)] p-0.5 shrink-0`}>
-                            <IconComp className="w-full h-full" />
+                          <div className={`${className} flex items-center justify-center rounded-2xl overflow-hidden border-2 border-[var(--brand-primary)]/40 shadow-sm bg-[var(--bg-base)] p-0.5 shrink-0`}>
+                            <IconComp className="w-full h-full object-cover" />
                           </div>
                         ),
                       };
@@ -544,7 +557,10 @@ function BazarRecompensas() {
                     }
               );
               const Icono = meta.IconoVisual;
-              const yaComprado = cosmeticosComprados.includes(articulo.id);
+              const yaComprado =
+                cosmeticosComprados.includes(articulo.id) ||
+                (articulo.tipo === 'Avatar' &&
+                  cosmeticosComprados.some((c) => getAvatarPorId(c)?.id === getAvatarPorId(articulo.id)?.id));
               const equipado = isEquipado(articulo);
               const tieneSuficiente = apTotal >= articulo.costoAp;
               const enProceso =

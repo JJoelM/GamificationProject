@@ -12,6 +12,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 1,
     base: true,
     costoAp: 0,
+    tier: 'esencial',
     descripcion: 'Portador del grimorio luminoso, gafas de sabio y devoto de las runas ancestrales.',
     colorTema: '#2563EB',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -82,6 +83,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 1,
     base: true,
     costoAp: 0,
+    tier: 'esencial',
     descripcion: 'Ágil y perspicaz, con gafas de expedición, pluma guía y brújula de reliquias.',
     colorTema: '#D97706',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -145,6 +147,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 1,
     base: false,
     costoAp: 50,
+    tier: 'avanzado',
     descripcion: 'Puntería infalible entre el follaje; porta un arco de tejo élfico y carcaj repleto de flechas.',
     colorTema: '#16A34A',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -215,6 +218,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 1,
     base: false,
     costoAp: 40,
+    tier: 'avanzado',
     descripcion: 'Domina los secretos de la flora y destila pociones mágicas en matraces resplandecientes.',
     colorTema: '#059669',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -276,6 +280,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 2,
     base: false,
     costoAp: 60,
+    tier: 'avanzado',
     descripcion: 'Forja autómatas y artefactos electromágicos con monóculo de engranajes y placas de latón.',
     colorTema: '#7C3AED',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -326,6 +331,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 3,
     base: false,
     costoAp: 80,
+    tier: 'avanzado',
     descripcion: 'Armadura forjada en starlight con yelmo alado y estrella de ocho puntas.',
     colorTema: '#0284C7',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -378,6 +384,7 @@ export const AVATARES_RPG = [
     nivelRequerido: 4,
     base: false,
     costoAp: 100,
+    tier: 'avanzado',
     descripcion: 'Togas doradas, corona de rayos solares y orbe ardiente de sabiduría suprema.',
     colorTema: '#EA580C',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -422,6 +429,140 @@ export const AVATARES_RPG = [
       </svg>
     ),
   },
+
+  /* ═══════════════════════════════════════════════════════════════
+   * TIER 2 — AVATARES RAROS ILUSTRADOS (180 AP)
+   * ═══════════════════════════════════════════════════════════════ */
+  {
+    id: 'avatar_guerrero_veterano',
+    nombre: 'Guerrero Veterano',
+    clase: 'Paladín de Vanguardia',
+    nivelRequerido: 2,
+    base: false,
+    costoAp: 180,
+    tier: 'raro',
+    descripcion: 'Veterano curtido en mil batallas con coraza de acero templado y determinación inquebrantable.',
+    colorTema: '#DC2626',
+    imagenSrc: '/images/avatares/guerrero_veterano.png',
+    imagenFullSrc: '/images/avatares/guerrero_veterano.png',
+    IconoPreview: ({ className = 'w-full h-full' }) => (
+      <img
+        src="/images/avatares/guerrero_veterano.png"
+        alt="Guerrero Veterano"
+        className={`${className} object-cover rounded-xl`}
+        loading="lazy"
+      />
+    ),
+  },
+  {
+    id: 'avatar_sanadora_luz',
+    nombre: 'Sanadora de la Luz',
+    clase: 'Clériga Sagrada',
+    nivelRequerido: 2,
+    base: false,
+    costoAp: 180,
+    tier: 'raro',
+    descripcion: 'Canalizadora de la gracia luminosa y bendiciones arcanas que restauran el ánimo en los momentos más oscuros.',
+    colorTema: '#059669',
+    imagenSrc: '/images/avatares/sanadora_luz.png',
+    imagenFullSrc: '/images/avatares/sanadora_luz.png',
+    IconoPreview: ({ className = 'w-full h-full' }) => (
+      <img
+        src="/images/avatares/sanadora_luz.png"
+        alt="Sanadora de la Luz"
+        className={`${className} object-cover rounded-xl`}
+        loading="lazy"
+      />
+    ),
+  },
+  {
+    id: 'avatar_hechicero_arcano',
+    nombre: 'Hechicero Arcano',
+    clase: 'Taumaturgo de Sombras',
+    nivelRequerido: 2,
+    base: false,
+    costoAp: 180,
+    tier: 'raro',
+    descripcion: 'Dominador de vórtices astrales y grimorios prohibidos, capaz de alterar el tejido causal de la realidad.',
+    colorTema: '#7C3AED',
+    imagenSrc: '/images/avatares/hechicero_arcano.png',
+    imagenFullSrc: '/images/avatares/hechicero_arcano.png',
+    IconoPreview: ({ className = 'w-full h-full' }) => (
+      <img
+        src="/images/avatares/hechicero_arcano.png"
+        alt="Hechicero Arcano"
+        className={`${className} object-cover rounded-xl`}
+        loading="lazy"
+      />
+    ),
+  },
+
+  /* ═══════════════════════════════════════════════════════════════
+   * TIER 3 — AVATARES LEGENDARIOS ILUSTRADOS (300 AP)
+   * ═══════════════════════════════════════════════════════════════ */
+  {
+    id: 'avatar_paladin_runico',
+    nombre: 'Paladín Rúnico',
+    clase: 'Guardián Celestial',
+    nivelRequerido: 4,
+    base: false,
+    costoAp: 300,
+    tier: 'legendario',
+    descripcion: 'Caballero acorazado con armadura de runas celestiales y espada sagrada que disipa toda tiniebla.',
+    colorTema: '#F59E0B',
+    imagenSrc: '/images/avatares/paladin_bust.png',
+    imagenFullSrc: '/images/avatares/paladin.png',
+    IconoPreview: ({ className = 'w-full h-full' }) => (
+      <img
+        src="/images/avatares/paladin_bust.png"
+        alt="Paladín Rúnico"
+        className={`${className} object-cover rounded-xl`}
+        loading="lazy"
+      />
+    ),
+  },
+  {
+    id: 'avatar_archimaga_floresta',
+    nombre: 'Archimaga de la Floresta',
+    clase: 'Hechicera Primigenia',
+    nivelRequerido: 4,
+    base: false,
+    costoAp: 300,
+    tier: 'legendario',
+    descripcion: 'Hechicera mística sintonizada con los espíritus milenarios de la naturaleza y los misterios botánicos.',
+    colorTema: '#10B981',
+    imagenSrc: '/images/avatares/witch_bust.png',
+    imagenFullSrc: '/images/avatares/witch.png',
+    IconoPreview: ({ className = 'w-full h-full' }) => (
+      <img
+        src="/images/avatares/witch_bust.png"
+        alt="Archimaga de la Floresta"
+        className={`${className} object-cover rounded-xl`}
+        loading="lazy"
+      />
+    ),
+  },
+  {
+    id: 'avatar_cazador_sombrio',
+    nombre: 'Cazador Sombrío',
+    clase: 'Explorador Espectral',
+    nivelRequerido: 4,
+    base: false,
+    costoAp: 300,
+    tier: 'legendario',
+    descripcion: 'Tirador de las sombras y rastreador supremo que se desliza invisiblemente por las ruinas olvidadas.',
+    colorTema: '#06B6D4',
+    imagenSrc: '/images/avatares/ranger_bust.png',
+    imagenFullSrc: '/images/avatares/ranger.png',
+    IconoPreview: ({ className = 'w-full h-full' }) => (
+      <img
+        src="/images/avatares/ranger_bust.png"
+        alt="Cazador Sombrío"
+        className={`${className} object-cover rounded-xl`}
+        loading="lazy"
+      />
+    ),
+  },
 ];
 
 export const AURAS_DISPONIBLES = [
@@ -442,17 +583,60 @@ export function getAvatarPorId(id) {
   if (id === 'avatar_arquera' || id === 'arquera_silvana' || id === 'arquera') {
     return AVATARES_RPG.find((a) => a.id === 'avatar_arquera') || AVATARES_RPG[2];
   }
-  if (id === 'avatar-explorador') {
+  if (id === 'avatar-explorador' || id === 'exploradora_reliquias' || id === 'avatar_explorador') {
     return AVATARES_RPG.find((a) => a.id === 'exploradora_reliquias') || AVATARES_RPG[1];
   }
-  if (id === 'avatar_guerrero') {
+  if (id === 'avatar_guerrero' || id === 'caballera_astral') {
     return AVATARES_RPG.find((a) => a.id === 'caballera_astral') || AVATARES_RPG[5];
   }
-  if (id === 'avatar_mago') {
+  if (id === 'avatar_mago' || id === 'erudito_arcano') {
     return AVATARES_RPG.find((a) => a.id === 'erudito_arcano') || AVATARES_RPG[0];
   }
-  if (id === 'mago_sideral') {
+  if (id === 'mago_sideral' || id === 'archimago_solar') {
     return AVATARES_RPG.find((a) => a.id === 'archimago_solar') || AVATARES_RPG[6];
+  }
+  if (id === 'alquimista_botanica') {
+    return AVATARES_RPG.find((a) => a.id === 'alquimista_botanica') || AVATARES_RPG[3];
+  }
+  if (id === 'artifice_runico') {
+    return AVATARES_RPG.find((a) => a.id === 'artifice_runico') || AVATARES_RPG[4];
+  }
+
+  // Tier 2 aliases
+  if (
+    id === 'avatar_guerrero_veterano' ||
+    id === 'guerrero_veterano' ||
+    id === 'guerrero_2' ||
+    id === 'avatar_guerrero_2'
+  ) {
+    return AVATARES_RPG.find((a) => a.id === 'avatar_guerrero_veterano');
+  }
+  if (
+    id === 'avatar_sanadora_luz' ||
+    id === 'sanadora_luz' ||
+    id === 'healer_2' ||
+    id === 'avatar_healer_2'
+  ) {
+    return AVATARES_RPG.find((a) => a.id === 'avatar_sanadora_luz');
+  }
+  if (
+    id === 'avatar_hechicero_arcano' ||
+    id === 'hechicero_arcano' ||
+    id === 'mago_dfs' ||
+    id === 'avatar_mago_dfs'
+  ) {
+    return AVATARES_RPG.find((a) => a.id === 'avatar_hechicero_arcano');
+  }
+
+  // Tier 3 aliases
+  if (id === 'avatar_paladin_runico' || id === 'paladin' || id === 'paladin_runico') {
+    return AVATARES_RPG.find((a) => a.id === 'avatar_paladin_runico');
+  }
+  if (id === 'avatar_archimaga_floresta' || id === 'witch' || id === 'archimaga_floresta') {
+    return AVATARES_RPG.find((a) => a.id === 'avatar_archimaga_floresta');
+  }
+  if (id === 'avatar_cazador_sombrio' || id === 'ranger' || id === 'cazador_sombrio') {
+    return AVATARES_RPG.find((a) => a.id === 'avatar_cazador_sombrio');
   }
 
   return AVATARES_RPG[0];

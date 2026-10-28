@@ -12,7 +12,8 @@ public static class CatalogoBazar
         new("pista", "Pista", TipoArticulo.Pista, 15),
         new("escudo-racha", "Escudo de racha", TipoArticulo.EscudoRacha, 50),
 
-        // Avatares RPG Oficiales (7 avatares únicos coincidentes con Personalizar Identidad)
+        // Avatares RPG Oficiales
+        // Tier 1 — Esenciales y Avanzados (0 a 100 AP)
         new("erudito_arcano", "Erudito Arcano", TipoArticulo.Avatar, 0),
         new("exploradora_reliquias", "Exploradora de Reliquias", TipoArticulo.Avatar, 0),
         new("alquimista_botanica", "Alquimista Botánica", TipoArticulo.Avatar, 40),
@@ -20,6 +21,16 @@ public static class CatalogoBazar
         new("artifice_runico", "Artífice Rúnico", TipoArticulo.Avatar, 60),
         new("caballera_astral", "Caballera Astral", TipoArticulo.Avatar, 80),
         new("archimago_solar", "Archimago Solar", TipoArticulo.Avatar, 100),
+
+        // Tier 2 — Ilustraciones Raras (180 AP)
+        new("avatar_guerrero_veterano", "Guerrero Veterano", TipoArticulo.Avatar, 180),
+        new("avatar_sanadora_luz", "Sanadora de la Luz", TipoArticulo.Avatar, 180),
+        new("avatar_hechicero_arcano", "Hechicero Arcano", TipoArticulo.Avatar, 180),
+
+        // Tier 3 — Ilustraciones Legendarias (300 AP)
+        new("avatar_paladin_runico", "Paladín Rúnico", TipoArticulo.Avatar, 300),
+        new("avatar_archimaga_floresta", "Archimaga de la Floresta", TipoArticulo.Avatar, 300),
+        new("avatar_cazador_sombrio", "Cazador Sombrío", TipoArticulo.Avatar, 300),
 
         // Marcos
         new("scroll", "Marco de Pergamino", TipoArticulo.Marco, 30),
@@ -58,6 +69,12 @@ public static class CatalogoBazar
             "avatar_guerrero" => "caballera_astral",
             "avatar_mago" => "erudito_arcano",
             "avatar-explorador" => "exploradora_reliquias",
+            "guerrero_veterano" => "avatar_guerrero_veterano",
+            "sanadora_luz" => "avatar_sanadora_luz",
+            "hechicero_arcano" => "avatar_hechicero_arcano",
+            "paladin" or "paladin_runico" => "avatar_paladin_runico",
+            "witch" or "archimaga_floresta" => "avatar_archimaga_floresta",
+            "ranger" or "cazador_sombrio" => "avatar_cazador_sombrio",
             _ => id.Trim().ToLowerInvariant(),
         };
 
