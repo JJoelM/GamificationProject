@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { aulasApi } from '../services/api';
 import useSessionStore from '../store/useSessionStore';
@@ -19,19 +20,15 @@ const AULAS_DEFAULT = [
 export function useMisAulas() {
   const usuario = useSessionStore((s) => s.usuario);
   const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const setAulaActivaId = useSessionStore((s) => s.setAulaActivaId);
   const setCodigoInvitacion = useSessionStore((s) => s.setCodigoInvitacion);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['aulas', 'mis-aulas', usuario?.usuarioId],
     queryFn: async () => {
       try {
         const data = await aulasApi.getMisAulas();
-        if (Array.isArray(data) && data.length > 0) {
-          // Sincronizar código de invitación del aula activa si coincide
-          const activa = data.find((a) => a.aulaId === aulaActivaId);
-          if (activa?.codigoInvitacion) {
-            setCodigoInvitacion(activa.codigoInvitacion);
-          }
+        if (Array.isArray(data)) {
           return data;
         }
         return AULAS_DEFAULT;
@@ -43,7 +40,35 @@ export function useMisAulas() {
       }
     },
     enabled: Boolean(usuario),
+    staleTime: 1000 * 30, // 30s
   });
+
+  useEffect(() => {
+    if (!query.data || !Array.isArray(query.data)) return;
+
+    if (query.data.length > 0) {
+      const activa = query.data.find((a) => a.aulaId === aulaActivaId);
+      if (activa) {
+        if (activa.codigoInvitacion && activa.codigoInvitacion !== useSessionStore.getState().codigoInvitacionAula) {
+          setCodigoInvitacion(activa.codigoInvitacion);
+        }
+      } else {
+        // El aula activa almacenada no pertenece a este usuario o es null:
+        // Asignar inmediatamente la primera aula válida del usuario autenticado
+        setAulaActivaId(query.data[0].aulaId);
+        if (query.data[0].codigoInvitacion) {
+          setCodigoInvitacion(query.data[0].codigoInvitacion);
+        }
+      }
+    } else if (usuario?.rol !== 'Directivo' && usuario?.rol !== 'Administrador') {
+      if (aulaActivaId !== null) {
+        setAulaActivaId(null);
+        setCodigoInvitacion(null);
+      }
+    }
+  }, [query.data, aulaActivaId, setAulaActivaId, setCodigoInvitacion, usuario?.rol]);
+
+  return query;
 }
 
 export function useCrearAula() {

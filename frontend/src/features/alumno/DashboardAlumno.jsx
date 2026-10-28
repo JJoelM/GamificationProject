@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Swords, ArrowRight, Compass, Sparkles, Map, RefreshCw, BookOpen, Zap } from 'lucide-react';
 import { useMisionesActivas } from '../../hooks/useMisiones';
 import { usePersonaje } from '../../hooks/usePersonaje';
+import { useMisAulas } from '../../hooks/useAulas';
 import useSessionStore from '../../store/useSessionStore';
 import HojaPersonaje from './components/HojaPersonaje';
 import RankingAula from './components/RankingAula';
@@ -22,9 +23,13 @@ import ArtFrame from '../../components/ui/ArtFrame';
  */
 function DashboardAlumno() {
   const navigate = useNavigate();
+  const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const { data: aulas, isLoading: isLoadingAulas } = useMisAulas();
   usePersonaje(); // Sincroniza XP, AP y racha con backend
-  const { data: misiones, isLoading } = useMisionesActivas();
+  const { data: misiones, isLoading: isLoadingMisiones } = useMisionesActivas();
   const [misionSeleccionada, setMisionSeleccionada] = useState(null);
+
+  const isLoading = isLoadingAulas || isLoadingMisiones;
 
   const misionesResueltas = useSessionStore((s) => s.misionesResueltas) || {};
 

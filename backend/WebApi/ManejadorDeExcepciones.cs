@@ -50,6 +50,16 @@ public class ManejadorDeExcepciones : IExceptionHandler
         if (status == StatusCodes.Status500InternalServerError)
             _logger.LogError(exception, "Error no controlado en {Path}", httpContext.Request.Path);
 
+        if (!httpContext.Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
+        {
+            var origin = httpContext.Request.Headers.Origin.FirstOrDefault();
+            if (!string.IsNullOrEmpty(origin))
+            {
+                httpContext.Response.Headers.AccessControlAllowOrigin = origin;
+                httpContext.Response.Headers.AccessControlAllowCredentials = "true";
+            }
+        }
+
         httpContext.Response.StatusCode = status;
         await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
         {

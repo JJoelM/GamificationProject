@@ -7,7 +7,7 @@ import {
   CheckCircle2, ArrowLeft, ShieldAlert, Sparkles, AlertCircle
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
-import { usuariosApi } from '../../services/api';
+import { usuariosApi, aulasApi } from '../../services/api';
 import Button from '../../components/ui/Button';
 import ThemeToggle from '../../components/layout/ThemeToggle';
 import SoundToggle from '../../components/layout/SoundToggle';
@@ -88,6 +88,21 @@ function AuthPage() {
       // Limpiar caché previa antes de fijar nuevo usuario
       queryClient.clear();
       setUsuario(data);
+
+      try {
+        const misAulas = await aulasApi.getMisAulas();
+        if (Array.isArray(misAulas) && misAulas.length > 0) {
+          useSessionStore.getState().setAulaActivaId(misAulas[0].aulaId);
+          if (misAulas[0].codigoInvitacion) {
+            useSessionStore.getState().setCodigoInvitacion(misAulas[0].codigoInvitacion);
+          }
+        } else {
+          useSessionStore.getState().setAulaActivaId(null);
+        }
+      } catch {
+        // En caso de fallo transitorio, useMisAulas en AppShell sincronizará
+      }
+
       redirectByRole(data.rol);
     } catch (err) {
       if (!err.isApiError) {
@@ -179,6 +194,10 @@ function AuthPage() {
         const loginData = await usuariosApi.login({ email, password });
         queryClient.clear();
         setUsuario(loginData);
+        if (res?.aulaId) {
+          useSessionStore.getState().setAulaActivaId(res.aulaId);
+          useSessionStore.getState().setCodigoInvitacion(codigoInvitacion.trim().toUpperCase());
+        }
         setTimeout(() => redirectByRole(loginData.rol), 1000);
       }
     } catch (err) {
