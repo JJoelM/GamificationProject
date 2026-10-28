@@ -328,7 +328,7 @@ export default function SalonAventureros() {
                               {alumno.nombreCompleto}
                             </span>
                             {alumno.esYo && (
-                              <span className="text-[9px] font-extrabold text-[var(--brand-primary)] bg-[color-mix(in_oklch,var(--brand-primary)_12%,var(--bg-panel))] px-1.5 py-0.2 rounded-md">
+                              <span className="text-[9px] font-extrabold text-[var(--brand-primary)] bg-[color-mix(in_oklch,var(--brand-primary)_12%,var(--bg-panel))] px-1.5 py-0.5 rounded-md">
                                 Tú
                               </span>
                             )}
