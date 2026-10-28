@@ -9,6 +9,8 @@ export const AVATARES_RPG = [
     nombre: 'Erudito Arcano',
     clase: 'Mago del Saber',
     nivelRequerido: 1,
+    base: true,
+    costoAp: 0,
     descripcion: 'Portador del grimorio luminoso y devoto de las runas ancestrales.',
     colorTema: '#2563EB',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -50,6 +52,8 @@ export const AVATARES_RPG = [
     nombre: 'Exploradora de Reliquias',
     clase: 'Aventurera Intrépida',
     nivelRequerido: 1,
+    base: true,
+    costoAp: 0,
     descripcion: 'Ágil y perspicaz, descifra mapas olvidados y ruinas misteriosas.',
     colorTema: '#D97706',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -93,6 +97,8 @@ export const AVATARES_RPG = [
     nombre: 'Alquimista Botánica',
     clase: 'Científica Naturalista',
     nivelRequerido: 1,
+    base: false,
+    costoAp: 40,
     descripcion: 'Domina los secretos de la flora y destila pociones curativas.',
     colorTema: '#059669',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -132,6 +138,8 @@ export const AVATARES_RPG = [
     nombre: 'Artífice Rúnico',
     clase: 'Ingeniero Arcano',
     nivelRequerido: 2,
+    base: false,
+    costoAp: 60,
     descripcion: 'Forja artefactos electromágicos y decodifica autómatas del saber.',
     colorTema: '#7C3AED',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -167,6 +175,8 @@ export const AVATARES_RPG = [
     nombre: 'Caballera Astral',
     clase: 'Guardiana de las Estrellas',
     nivelRequerido: 3,
+    base: false,
+    costoAp: 80,
     descripcion: 'Escudo inquebrantable que canaliza la luz de las constelaciones.',
     colorTema: '#0284C7',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -203,6 +213,8 @@ export const AVATARES_RPG = [
     nombre: 'Archimago Solar',
     clase: 'Maestro de la Iluminación',
     nivelRequerido: 4,
+    base: false,
+    costoAp: 100,
     descripcion: 'Canaliza el saber cumbre y desata la sabiduría de las eras doradas.',
     colorTema: '#EA580C',
     IconoPreview: ({ className = 'w-full h-full' }) => (
@@ -253,6 +265,7 @@ export function getAvatarPorId(id) {
   if (id === 'avatar_guerrero') return AVATARES_RPG.find((a) => a.id === 'caballera_astral') || AVATARES_RPG[4];
   if (id === 'avatar_mago') return AVATARES_RPG.find((a) => a.id === 'erudito_arcano') || AVATARES_RPG[0];
   if (id === 'avatar_arquera') return AVATARES_RPG.find((a) => a.id === 'alquimista_botanica') || AVATARES_RPG[2];
+  if (id === 'mago_sideral') return AVATARES_RPG.find((a) => a.id === 'archimago_solar') || AVATARES_RPG[5];
 
   return AVATARES_RPG[0];
 }

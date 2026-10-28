@@ -19,6 +19,7 @@ public static class CatalogoBazar
         new("artifice_runico", "Artífice Rúnico", TipoArticulo.Avatar, 60),
         new("caballera_astral", "Caballera Astral", TipoArticulo.Avatar, 80),
         new("mago_sideral", "Mago Sideral", TipoArticulo.Avatar, 100),
+        new("archimago_solar", "Archimago Solar", TipoArticulo.Avatar, 100),
         new("avatar-explorador", "Explorador", TipoArticulo.Avatar, 40),
         new("avatar_guerrero", "Guerrero", TipoArticulo.Avatar, 50),
         new("avatar_mago", "Mago", TipoArticulo.Avatar, 60),
@@ -56,6 +57,7 @@ public static class CatalogoBazar
             "marco-pergamino" => "scroll",
             "marco_dorado" => "orlado_dorado",
             "titulo_centinela_saber" => "titulo_centinela",
+            "mago_sideral" => "archimago_solar",
             _ => id.Trim().ToLowerInvariant(),
         };
 

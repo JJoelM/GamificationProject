@@ -15,28 +15,28 @@ import { usePersonalizarPersonaje } from '../../../hooks/useBazarMutations';
 import { playParchment, playSuccess } from '../../../utils/audio';
 
 const MARCOS_DISPONIBLES = [
-  { id: 'scroll', nombre: 'Pergamino Clásico', shape: 'scroll', base: true, descripcion: 'Borde orgánico de pergamino doblado.' },
-  { id: 'orlado_dorado', nombre: 'Orlado de Oro', shape: 'orlado_dorado', base: false, descripcion: 'Octógono noble con filigrana dorada.' },
-  { id: 'cristal_celeste', nombre: 'Prisma Astral', shape: 'cristal_celeste', base: false, descripcion: 'Prisma facetado con destellos celestes.' },
-  { id: 'runa_violeta', nombre: 'Runas Arcanas', shape: 'runa_violeta', base: false, descripcion: 'Corte rúnico de alta magia arcana.' },
+  { id: 'scroll', nombre: 'Pergamino Clásico', shape: 'scroll', base: true, costoAp: 0, descripcion: 'Borde orgánico de pergamino doblado.' },
+  { id: 'orlado_dorado', nombre: 'Orlado de Oro', shape: 'orlado_dorado', base: false, costoAp: 100, descripcion: 'Octógono noble con filigrana dorada.' },
+  { id: 'cristal_celeste', nombre: 'Prisma Astral', shape: 'cristal_celeste', base: false, costoAp: 90, descripcion: 'Prisma facetado con destellos celestes.' },
+  { id: 'runa_violeta', nombre: 'Runas Arcanas', shape: 'runa_violeta', base: false, costoAp: 110, descripcion: 'Corte rúnico de alta magia arcana.' },
 ];
 
 const MASCOTAS_DISPONIBLES = [
-  { id: 'ninguna', valor: null, nombre: 'Sin Mascota', descripcion: 'Viajar en solitario.', imagenSrc: null },
-  { id: 'buho', valor: 'buho', nombre: 'Búho Erudito', descripcion: 'Sabiduría en lecturas nocturnas.', imagenSrc: '/images/mascotas/buho.png' },
-  { id: 'dragon', valor: 'dragon', nombre: 'Dragón Guardián', descripcion: 'Fuego y valentía ante los desafíos.', imagenSrc: '/images/mascotas/dragon.png' },
-  { id: 'gato', valor: 'gato', nombre: 'Gato Místico', descripcion: 'Serenidad y cariño en tus horas de estudio.', imagenSrc: '/images/mascotas/gato.png' },
+  { id: 'ninguna', valor: null, nombre: 'Sin Mascota', costoAp: 0, descripcion: 'Viajar en solitario.', imagenSrc: null },
+  { id: 'buho', valor: 'buho', nombre: 'Búho Erudito', costoAp: 250, descripcion: 'Sabiduría en lecturas nocturnas.', imagenSrc: '/images/mascotas/buho.png' },
+  { id: 'dragon', valor: 'dragon', nombre: 'Dragón Guardián', costoAp: 250, descripcion: 'Fuego y valentía ante los desafíos.', imagenSrc: '/images/mascotas/dragon.png' },
+  { id: 'gato', valor: 'gato', nombre: 'Gato Místico', costoAp: 250, descripcion: 'Serenidad y cariño en tus horas de estudio.', imagenSrc: '/images/mascotas/gato.png' },
 ];
 
 const TITULOS_DISPONIBLES = [
-  { id: 'Iniciado del Saber', nombre: 'Iniciado del Saber', nivelReq: 1 },
-  { id: 'Buscador de Respuestas', nombre: 'Buscador de Respuestas', nivelReq: 2 },
-  { id: 'Explorador Curioso', nombre: 'Explorador Curioso', nivelReq: 3 },
-  { id: 'Erudito de las Runas', nombre: 'Erudito de las Runas', nivelReq: 4 },
-  { id: 'Maestro Alquimista', nombre: 'Maestro Alquimista', nivelReq: 5 },
-  { id: 'titulo_centinela', nombre: 'Centinela del Saber', deBazar: true },
-  { id: 'titulo_erudito', nombre: 'Erudito Arcano', deBazar: true },
-  { id: 'titulo_maestro_grimorios', nombre: 'Maestro de Grimorios', deBazar: true },
+  { id: 'Iniciado del Saber', nombre: 'Iniciado del Saber', nivelReq: 1, costoAp: 0 },
+  { id: 'Buscador de Respuestas', nombre: 'Buscador de Respuestas', nivelReq: 2, costoAp: 0 },
+  { id: 'Explorador Curioso', nombre: 'Explorador Curioso', nivelReq: 3, costoAp: 0 },
+  { id: 'Erudito de las Runas', nombre: 'Erudito de las Runas', nivelReq: 4, costoAp: 0 },
+  { id: 'Maestro Alquimista', nombre: 'Maestro Alquimista', nivelReq: 5, costoAp: 0 },
+  { id: 'titulo_centinela', nombre: 'Centinela del Saber', deBazar: true, costoAp: 140 },
+  { id: 'titulo_erudito', nombre: 'Erudito Arcano', deBazar: true, costoAp: 150 },
+  { id: 'titulo_maestro_grimorios', nombre: 'Maestro de Grimorios', deBazar: true, costoAp: 200 },
 ];
 
 function SelectorAvatarModal({ isOpen, onClose }) {
@@ -204,12 +204,22 @@ function SelectorAvatarModal({ isOpen, onClose }) {
         {/* ── CONTENIDO: 1. AVATARES ── */}
         {subTab === 'avatares' && (
           <div className="flex flex-col gap-3">
+            <p className="text-xs text-[var(--text-secondary)]">
+              Selecciona tu avatar de aventurero. Los avatares del Bazar deben adquirirse previamente para poder equiparse.
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
               {AVATARES_RPG.map((avatar) => {
-                const isUnlocked =
-                  avatar.nivelRequerido === 1 ||
-                  nivelInfo.nivel >= avatar.nivelRequerido ||
-                  cosmeticosComprados.includes(avatar.id);
+                const isBase = avatar.base || avatar.id === 'erudito_arcano' || avatar.id === 'exploradora_reliquias';
+                const isPurchased =
+                  cosmeticosComprados.includes(avatar.id) ||
+                  cosmeticosComprados.includes(`avatar_${avatar.id}`) ||
+                  (avatar.id === 'exploradora_reliquias' && cosmeticosComprados.includes('avatar-explorador')) ||
+                  (avatar.id === 'erudito_arcano' && cosmeticosComprados.includes('avatar_mago')) ||
+                  (avatar.id === 'alquimista_botanica' && cosmeticosComprados.includes('avatar_arquera')) ||
+                  (avatar.id === 'caballera_astral' && cosmeticosComprados.includes('avatar_guerrero')) ||
+                  (avatar.id === 'archimago_solar' && cosmeticosComprados.includes('mago_sideral'));
+
+                const isUnlocked = isBase || isPurchased;
                 const isSelected = selectedAvatarId === avatar.id;
                 const IconComp = avatar.IconoPreview;
 
@@ -223,13 +233,14 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                       playParchment();
                       setSelectedAvatarId(avatar.id);
                     }}
+                    title={!isUnlocked ? `Bloqueado: Adquiérelo en el Bazar por ${avatar.costoAp} AP` : avatar.nombre}
                     className={[
                       'relative p-3 rounded-[12px_16px_14px_14px] border-2 flex flex-col items-center gap-2 text-center transition-all cursor-pointer',
                       isSelected
                         ? 'border-[var(--brand-primary)] bg-[color-mix(in_oklch,var(--brand-primary)_12%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-primary)] scale-[1.02]'
                         : isUnlocked
                           ? 'border-[var(--border-muted)] bg-[var(--bg-panel)] hover:border-[var(--brand-primary)] hover:bg-[var(--bg-accent)]'
-                          : 'border-[var(--border-muted)] bg-[var(--bg-muted)] opacity-50 cursor-not-allowed',
+                          : 'border-[var(--border-muted)] border-dashed bg-[var(--bg-muted)] opacity-55 cursor-not-allowed',
                     ].join(' ')}
                   >
                     <div className="absolute top-2 right-2">
@@ -238,8 +249,9 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                           <Check size={12} />
                         </span>
                       ) : !isUnlocked ? (
-                        <span className="w-5 h-5 rounded-full bg-[var(--bg-panel)] border border-[var(--border-muted)] text-[var(--text-muted)] flex items-center justify-center text-[10px]">
-                          <Lock size={10} />
+                        <span className="px-1.5 py-0.5 rounded-md bg-[var(--bg-panel)] border border-[var(--border-muted)] text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 shadow-xs">
+                          <Lock size={10} className="text-amber-500" />
+                          <span>{avatar.costoAp ? `${avatar.costoAp} AP` : 'Bazar'}</span>
                         </span>
                       ) : null}
                     </div>
@@ -252,8 +264,14 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                       <h4 className="font-display font-bold text-xs text-[var(--text-primary)] leading-tight">
                         {avatar.nombre}
                       </h4>
-                      <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                        {isUnlocked ? avatar.clase : `Desbloquea en Nv. ${avatar.nivelRequerido}`}
+                      <p className="text-[10px] mt-0.5 font-medium">
+                        {isUnlocked ? (
+                          <span className="text-[var(--text-secondary)]">{avatar.clase}</span>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">
+                            Bazar ({avatar.costoAp} AP)
+                          </span>
+                        )}
                       </p>
                     </div>
                   </button>
@@ -284,13 +302,14 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                       playParchment();
                       setSelectedMarco(marco.id);
                     }}
+                    title={!isUnlocked ? `Bloqueado: Adquiérelo en el Bazar por ${marco.costoAp} AP` : marco.nombre}
                     className={[
                       'p-3.5 rounded-xl border-2 flex items-center gap-3.5 text-left transition-all cursor-pointer relative',
                       isSelected
                         ? 'border-[var(--brand-primary)] bg-[color-mix(in_oklch,var(--brand-primary)_12%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-primary)]'
                         : isUnlocked
                           ? 'border-[var(--border-muted)] bg-[var(--bg-panel)] hover:border-[var(--brand-primary)]'
-                          : 'border-[var(--border-muted)] bg-[var(--bg-muted)] opacity-50 cursor-not-allowed',
+                          : 'border-[var(--border-muted)] border-dashed bg-[var(--bg-muted)] opacity-55 cursor-not-allowed',
                     ].join(' ')}
                   >
                     <ArtFrame
@@ -306,10 +325,15 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                           {marco.nombre}
                         </h4>
                         {isSelected && <Check size={14} className="text-[var(--brand-primary)]" />}
-                        {!isUnlocked && <Lock size={12} className="text-[var(--text-muted)]" />}
+                        {!isUnlocked && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                            <Lock size={11} className="text-amber-500" />
+                            <span>{marco.costoAp} AP</span>
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2">
-                        {isUnlocked ? marco.descripcion : 'Adquiérelo en el Bazar.'}
+                        {isUnlocked ? marco.descripcion : `Requiere compra en el Bazar (${marco.costoAp} AP).`}
                       </p>
                     </div>
                   </button>
@@ -331,7 +355,7 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                   mascota.id === 'ninguna' ||
                   cosmeticosComprados.includes(mascota.id) ||
                   cosmeticosComprados.includes(`mascota_${mascota.id}`) ||
-                  cosmeticosComprados.includes('mascota-lechuza') && mascota.id === 'buho';
+                  (cosmeticosComprados.includes('mascota-lechuza') && mascota.id === 'buho');
                 const isSelected = selectedMascota === mascota.valor;
 
                 return (
@@ -344,18 +368,19 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                       playParchment();
                       setSelectedMascota(mascota.valor);
                     }}
+                    title={!isUnlocked ? `Bloqueado: Adquiérelo en el Bazar por ${mascota.costoAp} AP` : mascota.nombre}
                     className={[
                       'p-3.5 rounded-xl border-2 flex items-center gap-3.5 text-left transition-all cursor-pointer relative',
                       isSelected
                         ? 'border-[var(--brand-violet)] bg-[color-mix(in_oklch,var(--brand-violet)_12%,var(--bg-panel))] shadow-[3px_3px_0px_var(--brand-violet)]'
                         : isUnlocked
                           ? 'border-[var(--border-muted)] bg-[var(--bg-panel)] hover:border-[var(--brand-violet)]'
-                          : 'border-[var(--border-muted)] bg-[var(--bg-muted)] opacity-50 cursor-not-allowed',
+                          : 'border-[var(--border-muted)] border-dashed bg-[var(--bg-muted)] opacity-55 cursor-not-allowed',
                     ].join(' ')}
                   >
-                    <div className="w-12 h-12 rounded-xl border-2 border-[var(--border-muted)] overflow-hidden shrink-0 flex items-center justify-center bg-[var(--bg-base)]">
+                    <div className="w-12 h-12 rounded-full border-2 border-[var(--border-muted)] overflow-hidden shrink-0 flex items-center justify-center bg-[var(--bg-base)]">
                       {mascota.imagenSrc ? (
-                        <img src={mascota.imagenSrc} alt={mascota.nombre} className="w-full h-full object-cover" />
+                        <img src={mascota.imagenSrc} alt={mascota.nombre} className="w-full h-full object-cover rounded-full" />
                       ) : (
                         <span className="text-xs text-[var(--text-muted)] font-bold">🚫</span>
                       )}
@@ -366,10 +391,15 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                           {mascota.nombre}
                         </h4>
                         {isSelected && <Check size={14} className="text-[var(--brand-violet)]" />}
-                        {!isUnlocked && <Lock size={12} className="text-[var(--text-muted)]" />}
+                        {!isUnlocked && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                            <Lock size={11} className="text-amber-500" />
+                            <span>{mascota.costoAp} AP</span>
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2">
-                        {isUnlocked ? mascota.descripcion : 'Disponible en el Bazar (250 AP).'}
+                        {isUnlocked ? mascota.descripcion : `Requiere compra en el Bazar (${mascota.costoAp} AP).`}
                       </p>
                     </div>
                   </button>
@@ -421,9 +451,9 @@ function SelectorAvatarModal({ isOpen, onClose }) {
                     {isSelected ? (
                       <Check size={14} className="text-[var(--brand-gold)] shrink-0" />
                     ) : !isUnlocked ? (
-                      <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 shrink-0">
-                        <Lock size={10} />
-                        {titulo.nivelReq ? `Nv. ${titulo.nivelReq}` : 'Bazar'}
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 shrink-0">
+                        <Lock size={10} className="text-amber-500" />
+                        {titulo.nivelReq ? `Nv. ${titulo.nivelReq}` : `Bazar (${titulo.costoAp || 140} AP)`}
                       </span>
                     ) : null}
                   </button>

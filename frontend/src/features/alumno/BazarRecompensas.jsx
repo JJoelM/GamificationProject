@@ -13,6 +13,7 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import { playSuccess, playParchment } from '../../utils/audio';
+import { getAvatarPorId } from './components/AvataresData';
 
 /** Metadatos visuales complementarios según el ID y tipo del catálogo del backend */
 const METADATOS_VISUALES = {
@@ -515,16 +516,33 @@ function BazarRecompensas() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {cosmeticosFiltrados.map((articulo) => {
-              const meta = METADATOS_VISUALES[articulo.id] || {
-                descripcion: 'Artículo de prestigio para personalizar tu perfil.',
-                rareza: 'Especial',
-                colorRareza: 'text-[var(--brand-violet)]',
-                IconoVisual: ({ className = 'w-14 h-14' }) => (
-                  <div className={`${className} flex items-center justify-center rounded-2xl bg-[var(--bg-accent)] text-2xl`}>
-                    ✨
-                  </div>
-                ),
-              };
+              const meta = METADATOS_VISUALES[articulo.id] || (
+                articulo.tipo === 'Avatar'
+                  ? (() => {
+                      const av = getAvatarPorId(articulo.id);
+                      const IconComp = av.IconoPreview;
+                      return {
+                        descripcion: av.descripcion,
+                        rareza: 'Avatar RPG',
+                        colorRareza: 'text-[var(--brand-primary)]',
+                        IconoVisual: ({ className = 'w-14 h-14' }) => (
+                          <div className={`${className} flex items-center justify-center rounded-full overflow-hidden border-2 border-[var(--brand-primary)]/40 shadow-sm bg-[var(--bg-base)] p-0.5 shrink-0`}>
+                            <IconComp className="w-full h-full" />
+                          </div>
+                        ),
+                      };
+                    })()
+                  : {
+                      descripcion: 'Artículo de prestigio para personalizar tu perfil.',
+                      rareza: 'Especial',
+                      colorRareza: 'text-[var(--brand-violet)]',
+                      IconoVisual: ({ className = 'w-14 h-14' }) => (
+                        <div className={`${className} flex items-center justify-center rounded-2xl bg-[var(--bg-accent)] text-2xl`}>
+                          ✨
+                        </div>
+                      ),
+                    }
+              );
               const Icono = meta.IconoVisual;
               const yaComprado = cosmeticosComprados.includes(articulo.id);
               const equipado = isEquipado(articulo);
