@@ -443,11 +443,11 @@ export const AVATARES_RPG = [
     tier: 'raro',
     descripcion: 'Veterano curtido en mil batallas con coraza de acero templado y determinación inquebrantable.',
     colorTema: '#DC2626',
-    imagenSrc: '/images/avatares/guerrero_veterano.png',
+    imagenSrc: '/images/avatares/guerrero_veterano_bust.png',
     imagenFullSrc: '/images/avatares/guerrero_veterano.png',
     IconoPreview: ({ className = 'w-full h-full' }) => (
       <img
-        src="/images/avatares/guerrero_veterano.png"
+        src="/images/avatares/guerrero_veterano_bust.png"
         alt="Guerrero Veterano"
         className={`${className} object-cover rounded-xl`}
         loading="lazy"
@@ -464,11 +464,11 @@ export const AVATARES_RPG = [
     tier: 'raro',
     descripcion: 'Canalizadora de la gracia luminosa y bendiciones arcanas que restauran el ánimo en los momentos más oscuros.',
     colorTema: '#059669',
-    imagenSrc: '/images/avatares/sanadora_luz.png',
+    imagenSrc: '/images/avatares/sanadora_luz_bust.png',
     imagenFullSrc: '/images/avatares/sanadora_luz.png',
     IconoPreview: ({ className = 'w-full h-full' }) => (
       <img
-        src="/images/avatares/sanadora_luz.png"
+        src="/images/avatares/sanadora_luz_bust.png"
         alt="Sanadora de la Luz"
         className={`${className} object-cover rounded-xl`}
         loading="lazy"
@@ -485,11 +485,11 @@ export const AVATARES_RPG = [
     tier: 'raro',
     descripcion: 'Dominador de vórtices astrales y grimorios prohibidos, capaz de alterar el tejido causal de la realidad.',
     colorTema: '#7C3AED',
-    imagenSrc: '/images/avatares/hechicero_arcano.png',
+    imagenSrc: '/images/avatares/hechicero_arcano_bust.png',
     imagenFullSrc: '/images/avatares/hechicero_arcano.png',
     IconoPreview: ({ className = 'w-full h-full' }) => (
       <img
-        src="/images/avatares/hechicero_arcano.png"
+        src="/images/avatares/hechicero_arcano_bust.png"
         alt="Hechicero Arcano"
         className={`${className} object-cover rounded-xl`}
         loading="lazy"

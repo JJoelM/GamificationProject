@@ -12,8 +12,9 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
+import ArtFrame from '../../components/ui/ArtFrame';
 import { playSuccess, playParchment } from '../../utils/audio';
-import { getAvatarPorId } from './components/AvataresData';
+import { AVATARES_RPG, getAvatarPorId } from './components/AvataresData';
 
 /** Metadatos visuales complementarios según el ID y tipo del catálogo del backend */
 const METADATOS_VISUALES = {
@@ -38,43 +39,43 @@ const METADATOS_VISUALES = {
     ),
   },
   scroll: {
-    descripcion: 'Borde clásico tejido con pergamino antiguo de los sabios.',
+    descripcion: 'Marco clásico artesanal con madera noble, cuero y esquineros de bronce.',
     rareza: 'Común',
     colorRareza: 'text-amber-700 dark:text-amber-400',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-dashed border-amber-600 bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-display font-black text-xs`}>
-        📜
-      </div>
+      <ArtFrame shape="scroll" aspectRatio="1/1" className={`${className} shrink-0`}>
+        <span className="text-xs font-bold opacity-60">🖼️</span>
+      </ArtFrame>
     ),
   },
   orlado_dorado: {
-    descripcion: 'Orlado dorado con incrustaciones mágicas para estudiantes dedicados.',
+    descripcion: 'Marco noble forjado en oro imperial con bisel brillante y filigrana.',
     rareza: 'Legendario',
     colorRareza: 'text-[var(--brand-gold)]',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-double border-amber-400 bg-amber-500/15 text-amber-400 text-xl shadow-[0_0_12px_rgba(245,158,11,0.4)]`}>
-        ✨
-      </div>
+      <ArtFrame shape="orlado_dorado" aspectRatio="1/1" className={`${className} shrink-0`}>
+        <span className="text-xs font-bold opacity-70">✨</span>
+      </ArtFrame>
     ),
   },
   cristal_celeste: {
-    descripcion: 'Marco tallado en cristal astral con reflejos celestes y polvo de estrellas.',
+    descripcion: 'Marco tallado en cristal astral con reflejos celestes y prismas enjoyados.',
     rareza: 'Épico',
     colorRareza: 'text-cyan-400',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-cyan-400 bg-cyan-500/15 text-cyan-400 text-xl shadow-[0_0_12px_rgba(34,211,238,0.4)]`}>
-        💎
-      </div>
+      <ArtFrame shape="cristal_celeste" aspectRatio="1/1" className={`${className} shrink-0`}>
+        <span className="text-xs font-bold opacity-70">💎</span>
+      </ArtFrame>
     ),
   },
   runa_violeta: {
-    descripcion: 'Marco rúnico arcano con glifos de poder que potencian tu concentración.',
+    descripcion: 'Marco rúnico arcano de amatista y obsidiana con glifos luminosos.',
     rareza: 'Épico',
     colorRareza: 'text-purple-400',
     IconoVisual: ({ className = 'w-14 h-14' }) => (
-      <div className={`${className} flex items-center justify-center rounded-2xl border-4 border-purple-500 bg-purple-500/15 text-purple-400 text-xl shadow-[0_0_12px_rgba(168,85,247,0.4)]`}>
-        🔮
-      </div>
+      <ArtFrame shape="runa_violeta" aspectRatio="1/1" className={`${className} shrink-0`}>
+        <span className="text-xs font-bold opacity-70">🔮</span>
+      </ArtFrame>
     ),
   },
   buho: {
@@ -197,9 +198,25 @@ function BazarRecompensas() {
     (a) => a.tipo === 'Pista' || a.tipo === 'EscudoRacha'
   );
 
-  const articulosCosmeticos = (catalogo || []).filter(
-    (a) => a.tipo !== 'Pista' && a.tipo !== 'EscudoRacha'
-  );
+  // Aseguramos que todos los cosméticos del backend y avatares oficiales figuren siempre
+  const cosmeticosMap = new Map();
+  (catalogo || [])
+    .filter((a) => a.tipo !== 'Pista' && a.tipo !== 'EscudoRacha')
+    .forEach((art) => cosmeticosMap.set(art.id, art));
+
+  // Incorporar los 11 avatares comprables de AVATARES_RPG si no vinieron en el payload inicial
+  AVATARES_RPG.filter((a) => !a.base).forEach((av) => {
+    if (!cosmeticosMap.has(av.id)) {
+      cosmeticosMap.set(av.id, {
+        id: av.id,
+        nombre: av.nombre,
+        tipo: 'Avatar',
+        costoAp: av.costoAp,
+      });
+    }
+  });
+
+  const articulosCosmeticos = Array.from(cosmeticosMap.values());
 
   const cosmeticosFiltrados = subFiltroCosmetico === 'todos'
     ? articulosCosmeticos
@@ -208,7 +225,12 @@ function BazarRecompensas() {
   // Acción de compra o equipamiento
   const handleAccionArticulo = (articulo) => {
     const esConsumible = articulo.tipo === 'Pista' || articulo.tipo === 'EscudoRacha';
-    const yaComprado = cosmeticosComprados.includes(articulo.id);
+    const yaComprado =
+      articulo.costoAp === 0 ||
+      cosmeticosComprados.includes(articulo.id) ||
+      (articulo.tipo === 'Avatar' &&
+        cosmeticosComprados.some((c) => getAvatarPorId(c)?.id === getAvatarPorId(articulo.id)?.id)) ||
+      (articulo.tipo === 'Marco' && (articulo.id === 'scroll' || cosmeticosComprados.includes(articulo.id)));
 
     // Si ya fue comprado y es cosmético -> EQUIPAR
     if (!esConsumible && yaComprado) {
@@ -274,7 +296,7 @@ function BazarRecompensas() {
   };
 
   const isEquipado = (articulo) => {
-    if (articulo.tipo === 'Marco') return marcoEstilo === articulo.id;
+    if (articulo.tipo === 'Marco') return (marcoEstilo || 'scroll') === articulo.id;
     if (articulo.tipo === 'Mascota') return mascotaEquipada === articulo.id;
     if (articulo.tipo === 'Titulo') return tituloEquipado === articulo.id;
     if (articulo.tipo === 'Avatar') return getAvatarPorId(avatarEquipado)?.id === getAvatarPorId(articulo.id)?.id;

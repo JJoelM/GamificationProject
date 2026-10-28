@@ -33,7 +33,7 @@ public static class CatalogoBazar
         new("avatar_cazador_sombrio", "Cazador Sombrío", TipoArticulo.Avatar, 300),
 
         // Marcos
-        new("scroll", "Marco de Pergamino", TipoArticulo.Marco, 30),
+        new("scroll", "Marco de Pergamino", TipoArticulo.Marco, 0),
         new("orlado_dorado", "Marco Orlado de Oro", TipoArticulo.Marco, 100),
         new("cristal_celeste", "Marco de Cristal Astral", TipoArticulo.Marco, 90),
         new("runa_violeta", "Marco de Runas Arcanas", TipoArticulo.Marco, 110),
