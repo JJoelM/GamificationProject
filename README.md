@@ -1,98 +1,123 @@
 # Plataforma de Gamificación Educativa con IA — PFC
 
-Sistema web de gamificación educativa con generación de contenido asistida por IA bajo un esquema **HITL** (Human-in-the-Loop): la IA propone, el docente decide. Desarrollado como Proyecto Final de Carrera (Licenciatura en Sistemas de Información, FaCENA-UNNE).
-
-Todo este README está construido en base a el primer prototipo y sus commits, lo actualizaré cuando considere que cambió lo suficiente o cuando esté listo para un deploy
+Sistema web de gamificación educativa con generación de contenido asistida por IA bajo un esquema **HITL** (*Human-in-the-Loop*): la IA propone, el docente decide y ajusta. Desarrollado como Proyecto Final de Carrera (Licenciatura en Sistemas de Información, FaCENA-UNNE).
 
 ---
 
-## Arquitectura del Sistema
+## 🏛️ Arquitectura del Sistema
+
+El sistema implementa una arquitectura desacoplada basada en microservicios, CQRS y Event Sourcing:
 
 ```mermaid
 flowchart TD
-    Client["Frontend (React + Vite + Tailwind CSS)\nhttp://localhost:5173"]
+    Client["Frontend (React 18 + Vite + Tailwind CSS)\nhttp://localhost:5173"]
     API["Backend API (.NET 9 + CQRS / Event Sourcing)\nhttp://localhost:5230"]
     AI["Microservicio de IA (Python FastAPI)\nhttp://localhost:8001"]
     DB[("Base de Datos\nPostgreSQL 17\nlocalhost:5432")]
-    Gemini["Google Gemini API\n(gemini-3.5-flash-lite)"]
+    Gemini["Google Gemini API\n(google-genai SDK)"]
 
-    Client -->|HTTP / Cookie JWT HttpOnly| API
+    Client -->|HTTP / Cookies JWT HttpOnly| API
     API -->|Npgsql / EF Core| DB
     API -->|HTTP REST + X-Internal-Token| AI
     AI -->|google-genai SDK| Gemini
 ```
 
-| Capa | Stack |
-|------|-------|
-| **Frontend** | React 18, Vite, Tailwind CSS v4, React Query, Zustand, Framer Motion, Anime.js |
-| **Backend** | .NET 9 WebAPI, EF Core, Npgsql, CQRS (MediatR), Event Sourcing |
-| **Microservicio IA** | Python 3.11+, FastAPI, Uvicorn, `google-genai` SDK |
-| **Infraestructura** | Docker Compose, PostgreSQL 17 |
+| Capa | Tecnologías | Responsabilidad |
+|------|-------------|-----------------|
+| **Frontend** | React 18, Vite, Tailwind CSS v4, React Query, Zustand, Lucide Icons, Canvas Confetti | UI/UX interactiva con estética *Painterly RPG*, modo claro/oscuro y consumo CQRS |
+| **Backend** | .NET 9 WebAPI, EF Core, Npgsql, MediatR (CQRS), Event Sourcing | Lógica de agregados de dominio, persistencia de eventos, proyecciones y endpoints REST |
+| **Microservicio IA** | Python 3.11+, FastAPI, Uvicorn, SDK oficial `google-genai` | Generación estructurada de misiones y mini-juegos mediante modelos Gemini |
+| **Persistencia** | PostgreSQL 17 en Docker Compose | Almacén relacional de eventos (`Eventos`), proyecciones (`PersonajesResumen`, `MisionesActivas`, etc.) |
 
 ---
 
-## Requisitos Previos
+## 🎮 Tipos de Misiones y Mini-juegos
 
-1. **Docker Desktop** (o Docker Engine + Compose v2+)
+1. **Opción Múltiple Interactiva**:
+   * Cuestionarios dinámicos con retroalimentación inmediata y explicaciones pedagógicas.
+   * Sistema de recompensa calibrada en XP (Experiencia) y AP (Puntos de Aventura).
+
+2. **Batalla de Jefe (Boss Fight)**:
+   * Encuentros épicos por fases contra jefes temáticos (ej. *El Bug Ancestral*).
+   * Barra de HP sincronizada, efectos visuales de daño/fallo y resolución táctica de preguntas clave.
+
+3. **Línea Temporal (Secuencia Histórica / Sistemas)**:
+   * Reconstrucción cronológica interactiva mediante ordenamiento de eventos y acusación del detonante/evento culpable.
+
+---
+
+## 🛡️ Características Principales
+
+* **Flujo HITL (Human-in-the-Loop)**:
+  * Generación automática de misiones con estimación de confianza IA (0% a 100%).
+  * El docente puede inspeccionar, probar mediante un simulador en tiempo real, editar preguntas/recompensas o descartar antes de publicar en el aula.
+* **Importación y Exportación Modular**:
+  * Importación/exportación de misiones en formato JSON estructurado entre aulas y docentes.
+* **Personalización de Identidad y Bazar de Cosméticos**:
+  * **Avatares temáticos**: Ilustraciones de cuerpo entero e iconos de busto (Guerrero, Hechicero Arcano, Sanadora de la Luz, Paladín, Nigromante, etc.).
+  * **Marcos de Avatar**: Marcos orlados, filigranas y runas con adaptación física al contorno en todos los componentes.
+  * **Títulos Honoríficos**: Desbloqueables por nivel alcanzado y hitos académicos.
+  * **Mascotas acompañantes**: Compañeros de aventura (Dragón, Fénix, etc.).
+* **Salón de Aventureros (Leaderboard)**:
+  * Vista responsive del aula con clasificación en tiempo real por XP y nivel.
+  * Visualización completa de los personajes de los compañeros con sus cosméticos equipados.
+* **Métricas y Secuencia Curricular**:
+  * Panel docente de analítica con tasas de aprobación, dificultad percibida y seguimiento por alumno.
+* **Seguridad y Gestión de Cuenta**:
+  * Autenticación basada en cookies JWT `HttpOnly` y `SameSite`.
+  * Cambio seguro de contraseña con validación de credencial actual.
+  * Baja de cuenta con confirmación destructiva y desvinculación completa.
+
+---
+
+## 📋 Requisitos Previos
+
+1. **Docker Desktop** (o Docker Engine + Docker Compose v2+)
 2. **.NET 9 SDK** — [descargar](https://dotnet.microsoft.com/download/dotnet/9.0)
 3. **Node.js v18+** con `npm` — [descargar](https://nodejs.org/)
 4. **Python 3.11+** — [descargar](https://www.python.org/)
-5. Una **API Key de Google Gemini** — generala en [Google AI Studio](https://aistudio.google.com/) (gratuita)
-6. **dotnet-ef** como herramienta global: `dotnet tool install --global dotnet-ef` (si no lo tenés ya)
+5. **API Key de Google Gemini** — obtenible en [Google AI Studio](https://aistudio.google.com/)
+6. Herramienta global de migraciones:
+   ```bash
+   dotnet tool install --global dotnet-ef
+   ```
 
 ---
 
-## Guía de Instalación
+## 🚀 Guía de Instalación y Puesta en Marcha
 
-### 1 — Variables de entorno
+### 1. Variables de Entorno
 
 ```bash
-# Raíz del proyecto — PostgreSQL (usado por docker-compose.yml)
+# Variables del entorno raíz (PostgreSQL)
 cp .env.example .env
 
 # Microservicio de IA
 cp ai-service/.env.example ai-service/.env
-# Editá ai-service/.env: GEMINI_API_KEY real, y TOKEN_INTERNO_BACKEND con un
-# string aleatorio propio (no un valor de ejemplo).
+# Editar ai-service/.env con tu GEMINI_API_KEY y un TOKEN_INTERNO_BACKEND seguro.
 
 # Backend .NET
 cp backend/WebApi/appsettings.Development.json.example backend/WebApi/appsettings.Development.json
-# Editá ConnectionStrings y AiService:TokenInterno con tus valores locales.
+# Asegurarse de que AiService:TokenInterno coincida con el TOKEN_INTERNO_BACKEND configurado en Python.
 ```
 
-> **El `TOKEN_INTERNO_BACKEND` de `ai-service/.env` y `AiService:TokenInterno`
-> de `appsettings.Development.json` deben ser exactamente el mismo string.**
-> Si no coinciden, el microservicio de IA rechaza los pedidos del backend con 401.
-
-**El secreto del JWT no va en ningún archivo del repositorio — va en `dotnet user-secrets`:**
+Configurar el secreto JWT en el almacén seguro de .NET (no versionado):
 
 ```bash
 cd backend/WebApi
 dotnet user-secrets init
-dotnet user-secrets set "JwtSettings:Secret" "un-string-aleatorio-largo-y-propio-no-un-ejemplo"
+dotnet user-secrets set "JwtSettings:Secret" "un-string-aleatorio-largo-y-seguro-para-jwt-firma-local"
 cd ../..
 ```
 
-Sin este paso, el backend arranca pero cualquier intento de login falla con
-un error de configuración — es intencional, el sistema no arranca con un
-secreto por defecto.
-
----
-
-### 2 — Base de datos (PostgreSQL vía Docker)
+### 2. Base de Datos (Docker)
 
 ```bash
 docker compose up -d
-docker compose ps   # confirmá que el estado sea "healthy", no solo "running"
+docker compose ps   # Verificar que el contenedor esté 'healthy'
 ```
 
----
-
-### 3 — Aplicar las migraciones (paso manual, no automático)
-
-El sistema **no** aplica migraciones solo al arrancar — es una decisión
-deliberada para no tener dos caminos distintos escribiendo el esquema (uno
-manual y revisado, otro automático y silencioso). Hay que correrlo una vez:
+### 3. Aplicar Migraciones
 
 ```bash
 cd backend
@@ -100,46 +125,34 @@ dotnet ef database update --project Infrastructure --startup-project WebApi
 cd ..
 ```
 
----
-
-### 4 — Microservicio de IA (Python FastAPI)
+### 4. Microservicio de IA (Python FastAPI)
 
 ```bash
 cd ai-service
-
 python -m venv venv
 
-# Windows PowerShell
+# En Windows:
 .\venv\Scripts\activate
-# Linux / macOS
+# En Linux/macOS:
 source venv/bin/activate
 
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8001
 ```
 
-Disponible en `http://localhost:8001`.
+*Microservicio disponible en `http://localhost:8001`.*
 
----
-
-### 5 — Backend (.NET 9 WebAPI)
+### 5. Backend WebAPI (.NET 9)
 
 ```bash
 cd backend/WebApi
 dotnet run
 ```
 
-La WebAPI inicia en `http://localhost:5230`. En entorno `Development`
-**siembra los datos de prueba automáticamente** (eso sí es automático — lo
-que no lo es son las migraciones del paso 3, que tienen que estar aplicadas
-antes de este paso o el seed falla contra tablas inexistentes).
+*WebAPI iniciará en `http://localhost:5230`. En entorno `Development` se ejecutan automáticamente las semillas de prueba.*
+*Documentación interactiva OpenAPI (Scalar): `http://localhost:5230/scalar`.*
 
-Documentación interactiva de la API (Scalar): `http://localhost:5230/scalar`
-(`/scalar/v1` también funciona, apunta al mismo documento explícitamente).
-
----
-
-### 6 — Frontend (React + Vite)
+### 6. Frontend (React + Vite)
 
 ```bash
 cd frontend
@@ -147,86 +160,65 @@ npm install
 npm run dev
 ```
 
-`http://localhost:5173`.
-
-> Si el frontend usa un proxy de Vite hacia el backend (en vez de llamar a
-> `http://localhost:5230` directo con `credentials: 'include'`), confirmá
-> que sea consistente con lo que espera el backend: el CORS ya está
-> configurado para aceptar `http://localhost:5173` como origen directo. Si
-> hay proxy Y CORS a la vez sin que las rutas relativas coincidan en los
-> dos lados, las cookies de sesión pueden comportarse distinto de lo
-> esperado. Ver `spec.md` para el contrato completo.
+*Aplicación disponible en `http://localhost:5173`.*
 
 ---
 
-## Credenciales de Desarrollo (Seed)
+## 🔑 Credenciales de Prueba (Seed de Desarrollo)
 
-| Rol | Correo | Contraseña |
-|-----|--------|------------|
-| Docente | `docente@unne.edu.ar` | `Cambiar123!` |
-| Alumno | `joel@alumno.unne.edu.ar` | `Cambiar123!` |
-| Directivo | `directivo@unne.edu.ar` | `Cambiar123!` |
-| Administrador | `admin@unne.edu.ar` | `Cambiar123!` |
+Todas las cuentas de prueba tienen la contraseña predeterminada: `Cambiar123!`
 
-El **código de invitación** del aula de prueba se muestra en el Dashboard
-del Docente una vez iniciada la sesión.
-
-> Exclusivamente para desarrollo local. No usar en producción — y el uso de
-> estas credenciales en particular no reemplaza la revisión de propiedad
-> intelectual y confidencialidad descrita en el Capítulo 4 del informe.
+| Rol | Correo Electrónico | Descripción |
+|-----|-------------------|-------------|
+| **Docente** | `docente@unne.edu.ar` | Acceso a Inbox HITL, Validador de Misiones, Métricas y Creación de Aulas |
+| **Alumno 1** | `joel@alumno.unne.edu.ar` | Alumno inicial con misiones listas para resolver y bazar disponible |
+| **Alumno 2** | `segundo.alumno@unne.edu.ar` | Alumna con nivel 2, misión resuelta y cosméticos equipados para Leaderboard |
+| **Directivo** | `directivo@unne.edu.ar` | Panel institucional de métricas y supervisión de aulas |
+| **Administrador** | `admin@unne.edu.ar` | Gestión de altas de usuarios y configuración de la plataforma |
 
 ---
 
-## Solución de Problemas
+## 🧪 Pruebas Automatizadas
 
-**Error 401 en el Microservicio de IA**
-`TOKEN_INTERNO_BACKEND` (ai-service/.env) y `AiService:TokenInterno`
-(appsettings.Development.json) no coinciden.
+### Backend (.NET)
+Ejecutar la suite completa de tests de dominio y proyecciones (86 tests unitarios):
+```bash
+dotnet test backend/GamificacionBackend.sln
+```
 
-**El login falla con un error de configuración**
-Falta correr `dotnet user-secrets set "JwtSettings:Secret" "..."` — ver
-sección de instalación, paso 1.
-
-**El seed no crea nada / tira error al arrancar el backend**
-Las migraciones no se aplicaron. Correr el paso 3 antes que el paso 5.
-
-**Error de conexión a PostgreSQL**
-`docker compose ps` — confirmar `healthy`, no solo `running`. Si cambiaste
-la contraseña en `.env`, actualizarla también en la cadena de conexión de
-`appsettings.Development.json`.
-
-**El frontend no conecta con el backend**
-Confirmar que el backend esté corriendo en el puerto 5230, y que las
-llamadas del frontend usen `credentials: 'include'` (ver nota del paso 6).
-
-**La IA no genera misiones / Error 500 en `/generar-con-ia`**
-Microservicio de IA activo en el puerto 8001, `GEMINI_API_KEY` válida.
+### Frontend (React)
+Verificar la compilación estática y empaquetado de producción:
+```bash
+npm --prefix frontend run build
+```
 
 ---
 
-## Estructura del Repositorio
+## 📁 Estructura del Repositorio
 
 ```text
 GamificacionPFC/
-├── ai-service/              # Microservicio Python (FastAPI + Gemini SDK)
-├── backend/                 # Solución .NET 9 (Clean Architecture / CQRS)
-│   ├── Core.Domain/         # Agregados y eventos de dominio
-│   ├── Core.Application/    # Comandos, Queries y Proyecciones (MediatR)
-│   ├── Infrastructure/      # Persistencia EF Core y cliente HTTP IA
-│   ├── WebApi/              # Endpoints REST e inyección de dependencias
-│   └── Core.Domain.Tests/   # Tests unitarios del dominio
-├── frontend/                 # Aplicación React + Vite + Tailwind CSS
-├── docs/                     # documentos de referencia
-├── docker-compose.yml
+├── ai-service/              # Microservicio Python FastAPI (generación Gemini)
+├── backend/                 # Solución .NET 9 (Clean Architecture + CQRS + Event Sourcing)
+│   ├── Core.Domain/         # Agregados (Personaje, Misión, Aula, Usuario), Eventos y Reglas
+│   ├── Core.Application/    # Comandos, Queries, Handlers (MediatR) y Proyecciones
+│   ├── Infrastructure/      # EF Core, Repositorios, PostgresDbContext y Cliente HTTP IA
+│   ├── WebApi/              # Minimal APIs, Endpoints de autenticación, sesión y Scalar Docs
+│   └── Core.Domain.Tests/   # Batería de 86 pruebas unitarias de dominio
+├── frontend/                # SPA React 18 + Vite + Tailwind CSS v4
+│   ├── src/
+│   │   ├── components/      # Componentes UI reutilizables (Badge, Button, Modal, etc.)
+│   │   ├── features/        # Módulos por dominio (alumno, docente, directivo, admin, auth)
+│   │   ├── hooks/           # Hooks personalizados de React Query y estado
+│   │   └── store/           # Stores globales de sesión y preferencias
+├── .github/workflows/       # Pipelines CI/CD y análisis de seguridad (Gitleaks + CodeQL)
+├── docker-compose.yml       # Orquestación de base de datos local PostgreSQL 17
 └── README.md
 ```
 
 ---
 
-## Licencia y propiedad intelectual
+## 📄 Licencia y Marco Académico
 
-Proyecto académico — FaCENA, UNNE. La titularidad de los derechos
-patrimoniales sobre el desarrollo sigue el régimen proporcional del
-Art. 7 de la Res. N° 2024-615-CS (no una licencia de código abierto
-estándar) — ver Capítulo 4 del informe para el análisis completo antes de
-asumir cualquier uso comercial de este repositorio.
+Proyecto académico de fin de carrera — FaCENA, Universidad Nacional del Nordeste (UNNE).  
+La titularidad de los derechos patrimoniales sobre el desarrollo sigue el régimen del Art. 7 de la Res. N° 2024-615-CS.
