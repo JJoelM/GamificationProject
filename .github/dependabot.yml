@@ -37,6 +37,9 @@ updates:
       dependencias-python:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "tenacity"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -47,3 +50,8 @@ updates:
       actions:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "actions/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "github/*"
+        update-types: ["version-update:semver-major"]

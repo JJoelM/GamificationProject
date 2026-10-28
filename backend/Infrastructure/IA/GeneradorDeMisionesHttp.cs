@@ -1,49 +1,141 @@
+using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Core.Application.Common;
-using Microsoft.Extensions.Configuration;
+using Core.Domain.Agregados.Misiones;
+using Core.Domain.SeedWork;
 
 namespace Infrastructure.IA;
 
+// Capa anticorrupcion: traduce lo que devuelve el microservicio de Python (snake_case)
+// al formato del dominio. El header X-Internal-Token ya lo agrega el HttpClient registrado en Program.cs.
 public class GeneradorDeMisionesHttp : IGeneradorDeMisiones
 {
-    private readonly HttpClient _httpClient;
-    private readonly string _tokenInterno;
+    private const string MensajeGenerico =
+        "La IA no pudo generar este tipo de misión con ese material. Probá con más texto o con otro tipo de misión.";
 
-    public GeneradorDeMisionesHttp(HttpClient httpClient, IConfiguration configuracion)
-    {
-        _httpClient = httpClient;
-        // Falla al construirse si falta la config, no en el primer request real.
-        _tokenInterno = configuracion["AiService:TokenInterno"]?.Trim()
-                ?? throw new InvalidOperationException("Falta configurar AiService:TokenInterno.");
-    }
+    private readonly HttpClient _http;
+
+    public GeneradorDeMisionesHttp(HttpClient http) => _http = http;
 
     public async Task<ContenidoGeneradoPorIA> GenerarAsync(
-        string temaCurricular, string textoFuente, CancellationToken ct = default)
+        TipoPlantilla tipo, string temaCurricular, string textoFuente, CancellationToken ct = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/generar")
+        var ruta = tipo switch
         {
-            Content = JsonContent.Create(new { tema_curricular = temaCurricular, texto_fuente = textoFuente }),
+            TipoPlantilla.OpcionMultiple => "/generar/opcion-multiple",
+            TipoPlantilla.BatallaDeJefe => "/generar/batalla-de-jefe",
+            TipoPlantilla.LineaTemporal => "/generar/linea-temporal",
+            _ => throw new ArgumentOutOfRangeException(nameof(tipo), "Tipo de misión no soportado."),
         };
-        request.Headers.Add("X-Internal-Token", _tokenInterno);
 
-        var response = await _httpClient.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
+        HttpResponseMessage respuesta;
+        try
+        {
+            respuesta = await _http.PostAsJsonAsync(
+                ruta, new { tema_curricular = temaCurricular, texto_fuente = textoFuente }, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new GeneracionFallidaException("No se pudo contactar al servicio de IA. Intentá de nuevo en unos minutos.", ex);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            throw new GeneracionFallidaException("El servicio de IA tardó demasiado en responder. Intentá de nuevo.", ex);
+        }
 
-        var resultado = await response.Content.ReadFromJsonAsync<RespuestaGeneracion>(cancellationToken: ct)
-            ?? throw new InvalidOperationException("El microservicio de IA devolvió una respuesta vacía.");
+        using (respuesta)
+        {
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                string? detalleError = null;
+                try
+                {
+                    detalleError = await respuesta.Content.ReadAsStringAsync(ct);
+                }
+                catch { /* ignorar fallo al leer detalle */ }
 
-        return new ContenidoGeneradoPorIA(
-            resultado.narrativa,
-            resultado.preguntas
-                .Select(p => new PreguntaGenerada(p.enunciado, p.opciones, p.respuesta_correcta, p.explicacion))
-                .ToList());
+                var mensaje = respuesta.StatusCode switch
+                {
+                    HttpStatusCode.BadGateway => MensajeGenerico,
+                    HttpStatusCode.TooManyRequests => "Se superó temporalmente la cuota de generación con IA. Por favor, aguardá un momento e intentá nuevamente.",
+                    _ => string.IsNullOrWhiteSpace(detalleError)
+                        ? MensajeGenerico
+                        : $"El servicio de IA no pudo generar la misión (HTTP {(int)respuesta.StatusCode}). {detalleError}"
+                };
+
+                throw new GeneracionFallidaException(mensaje);
+            }
+
+            try
+            {
+                return tipo switch
+                {
+                    TipoPlantilla.OpcionMultiple => await LeerOpcionMultiple(respuesta, ct),
+                    TipoPlantilla.BatallaDeJefe => await LeerBatalla(respuesta, ct),
+                    _ => await LeerLineaTemporal(respuesta, ct),
+                };
+            }
+            catch (JsonException ex)
+            {
+                throw new GeneracionFallidaException(MensajeGenerico, ex);
+            }
+        }
     }
 
-    // Forma exacta del JSON que devuelve FastAPI -- nombres en snake_case,
-    // como los define el modelo Pydantic del lado de Python.
-    private sealed record RespuestaGeneracion(
-        string narrativa, List<PreguntaGeneracion> preguntas);
+    private static async Task<ContenidoGeneradoPorIA> LeerOpcionMultiple(HttpResponseMessage r, CancellationToken ct)
+    {
+        var dto = await r.Content.ReadFromJsonAsync<RespuestaOpcionMultiple>(cancellationToken: ct)
+            ?? throw new GeneracionFallidaException(MensajeGenerico);
 
-    private sealed record PreguntaGeneracion(
-        string enunciado, List<string> opciones, string respuesta_correcta, string explicacion);
+        var payload = new ContenidoOpcionMultiple(dto.preguntas
+            .Select(p => new PreguntaOpcionMultiple(p.enunciado, p.opciones, p.respuesta_correcta, p.explicacion))
+            .ToList());
+
+        return new ContenidoGeneradoPorIA(
+            dto.narrativa, JsonSerializer.Serialize(payload, OpcionesJsonMision.Instancia), dto.preguntas.Count);
+    }
+
+    private static async Task<ContenidoGeneradoPorIA> LeerBatalla(HttpResponseMessage r, CancellationToken ct)
+    {
+        var dto = await r.Content.ReadFromJsonAsync<RespuestaBatalla>(cancellationToken: ct)
+            ?? throw new GeneracionFallidaException(MensajeGenerico);
+
+        var payload = new ContenidoBatallaDeJefe(dto.nombre_jefe, dto.hp_maximo, dto.fases
+            .Select(f => new FaseDeBatalla(
+                f.enunciado, f.opciones, f.respuesta_correcta, f.explicacion, f.danio_al_jefe, f.penalizacion_fallo))
+            .ToList());
+
+        return new ContenidoGeneradoPorIA(
+            dto.narrativa, JsonSerializer.Serialize(payload, OpcionesJsonMision.Instancia), dto.fases.Count);
+    }
+
+    private static async Task<ContenidoGeneradoPorIA> LeerLineaTemporal(HttpResponseMessage r, CancellationToken ct)
+    {
+        var dto = await r.Content.ReadFromJsonAsync<RespuestaLineaTemporal>(cancellationToken: ct)
+            ?? throw new GeneracionFallidaException(MensajeGenerico);
+
+        var payload = new ContenidoLineaTemporal(
+            dto.estado_erroneo_descripcion,
+            dto.eventos_desordenados.Select(ev => new EventoDesordenado(ev.id, ev.descripcion, ev.orden_correcto)).ToList(),
+            dto.evento_culpable_id,
+            dto.explicacion);
+
+        return new ContenidoGeneradoPorIA(
+            dto.narrativa, JsonSerializer.Serialize(payload, OpcionesJsonMision.Instancia), dto.eventos_desordenados.Count);
+    }
+
+    // Los nombres van en snake_case para coincidir byte a byte con lo que emite Python.
+    private sealed record PreguntaDto(string enunciado, List<string> opciones, string respuesta_correcta, string explicacion);
+    private sealed record RespuestaOpcionMultiple(string narrativa, List<PreguntaDto> preguntas);
+
+    private sealed record FaseDto(
+        string enunciado, List<string> opciones, string respuesta_correcta, string explicacion,
+        int danio_al_jefe, string penalizacion_fallo);
+    private sealed record RespuestaBatalla(string narrativa, string nombre_jefe, int hp_maximo, List<FaseDto> fases);
+
+    private sealed record EventoDto(string id, string descripcion, int orden_correcto);
+    private sealed record RespuestaLineaTemporal(
+        string narrativa, string estado_erroneo_descripcion, List<EventoDto> eventos_desordenados,
+        string evento_culpable_id, string explicacion);
 }

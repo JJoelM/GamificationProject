@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import {
   Sparkles, Inbox, Swords, ArrowRight, BookOpen,
   Copy, Check, KeyRound, TrendingUp, Clock, Award,
-  Lightbulb, Users, ChevronRight
+  Lightbulb, Users, ChevronRight, GitFork
 } from 'lucide-react';
 import { useBorradoresDocente } from '../../hooks/useMisiones';
 import { useMisAulas } from '../../hooks/useAulas';
+import { useMetricasAula } from '../../hooks/useMetricas';
 import useSessionStore from '../../store/useSessionStore';
 import FormGenerarMision from './components/FormGenerarMision';
+import ListaAlumnosAula from './components/ListaAlumnosAula';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -93,8 +95,12 @@ function DashboardDocente() {
   const codigoInvitacion = useSessionStore((s) => s.codigoInvitacionAula);
 
   const { data: borradores } = useBorradoresDocente();
+  const { data: metricas } = useMetricasAula();
 
-  const cantBorradores = borradores?.length ?? 0;
+  const totalMisiones = borradores?.length ?? 0;
+  const cantPendientes = borradores?.filter((b) => (b.estadoValidacion || 'Pendiente') === 'Pendiente').length ?? 0;
+  const cantValidadas = borradores?.filter((b) => b.estadoValidacion === 'Validado').length ?? 0;
+  const tasaParticipacion = metricas ? `${Math.round(metricas.tasaCompletitud * 100)}%` : '--';
 
   const tip = TIPS[tipIdx];
   const TipIcon = tip.icon;
@@ -155,17 +161,22 @@ function DashboardDocente() {
 
       {/* ── Grid de métricas ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {/* Stat 1: Borradores */}
+        {/* Stat 1: Misiones del Aula y Borradores */}
         <StatCard
           index={0}
           icon={Inbox}
           iconBg="bg-[var(--brand-primary)]"
           iconColor="text-white"
-          label="Borradores por Validar"
-          value={cantBorradores}
+          label="Misiones del Aula"
+          value={totalMisiones}
+          sub={
+            cantPendientes > 0
+              ? `${cantPendientes} ${cantPendientes === 1 ? 'borrador por validar' : 'borradores por validar'}`
+              : `${cantValidadas} activas · Sin pendientes`
+          }
           badge={
-            cantBorradores > 0 ? (
-              <Badge variant="racha" glow>{cantBorradores} pendientes</Badge>
+            cantPendientes > 0 ? (
+              <Badge variant="racha" glow>{cantPendientes} por validar</Badge>
             ) : (
               <Badge variant="correcto">Al día</Badge>
             )
@@ -180,9 +191,17 @@ function DashboardDocente() {
           iconBg="bg-[color-mix(in_oklch,var(--brand-emerald)_15%,var(--bg-panel))]"
           iconColor="text-[var(--brand-emerald)]"
           label="Participación del Aula"
-          value="92%"
-          badge={<Badge variant="correcto">Excelente</Badge>}
-          sub="Tasa de actividad semanal y análisis de errores."
+          value={tasaParticipacion}
+          badge={
+            metricas?.tasaCompletitud >= 0.7 ? (
+              <Badge variant="correcto">Excelente</Badge>
+            ) : metricas?.tasaCompletitud >= 0.4 ? (
+              <Badge variant="xp">Activa</Badge>
+            ) : (
+              <Badge variant="info">En curso</Badge>
+            )
+          }
+          sub={`${metricas?.alumnosConAlMenosUnaMisionCompleta ?? 0} de ${metricas?.totalInscriptos ?? 0} alumnos activos.`}
           onClick={() => navigate('/docente/metricas')}
         />
 
@@ -232,10 +251,14 @@ function DashboardDocente() {
         </motion.div>
       </div>
 
+      {/* ── Expediente y Avances Individuales de Alumnos ── */}
+      <ListaAlumnosAula />
+
       {/* ── Sección inferior: ArtFrame + Tip pedagógico ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         <ArtFrame
-          label="Ilustración: Grimorio del Mentor Docente"
+          src="/images/docente/grimorio-profesor.webp"
+          label="Grimorio del Mentor Docente"
           shape="scroll"
           aspectRatio="16/9"
         />
@@ -277,6 +300,15 @@ function DashboardDocente() {
             >
               <BookOpen size={15} />
               Inbox de Misiones
+              <ChevronRight size={14} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/docente/camino')}
+            >
+              <GitFork size={15} className="text-[var(--brand-primary)]" />
+              Secuencia Curricular
               <ChevronRight size={14} />
             </Button>
             <Button

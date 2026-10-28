@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   School, Check, Plus, KeyRound, Copy, ChevronRight, X, Sparkles, BookOpen
 } from 'lucide-react';
@@ -12,6 +13,7 @@ import Card from '../ui/Card';
 import { playSuccess, playParchment } from '../../utils/audio';
 
 export default function SelectorAulaModal({ isOpen, onClose }) {
+  const queryClient = useQueryClient();
   const usuario = useSessionStore((s) => s.usuario);
   const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
   const setAulaActivaId = useSessionStore((s) => s.setAulaActivaId);
@@ -36,6 +38,15 @@ export default function SelectorAulaModal({ isOpen, onClose }) {
     if (aula.codigoInvitacion) {
       setCodigoInvitacion(aula.codigoInvitacion);
     }
+    // Invalidación reactiva para refrescar toda la pantalla según el aula elegida
+    queryClient.invalidateQueries({ queryKey: ['misiones'] });
+    queryClient.invalidateQueries({ queryKey: ['aulas'] });
+    queryClient.invalidateQueries({ queryKey: ['personaje'] });
+    queryClient.invalidateQueries({ queryKey: ['ranking'] });
+    queryClient.invalidateQueries({ queryKey: ['grimorio'] });
+    queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
+    queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
+    queryClient.invalidateQueries({ queryKey: ['metricas-aula'] });
     onClose();
   };
 

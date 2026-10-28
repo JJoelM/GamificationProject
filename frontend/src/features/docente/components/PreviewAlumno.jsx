@@ -10,8 +10,21 @@ import Button from '../../../components/ui/Button';
  * Puramente visual/local, sin llamadas a API.
  * Se muestra/oculta en el ValidadorMision con un toggle.
  */
-function PreviewAlumno({ narrativa, payload, recompensaXp, temaCurricular }) {
-  const preguntas = payload?.preguntas ?? [];
+function PreviewAlumno({ narrativa, payload, recompensaXp, temaCurricular, tipoPlantilla }) {
+  let parsedPayload = payload;
+  if (typeof payload === 'string') {
+    try {
+      parsedPayload = JSON.parse(payload);
+    } catch {
+      parsedPayload = {};
+    }
+  }
+
+  const esBatalla = tipoPlantilla === 'BatallaDeJefe' || Boolean(parsedPayload?.fases);
+  const esLineaTemporal = tipoPlantilla === 'LineaTemporal' || Boolean(parsedPayload?.eventosDesordenados);
+
+  // Normalizar preguntas si viene de BatallaDeJefe o OpcionMultiple
+  const preguntas = parsedPayload?.preguntas ?? parsedPayload?.fases ?? [];
   const [preguntaActual, setPreguntaActual] = useState(0);
   const [selecciones, setSelecciones] = useState({});
   const [mostrarFeedback, setMostrarFeedback] = useState(false);
@@ -46,6 +59,67 @@ function PreviewAlumno({ narrativa, payload, recompensaXp, temaCurricular }) {
     setMostrarFeedback(false);
     setPreguntaActual(0);
   };
+
+  // Si es Línea Temporal, renderizamos vista de reconstrucción temporal
+  if (esLineaTemporal) {
+    const eventos = parsedPayload?.eventosDesordenados ?? [];
+    const culpableId = parsedPayload?.eventoCulpableId;
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="info">Vista Alumno (Línea Temporal)</Badge>
+            <span className="text-xs text-[var(--text-muted)] font-display">
+              {eventos.length} eventos a secuenciar
+            </span>
+          </div>
+        </div>
+
+        {narrativa && (
+          <div className="p-3.5 rounded-xl bg-[color-mix(in_oklch,var(--brand-primary)_8%,var(--bg-panel))] border border-[var(--border-muted)] italic text-xs text-[var(--text-secondary)] leading-relaxed">
+            "{narrativa}"
+          </div>
+        )}
+
+        {parsedPayload?.estadoErroneoDescripcion && (
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+            <strong>Anomalía:</strong> {parsedPayload.estadoErroneoDescripcion}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          {eventos.map((ev, i) => {
+            const esCulpable = ev.id === culpableId;
+            return (
+              <div
+                key={ev.id || i}
+                className="p-3 rounded-xl border border-[var(--border-muted)] bg-[var(--bg-base)] flex items-start gap-3"
+              >
+                <span className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                  {ev.ordenCorrecto ?? i + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-[var(--text-primary)]">{ev.descripcion}</p>
+                  {esCulpable && (
+                    <span className="inline-block mt-1 text-[10px] text-amber-400 font-display font-semibold">
+                      ⚡ Causa Raíz Detectada
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {parsedPayload?.explicacion && (
+          <div className="p-3 rounded-xl bg-[color-mix(in_oklch,var(--brand-emerald)_10%,var(--bg-panel))] border border-[var(--brand-emerald)]/30 text-xs text-[var(--text-secondary)]">
+            <strong className="text-[var(--brand-emerald)] font-display">Explicación pedagógica: </strong>
+            {parsedPayload.explicacion}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!pregunta) {
     return (

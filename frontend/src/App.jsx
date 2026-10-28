@@ -1,21 +1,26 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
+import LandingPage from './features/landing/LandingPage';
 import AuthPage from './features/auth/AuthPage';
 import DashboardDocente from './features/docente/DashboardDocente';
 import InboxBorradores from './features/docente/InboxBorradores';
 import ValidadorMision from './features/docente/ValidadorMision';
 import MetricasAula from './features/docente/MetricasAula';
+import SecuenciaCurricularDocente from './features/docente/SecuenciaCurricularDocente';
 import DashboardAlumno from './features/alumno/DashboardAlumno';
 import TableroMisiones from './features/alumno/TableroMisiones';
+import SalonAventureros from './features/alumno/SalonAventureros';
 import BazarRecompensas from './features/alumno/BazarRecompensas';
 import GrimorioSaber from './features/alumno/GrimorioSaber';
 import GestionDocentes from './features/directivo/GestionDocentes';
+import DashboardDirectivo from './features/directivo/DashboardDirectivo';
 
 /**
  * App — Configuración de rutas de React Router
  *
  * Rutas según spec.md + extensiones pedagógicas:
- * /                              → AuthPage (Login universal y autorregistros con cookie HttpOnly)
+ * /                              → LandingPage (Página de captación, propuesta de valor y comercial Painterly RPG)
+ * /auth o /login                 → AuthPage (Login universal y autorregistros con cookie HttpOnly)
  *
  * Rutas Docente:
  * /docente/dashboard             → DashboardDocente (métricas, código de aula y accesos rápidos)
@@ -36,8 +41,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Portal y Landing Pública Comercial */}
+        <Route path="/" element={<LandingPage />} />
+
         {/* Autenticación Real — fuera del AppShell */}
-        <Route path="/" element={<AuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<AuthPage />} />
 
         {/* Rutas principales envueltas en AppShell (sidebar + topbar + audio + level up) */}
         <Route element={<AppShell />}>
@@ -46,14 +55,17 @@ function App() {
           <Route path="/docente/misiones/pendientes" element={<InboxBorradores />} />
           <Route path="/docente/misiones/:id/validar" element={<ValidadorMision />} />
           <Route path="/docente/metricas" element={<MetricasAula />} />
+          <Route path="/docente/camino" element={<SecuenciaCurricularDocente />} />
 
           {/* Entorno Alumno */}
           <Route path="/alumno/dashboard" element={<DashboardAlumno />} />
           <Route path="/alumno/misiones" element={<TableroMisiones />} />
+          <Route path="/alumno/ranking" element={<SalonAventureros />} />
           <Route path="/alumno/bazar" element={<BazarRecompensas />} />
           <Route path="/alumno/grimorio" element={<GrimorioSaber />} />
 
           {/* Entorno Directivo / Administrador */}
+          <Route path="/directivo/dashboard" element={<DashboardDirectivo />} />
           <Route path="/directivo/docentes" element={<GestionDocentes />} />
         </Route>
       </Routes>

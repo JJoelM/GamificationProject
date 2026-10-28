@@ -11,8 +11,6 @@ public sealed record CambiarPasswordCommand(Guid UsuarioId, string PasswordActua
 
 public sealed class CambiarPasswordCommandHandler : IRequestHandler<CambiarPasswordCommand>
 {
-    private const int LongitudMinimaPassword = 8;
-
     private readonly IApplicationDbContext _db;
     private readonly PasswordHasher<Usuario> _hasher = new();
 
@@ -20,8 +18,7 @@ public sealed class CambiarPasswordCommandHandler : IRequestHandler<CambiarPassw
 
     public async Task Handle(CambiarPasswordCommand request, CancellationToken cancellationToken)
     {
-        if (request.PasswordNueva.Length < LongitudMinimaPassword)
-            throw new ArgumentException($"La nueva contraseña debe tener al menos {LongitudMinimaPassword} caracteres.");
+        ValidadorPassword.Validar(request.PasswordNueva);
 
         var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == request.UsuarioId, cancellationToken)
             ?? throw new AgregadoNoEncontradoException(nameof(Usuario), request.UsuarioId);

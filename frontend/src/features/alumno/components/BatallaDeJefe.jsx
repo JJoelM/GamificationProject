@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Swords, Shield, Skull, ChevronRight, CheckCircle2, AlertTriangle, Flame, Image } from 'lucide-react';
+import { Swords, Shield, Skull, ChevronRight, CheckCircle2, AlertTriangle, Flame, Image, Lightbulb, XCircle } from 'lucide-react';
 import { animate } from 'animejs';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
 import ErrorBanner from '../../../components/ui/ErrorBanner';
 import ResultadoResolucion from './ResultadoResolucion';
+import ModalSinPistas from './ModalSinPistas';
 import { useResolverMision } from '../../../hooks/useMisionMutations';
+import { usePersonaje } from '../../../hooks/usePersonaje';
+import { useUsarPista } from '../../../hooks/usePistas';
 import { playParchment, playChime, playSuccess } from '../../../utils/audio';
 
 /**
@@ -140,11 +143,18 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
   // Estado del combate turno a turno
   const [faseActualIdx, setFaseActualIdx] = useState(0);
   const [respuestas, setRespuestas] = useState({});
+  const [descartesPorFase, setDescartesPorFase] = useState({});
+  const [modalSinPistasOpen, setModalSinPistasOpen] = useState(false);
   const [pantalla, setPantalla] = useState('combate'); // 'combate' | 'final'
   const [hpBoss, setHpBoss] = useState(hpMaximo);
   const [enfriamientoActivo, setEnfriamientoActivo] = useState(false);
   const [turnoEjecutado, setTurnoEjecutado] = useState(false);
   const [mensajeTurno, setMensajeTurno] = useState(null);
+  const [tonoRojizoActivo, setTonoRojizoActivo] = useState(false);
+
+  const { data: personaje } = usePersonaje();
+  const { mutate: pedirPista, isPending: isUsandoPista } = useUsarPista();
+  const pistasDisponibles = personaje?.pistasDisponibles ?? 0;
 
   // Refs de animación imperativa de Anime.js
   const arenaRef = useRef(null);
@@ -156,6 +166,42 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
   const faseActual = fases[faseActualIdx];
   const respuestaFaseActual = respuestas[faseActualIdx];
 
+  const handleUsarPista = () => {
+    if (turnoEjecutado || enfriamientoActivo) return;
+    if (pistasDisponibles <= 0) {
+      setModalSinPistasOpen(true);
+      return;
+    }
+
+    const yaDescartadas = descartesPorFase[faseActualIdx] || [];
+    pedirPista(
+      {
+        misionId: mision.misionId,
+        indicePregunta: faseActualIdx,
+        opcionesYaDescartadas: yaDescartadas,
+      },
+      {
+        onSuccess: (data) => {
+          playParchment();
+          if (data?.opcionADescartar) {
+            setDescartesPorFase((prev) => ({
+              ...prev,
+              [faseActualIdx]: [...(prev[faseActualIdx] || []), data.opcionADescartar],
+            }));
+            if (respuestaFaseActual === data.opcionADescartar) {
+              setRespuestaFaseActual(null);
+            }
+          }
+        },
+        onError: (err) => {
+          if (err?.status === 409 || err?.esFaltaDePistas) {
+            setModalSinPistasOpen(true);
+          }
+        },
+      }
+    );
+  };
+
   // Respiración idle de la criatura (Anime.js)
   useEffect(() => {
     if (!criaturaRef.current) return;
@@ -166,8 +212,8 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
     if (prefersReducedMotion) return;
 
     const animBreathing = animate(criaturaRef.current, {
-      translateY: [-4, 4],
-      duration: 2400,
+      scaleY: [1, 1.018],
+      duration: 2200,
       direction: 'alternate',
       loop: true,
       ease: 'inOutSine',
@@ -180,6 +226,8 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
   const handleClose = () => {
     reset();
     setRespuestas({});
+    setDescartesPorFase({});
+    setModalSinPistasOpen(false);
     setFaseActualIdx(0);
     setPantalla('combate');
     setHpBoss(hpMaximo);
@@ -216,12 +264,17 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
       onComplete: () => numero.remove(),
     });
 
-    // Recoil y flash rojizo sobre la criatura con Anime.js
+    // Tono rojizo puro durante 0.3 segundos (300ms) sin desaturar ni dejar en blanco y negro
+    setTonoRojizoActivo(true);
+    setTimeout(() => {
+      setTonoRojizoActivo(false);
+    }, 300);
+
+    // Recoil shake sobre la criatura con Anime.js
     if (criaturaRef.current) {
       animate(criaturaRef.current, {
-        translateX: [-14, 14, -10, 10, -5, 5, 0],
-        filter: ['brightness(1)', 'brightness(2.2) saturate(1.8)', 'brightness(1)'],
-        duration: 450,
+        translateX: [-12, 12, -8, 8, -4, 4, 0],
+        duration: 300,
         ease: 'outQuad',
       });
     }
@@ -283,6 +336,7 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
         misionId: mision.misionId,
         respuestas: respuestasArray,
         preguntasOriginales: fases,
+        esRepaso: Boolean(mision?.completada),
       },
       {
         onSuccess: () => {
@@ -365,7 +419,8 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
   const jefeDerrotado = hpBoss <= 0 || (resultadoData?.porcentajeCorrecto ?? 0) >= 60;
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={isOpen}
       onClose={isPending ? undefined : handleClose}
       title={
@@ -387,30 +442,46 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
 
         {error && <ErrorBanner error={error} onDismiss={reset} />}
 
-        {/* ── 1. Escenario de la Batalla (Arena Ilustrada con Capas) ── */}
+        {/* ── 1. Escenario de la Batalla (Arena Ilustrada con Capas - 50% Superior Visible) ── */}
         <div className="relative w-full rounded-[16px_22px_18px_20px] overflow-hidden border-2 border-amber-500/70 shadow-[0_8px_30px_rgba(0,0,0,0.6)] bg-black">
-          {/* Contenedor con ratio vertical para la ilustración oficial (1000x1736) */}
-          <div className="relative w-full h-[280px] sm:h-[340px] overflow-hidden flex items-center justify-center">
-            {/* Imagen de fondo (con o sin sombra según la variante) */}
+          {/* Contenedor principal con altura responsiva */}
+          <div className="relative w-full h-[280px] sm:h-[350px] overflow-hidden flex items-center justify-center bg-black">
+            {/* Fondo ambiental difuminado para rellenar los bordes laterales sin deformar la imagen original */}
             <img
               src={varianteSeleccionada.fondo}
-              alt="Fondo de la Arena de Batalla"
-              className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none brightness-90"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-[200%] object-cover object-top blur-2xl opacity-35 scale-110 pointer-events-none select-none brightness-75"
             />
 
-            {/* Viñeta oscura superior e inferior para máxima legibilidad */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 pointer-events-none" />
+            {/* Viñeta oscura periférica */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/20 to-black/90 pointer-events-none z-10" />
 
-            {/* Sprite de la criatura superpuesto con pixel alignment exacto */}
+            {/* Lienzo central recortado al 50% superior (aspect 1000/868 = 1000 / (1736 / 2)) */}
             <div
               ref={damageContainerRef}
-              className="relative w-full h-full flex items-center justify-center z-10"
+              className="relative h-full aspect-[1000/868] max-w-full overflow-hidden flex items-center justify-center z-15 select-none"
             >
+              {/* Fondo original recortado con el 50% inferior oculto */}
+              <img
+                src={varianteSeleccionada.fondo}
+                alt="Fondo de la Arena de Batalla"
+                className="absolute top-0 left-0 w-full h-[200%] max-w-none object-cover object-top pointer-events-none select-none"
+              />
+
+              {/* Sprite de la criatura con el 50% inferior oculto, perfectamente alineado sobre su sombra */}
               <img
                 ref={criaturaRef}
                 src={varianteSeleccionada.criatura}
                 alt={nombreJefe}
-                className="h-full w-auto max-w-full object-contain pointer-events-none select-none drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)]"
+                style={{
+                  filter: tonoRojizoActivo
+                    ? 'sepia(1) saturate(9) hue-rotate(315deg) brightness(0.95)'
+                    : 'none',
+                  transition: 'filter 0.08s ease',
+                  transformOrigin: '50% 48%',
+                }}
+                className="absolute top-0 left-0 w-full h-[200%] max-w-none object-cover object-top pointer-events-none select-none drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)]"
               />
             </div>
 
@@ -459,13 +530,36 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
         {/* ── 2. Interacción Turno a Turno (Daño Instantáneo) ── */}
         {pantalla === 'combate' && faseActual && (
           <div className="flex flex-col gap-3">
-            {/* Mensaje de diálogo del Jefe (Prompt de la Fase) */}
+            {/* Mensaje de diálogo del Jefe (Prompt de la Fase) con botón de Pista */}
             <div className="p-4 rounded-[12px_16px_14px_14px] bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-accent)] border-2 border-[var(--border)] shadow-[3px_3px_0px_var(--border)]">
-              <div className="flex items-center gap-2 mb-1.5 text-[var(--brand-crimson)]">
-                <Flame size={15} />
-                <span className="text-[10px] font-display font-black tracking-widest uppercase">
-                  Ataque del Jefe — Turno {faseActualIdx + 1}
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-2 text-[var(--brand-crimson)]">
+                  <Flame size={15} />
+                  <span className="text-[10px] font-display font-black tracking-widest uppercase">
+                    Ataque del Jefe — Turno {faseActualIdx + 1} de {totalFases}
+                  </span>
+                </div>
+
+                {!turnoEjecutado && (
+                  <button
+                    type="button"
+                    onClick={handleUsarPista}
+                    disabled={isUsandoPista || enfriamientoActivo}
+                    className={[
+                      'flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-display font-bold transition-all cursor-pointer shadow-xs',
+                      pistasDisponibles > 0
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 active:scale-95'
+                        : 'bg-[var(--bg-muted)] border-[var(--border-muted)] text-[var(--text-muted)] opacity-70 hover:opacity-100',
+                    ].join(' ')}
+                    title="Descarta una táctica errónea usando una pista del Bazar"
+                  >
+                    <Lightbulb size={13} className={isUsandoPista ? 'animate-spin text-amber-500' : 'text-amber-500'} />
+                    <span>Usar Pista</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
+                      {pistasDisponibles}
+                    </span>
+                  </button>
+                )}
               </div>
               <p className="font-display font-bold text-sm sm:text-base text-[var(--text-primary)] leading-snug">
                 {faseActual.enunciado}
@@ -478,14 +572,14 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
                 className={[
                   'p-3 rounded-xl border-2 text-xs font-display font-bold flex items-center gap-2 animate-fadeIn',
                   mensajeTurno.tipo === 'exito'
-                    ? 'border-[var(--brand-emerald)] bg-[color-mix(in_oklch,var(--brand-emerald)_12%,var(--bg-panel))] text-[var(--brand-emerald)]'
-                    : 'border-[var(--brand-crimson)] bg-[color-mix(in_oklch,var(--brand-crimson)_12%,var(--bg-panel))] text-[var(--brand-crimson)]',
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200'
+                    : 'border-red-500 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200',
                 ].join(' ')}
               >
                 {mensajeTurno.tipo === 'exito' ? (
-                  <CheckCircle2 size={16} className="shrink-0" />
+                  <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <AlertTriangle size={16} className="shrink-0" />
+                  <AlertTriangle size={16} className="shrink-0 text-red-600 dark:text-red-400" />
                 )}
                 <span>{mensajeTurno.texto}</span>
               </div>
@@ -495,33 +589,48 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {faseActual.opciones?.map((opcion, oIdx) => {
                 const fueElegida = respuestaFaseActual === opcion;
+                const descartadas = descartesPorFase[faseActualIdx] || [];
+                const esDescartada = descartadas.includes(opcion);
 
                 return (
                   <button
                     key={oIdx}
                     type="button"
-                    disabled={turnoEjecutado || enfriamientoActivo}
-                    onClick={() => handleEjecutarAccionTurno(opcion)}
+                    disabled={turnoEjecutado || enfriamientoActivo || esDescartada}
+                    onClick={() => !esDescartada && handleEjecutarAccionTurno(opcion)}
                     className={[
                       'group relative flex items-center gap-3 p-3.5 rounded-[10px_14px_10px_12px] border-2 text-left text-sm transition-all duration-150 outline-none',
-                      turnoEjecutado
-                        ? fueElegida
-                          ? 'border-[var(--brand-crimson)] bg-[color-mix(in_oklch,var(--brand-crimson)_14%,var(--bg-panel))] font-bold shadow-md'
-                          : 'border-[var(--border-muted)] bg-[var(--bg-base)] opacity-50 cursor-not-allowed'
-                        : 'border-[var(--border)] bg-[var(--bg-base)] hover:border-[var(--brand-crimson)] hover:bg-[var(--bg-accent)] hover:-translate-y-0.5 cursor-pointer shadow-[2px_2px_0px_var(--border)] active:scale-[0.98]',
+                      esDescartada
+                        ? 'border-dashed border-red-400/40 bg-[var(--bg-muted)] opacity-40 line-through cursor-not-allowed select-none'
+                        : turnoEjecutado
+                          ? fueElegida
+                            ? 'border-[var(--brand-crimson)] bg-[color-mix(in_oklch,var(--brand-crimson)_14%,var(--bg-panel))] font-bold shadow-md'
+                            : 'border-[var(--border-muted)] bg-[var(--bg-base)] opacity-50 cursor-not-allowed'
+                          : 'border-[var(--border)] bg-[var(--bg-base)] hover:border-[var(--brand-crimson)] hover:bg-[var(--bg-accent)] hover:-translate-y-0.5 cursor-pointer shadow-[2px_2px_0px_var(--border)] active:scale-[0.98]',
                     ].join(' ')}
                   >
-                    <span className="w-6 h-6 rounded-full bg-[var(--brand-crimson)] text-white text-xs font-display font-bold flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      {String.fromCharCode(65 + oIdx)}
+                    <span className={[
+                      'w-6 h-6 rounded-full text-xs font-display font-black flex items-center justify-center shrink-0 shadow-xs transition-transform',
+                      esDescartada
+                        ? 'border border-red-400/40 bg-red-50 dark:bg-red-950/20 text-red-500'
+                        : 'bg-[var(--brand-crimson)] text-white dark:text-slate-950 group-hover:scale-110'
+                    ].join(' ')}>
+                      {esDescartada ? <XCircle size={12} /> : String.fromCharCode(65 + oIdx)}
                     </span>
                     <span className="flex-1 leading-snug font-medium text-[var(--text-primary)]">
                       {opcion}
                     </span>
-                    {!turnoEjecutado && (
-                      <Swords
-                        size={14}
-                        className="text-[var(--text-muted)] group-hover:text-[var(--brand-crimson)] shrink-0 transition-colors"
-                      />
+                    {esDescartada ? (
+                      <span className="text-[10px] font-display font-bold text-red-600 dark:text-red-400 shrink-0">
+                        Descartada
+                      </span>
+                    ) : (
+                      !turnoEjecutado && (
+                        <Swords
+                          size={14}
+                          className="text-[var(--text-secondary)] group-hover:text-[var(--brand-crimson)] shrink-0 transition-colors"
+                        />
+                      )
                     )}
                   </button>
                 );
@@ -530,9 +639,9 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
 
             {/* Botón para avanzar a la siguiente fase o finalizar */}
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-[var(--border-muted)]">
-              <span className="text-xs text-[var(--text-muted)] font-display">
+              <span className="text-xs text-[var(--text-secondary)] font-display font-medium">
                 {turnoEjecutado ? (
-                  <span className="text-[var(--brand-emerald)] font-bold">
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">
                     ✓ Acción ejecutada
                   </span>
                 ) : (
@@ -612,6 +721,11 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
         )}
       </div>
     </Modal>
+    <ModalSinPistas
+      isOpen={modalSinPistasOpen}
+      onClose={() => setModalSinPistasOpen(false)}
+    />
+    </>
   );
 }
 

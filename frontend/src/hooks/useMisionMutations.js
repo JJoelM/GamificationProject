@@ -12,12 +12,13 @@ export function useGenerarMisionIa() {
   const aulaId = useSessionStore((s) => s.aulaActivaId);
 
   return useMutation({
-    mutationFn: async ({ temaCurricular, textoFuente }) => {
+    mutationFn: async ({ temaCurricular, textoFuente, tipoPlantilla }) => {
       try {
         return await misionesApi.generarConIa({
           aulaId,
           temaCurricular,
           textoFuente,
+          tipoPlantilla,
         });
       } catch (err) {
         if (!err.isApiError) {
@@ -127,8 +128,8 @@ export function useResolverMision() {
   const esMisionResuelta = useSessionStore((s) => s.esMisionResuelta);
 
   return useMutation({
-    mutationFn: async ({ misionId, respuestas, preguntasOriginales = [] }) => {
-      const eraRepasoPrevio = esMisionResuelta(misionId);
+    mutationFn: async ({ misionId, respuestas, preguntasOriginales = [], esRepaso = false }) => {
+      const eraRepasoPrevio = Boolean(esRepaso || esMisionResuelta(misionId));
 
       try {
         const resultado = await alumnosApi.resolverMision(misionId, { respuestas });
@@ -240,6 +241,10 @@ export function useResolverMision() {
     onSuccess: () => {
       playChime();
       queryClient.invalidateQueries({ queryKey: ['personaje'] });
+      queryClient.invalidateQueries({ queryKey: ['ranking'] });
+      queryClient.invalidateQueries({ queryKey: ['grimorio'] });
+      queryClient.invalidateQueries({ queryKey: ['misiones'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
     },
   });
 }
@@ -263,8 +268,9 @@ export function useResolverMisionOrdenTemporal() {
       eventoCulpableElegido,
       eventosOriginales = [],
       eventoCulpableOriginalId = '',
+      esRepaso = false,
     }) => {
-      const eraRepasoPrevio = esMisionResuelta(misionId);
+      const eraRepasoPrevio = Boolean(esRepaso || esMisionResuelta(misionId));
 
       try {
         const resultado = await alumnosApi.resolverOrdenTemporal(misionId, {
@@ -361,6 +367,10 @@ export function useResolverMisionOrdenTemporal() {
     onSuccess: () => {
       playChime();
       queryClient.invalidateQueries({ queryKey: ['personaje'] });
+      queryClient.invalidateQueries({ queryKey: ['ranking'] });
+      queryClient.invalidateQueries({ queryKey: ['grimorio'] });
+      queryClient.invalidateQueries({ queryKey: ['misiones'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
     },
   });
 }

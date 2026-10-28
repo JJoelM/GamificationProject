@@ -136,6 +136,89 @@
   animation: fade-up 0.3s ease-out both;
 }
 
+/* --- Animaciones lúdicas de la Landing (inspiradas en la presentación) --- */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -24; }
+}
+
+@keyframes boss-combat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  42%      { transform: translate(-5px, -3px) scale(1.03); }
+  52%      { transform: translate(5px, 2px) scale(0.96); }
+}
+
+@keyframes hero-attack {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  42%      { transform: translateX(9px) rotate(-4deg); }
+}
+
+@keyframes hp-drain {
+  0%, 18%   { width: 92%; }
+  45%, 65%  { width: 58%; }
+  82%, 100% { width: 32%; }
+}
+
+@keyframes spark-pop {
+  0%, 34%, 100% { opacity: 0; transform: scale(0.6) translateY(4px); }
+  44%, 62%      { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes tl-swap-1 {
+  0%, 35%, 100% { transform: translateY(0); }
+  50%, 85%      { transform: translateY(44px); }
+}
+
+@keyframes tl-swap-2 {
+  0%, 35%, 100% { transform: translateY(0); }
+  50%, 85%      { transform: translateY(-44px); }
+}
+
+@keyframes trivia-pick {
+  0%, 30%, 100% { transform: scale(1); }
+  45%, 80%      { transform: scale(1.025); }
+}
+
+@keyframes star-spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-dash-flow {
+  animation: dash-flow 1s linear infinite;
+}
+
+.animate-boss-combat {
+  animation: boss-combat 3.2s ease-in-out infinite;
+}
+
+.animate-hero-attack {
+  animation: hero-attack 3.2s ease-in-out infinite;
+}
+
+.animate-hp-drain {
+  animation: hp-drain 4.5s ease-in-out infinite;
+}
+
+.animate-spark-pop {
+  animation: spark-pop 3.2s ease-in-out infinite;
+}
+
+.animate-tl-swap-1 {
+  animation: tl-swap-1 4.5s ease-in-out infinite;
+}
+
+.animate-tl-swap-2 {
+  animation: tl-swap-2 4.5s ease-in-out infinite;
+}
+
+.animate-trivia-pick {
+  animation: trivia-pick 3.6s ease-in-out infinite;
+}
+
+.animate-star-spin {
+  transform-origin: center;
+  animation: star-spin 9s linear infinite;
+}
+
 /* Respeto a prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
@@ -146,7 +229,16 @@
   .animate-scale-in,
   .animate-slide-out-right,
   .animate-slide-out-left,
-  .animate-fade-up {
+  .animate-fade-up,
+  .animate-dash-flow,
+  .animate-boss-combat,
+  .animate-hero-attack,
+  .animate-hp-drain,
+  .animate-spark-pop,
+  .animate-tl-swap-1,
+  .animate-tl-swap-2,
+  .animate-trivia-pick,
+  .animate-star-spin {
     animation: none !important;
     transition: none !important;
   }

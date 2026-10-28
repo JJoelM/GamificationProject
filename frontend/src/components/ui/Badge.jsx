@@ -5,10 +5,10 @@
  */
 const variantStyles = {
   xp: 'bg-[var(--brand-gold)] text-[#1C0A00] border-[color-mix(in_oklch,var(--brand-gold)_70%,black)]',
-  nivel: 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary-hov)]',
-  racha: 'bg-[var(--brand-secondary)] text-white border-[color-mix(in_oklch,var(--brand-secondary)_70%,black)]',
-  correcto: 'bg-[var(--brand-emerald)] text-white border-[color-mix(in_oklch,var(--brand-emerald)_70%,black)]',
-  incorrecto: 'bg-[var(--brand-crimson)] text-white border-[color-mix(in_oklch,var(--brand-crimson)_70%,black)]',
+  nivel: 'bg-[var(--brand-primary)] text-white dark:text-slate-950 font-bold border-[var(--brand-primary-hov)]',
+  racha: 'bg-[var(--brand-secondary)] text-white dark:text-slate-950 font-bold border-[color-mix(in_oklch,var(--brand-secondary)_70%,black)]',
+  correcto: 'bg-[var(--brand-emerald)] text-white dark:text-slate-950 font-bold border-[color-mix(in_oklch,var(--brand-emerald)_70%,black)]',
+  incorrecto: 'bg-[var(--brand-crimson)] text-white dark:text-slate-950 font-bold border-[color-mix(in_oklch,var(--brand-crimson)_70%,black)]',
   pendiente: 'bg-[var(--bg-accent)] text-[var(--text-primary)] border-[var(--border-muted)]',
   repaso: 'bg-[color-mix(in_oklch,var(--brand-sky)_15%,var(--bg-panel))] text-[var(--brand-sky)] border-[var(--brand-sky)]',
   violet: 'bg-[color-mix(in_oklch,var(--brand-violet)_15%,var(--bg-panel))] text-[var(--brand-violet)] border-[var(--brand-violet)]',

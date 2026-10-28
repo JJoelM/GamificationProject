@@ -1,3 +1,4 @@
+using Core.Application.Common;
 using Core.Domain.SeedWork;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,9 @@ public class ManejadorDeExcepciones : IExceptionHandler
             NotSupportedException =>
                 (StatusCodes.Status400BadRequest, "Operación no soportada", exception.Message),
 
+            GeneracionFallidaException =>
+                (StatusCodes.Status502BadGateway, "Error en generación con IA", exception.Message),
+
             // Todo lo demás (InvalidOperationException de LINQ, errores de DI,
             // HttpRequestException al llamar al microservicio de IA, etc.) es un
             // error interno real -- se loguea completo del lado del servidor y
@@ -45,6 +49,16 @@ public class ManejadorDeExcepciones : IExceptionHandler
 
         if (status == StatusCodes.Status500InternalServerError)
             _logger.LogError(exception, "Error no controlado en {Path}", httpContext.Request.Path);
+
+        if (!httpContext.Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
+        {
+            var origin = httpContext.Request.Headers.Origin.FirstOrDefault();
+            if (!string.IsNullOrEmpty(origin))
+            {
+                httpContext.Response.Headers.AccessControlAllowOrigin = origin;
+                httpContext.Response.Headers.AccessControlAllowCredentials = "true";
+            }
+        }
 
         httpContext.Response.StatusCode = status;
         await httpContext.Response.WriteAsJsonAsync(new ProblemDetails

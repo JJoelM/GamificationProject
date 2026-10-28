@@ -20,7 +20,7 @@ const dificultadPorXp = (xp) => {
 function TarjetaMision({ mision, onResolver, index = 0 }) {
   const misionesResueltas = useSessionStore((s) => s.misionesResueltas) || {};
   const datosResolucion = misionesResueltas[mision.misionId];
-  const esCompletada = Boolean(datosResolucion?.completada);
+  const esCompletada = Boolean(mision.completada || datosResolucion?.completada);
 
   const tipoPlantilla = mision.tipoPlantilla || 'OpcionMultiple';
 
