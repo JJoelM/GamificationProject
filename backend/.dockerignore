@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/*.user
+**/appsettings.Development.json
+**/.env
+Core.Domain.Tests/

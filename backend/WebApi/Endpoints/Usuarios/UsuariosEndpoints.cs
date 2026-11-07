@@ -19,6 +19,15 @@ public sealed record CambiarPasswordRequest(string PasswordActual, string Passwo
 
 public static class UsuariosEndpoints
 {
+    private static CookieOptions CrearOpcionesCookie(DateTimeOffset? expira = null) => new()
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Strict,
+        Path = "/",
+        Expires = expira,
+    };
+
     public static void MapUsuariosEndpoints(this WebApplication app)
     {
         var grupo = app.MapGroup("/api/usuarios").WithTags("Usuarios");
@@ -46,13 +55,10 @@ public static class UsuariosEndpoints
         {
             var resultado = await mediator.Send(new LoginCommand(request.Email, request.Password));
 
-            http.Response.Cookies.Append("access_token", resultado.Token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTimeOffset.UtcNow.AddMinutes(120),
-            });
+            http.Response.Cookies.Append(
+                "access_token",
+                resultado.Token,
+                CrearOpcionesCookie(DateTimeOffset.UtcNow.AddMinutes(120)));
 
             return Results.Ok(new { resultado.UsuarioId, resultado.NombreCompleto, resultado.Rol });
         })
@@ -61,7 +67,7 @@ public static class UsuariosEndpoints
 
         grupo.MapPost("/logout", (HttpContext http) =>
         {
-            http.Response.Cookies.Delete("access_token");
+            http.Response.Cookies.Delete("access_token", CrearOpcionesCookie());
             return Results.NoContent();
         })
         .WithName("Logout");
@@ -86,7 +92,7 @@ public static class UsuariosEndpoints
         grupo.MapDelete("/mis-datos", async (ClaimsPrincipal usuario, HttpContext http, IMediator mediator) =>
         {
             await mediator.Send(new EliminarMiCuentaCommand(usuario.ObtenerUsuarioId()));
-            http.Response.Cookies.Delete("access_token");
+            http.Response.Cookies.Delete("access_token", CrearOpcionesCookie());
             return Results.NoContent();
         })
         .WithName("EliminarMiCuenta")

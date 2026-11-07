@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: gamificacion-pfc-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ENVIRONMENT
+        value: production
+      - key: AiService__BaseUrl
+        value: http://127.0.0.1:8001
+      - key: AiService__TokenInterno
+        generateValue: true
+      - key: TOKEN_INTERNO_BACKEND
+        fromService:
+          type: web
+          name: gamificacion-pfc-api
+          envVarKey: AiService__TokenInterno
+      - key: JwtSettings__Issuer
+        value: GamificacionPFC
+      - key: JwtSettings__Audience
+        value: GamificacionPFC
+      - key: JwtSettings__Secret
+        generateValue: true
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: RateLimits__IaPermitLimit
+        value: "5"
+      - key: RateLimits__IaWindowMinutes
+        value: "10"
+      - key: SeedDemoData
+        value: "false"
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FrontendUrl
+        sync: false
