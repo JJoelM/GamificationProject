@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Backend (.NET 9)
+    name: Backend (.NET 9 + Tests de Seguridad y Dominio)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del código
@@ -25,11 +25,11 @@ jobs:
       - name: Compilar
         run: dotnet build backend/GamificacionBackend.sln --no-restore --configuration Release
 
-      - name: Ejecutar pruebas unitarias
+      - name: Ejecutar pruebas unitarias y de seguridad
         run: dotnet test backend/GamificacionBackend.sln --no-build --configuration Release --verbosity normal
 
   frontend:
-    name: Frontend (React + Vite)
+    name: Frontend (React + Vite + Cloudflare Pages Proxy)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,11 +48,22 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Validar sintaxis de Cloudflare Pages Function Proxy
+        run: node --check functions/api/[[path]].js
+
       - name: Build de producción
         run: npm run build
 
+      - name: Auditoría anti-filtración de secretos en el bundle compilado
+        run: |
+          if grep -E "AIza[0-9A-Za-z_-]{35}|TokenInterno|TOKEN_INTERNO|onrender\.com|JwtSettings|Cambiar123|ProxySecret" dist/assets/*.js; then
+            echo "::error::Se detectaron posibles secretos, URLs privadas o contraseñas por defecto incrustadas en el bundle de producción."
+            exit 1
+          fi
+          echo "Bundle JS verificado: 0 secretos ni contraseñas por defecto expuestas."
+
   ai-service:
-    name: AI Service (Python)
+    name: AI Service (Python FastAPI + Unit Tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -73,5 +84,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Validar sintaxis y compilación
-        run: python -m py_compile main.py
+      - name: Validar sintaxis y compilación de módulos Python
+        run: python -m py_compile main.py contenido.py esquemas.py test_contenido.py
+
+      - name: Ejecutar pruebas unitarias de validación y transformación
+        run: python -m unittest -v test_contenido.py
+
+  docker-production:
+    name: Docker Unificado de Producción (Render)
+    runs-on: ubuntu-latest
+    needs: [ backend, ai-service ]
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxis del supervisor start.sh
+        run: sh -n start.sh
+
+      - name: Construir imagen Docker unificada (.NET 9 + Python FastAPI)
+        run: docker build -t gamificacion-pfc:ci .
