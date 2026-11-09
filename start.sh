@@ -13,6 +13,8 @@ set -e
   done
 ) &
 
-# 2. Inicia la WebAPI de .NET 9 como proceso principal en el puerto público expuesto a Render.
+# 2. Inicia la WebAPI de .NET 9 como proceso principal escuchando en $PORT (inyectado por Render) o 8080 por defecto.
+PORT="${PORT:-8080}"
+export ASPNETCORE_URLS="http://+:${PORT}"
 cd /app/backend
 exec dotnet WebApi.dll

@@ -4,6 +4,9 @@
 
 # ── Secretos y configuración local (NUNCA commitear) ──
 **/.env
+**/.env.*
+!**/.env.example
+.neon
 **/appsettings.Development.json
 
 # ── Documentación interna del agente (solo para desarrollo local) ──

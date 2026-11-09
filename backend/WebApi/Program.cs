@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
 using Core.Domain.Agregados.Personajes;
@@ -11,6 +12,7 @@ using Infrastructure.Persistence.Repositorios;
 using Infrastructure.Persistence;
 using Infrastructure.IA;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -33,22 +35,33 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
+var proxySecretConfigurado = builder.Configuration["ProxySecret"]?.Trim();
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.ForwardLimit = 2;
+    // Si ProxySecret está configurado, la IP real del cliente se valida por canal autenticado (X-Proxy-Secret)
+    // y limitamos X-Forwarded-For a 1 salto (el balanceador de Render) para impedir spoofing en llamadas directas.
+    options.ForwardLimit = string.IsNullOrEmpty(proxySecretConfigurado) ? 2 : 1;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
+var rawConnString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration["DATABASE_URL"];
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-           .UseSnakeCaseNamingConvention());
+    options.UseNpgsql(NormalizarConnectionStringPostgres(rawConnString))
+           .UseSnakeCaseNamingConvention()
+           .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 builder.Services.AddScoped<IGeneradorDeTokens, GeneradorDeTokensJwt>();
 
 var origenesPermitidos = (builder.Configuration["FrontendUrl"] ?? "http://localhost:5173")
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(u => u.TrimEnd('/'))
+    .Where(u => !string.IsNullOrWhiteSpace(u))
+    .ToArray();
 
 builder.Services.AddCors(options =>
 {
@@ -92,6 +105,27 @@ builder.Services.AddAuthorization();
 var iaPermitLimit = builder.Configuration.GetValue("RateLimits:IaPermitLimit", 5);
 var iaWindowMinutes = builder.Configuration.GetValue("RateLimits:IaWindowMinutes", 10);
 
+static string ObtenerIpClienteSegura(HttpContext httpContext, string? proxySecretEsperado)
+{
+    if (!string.IsNullOrEmpty(proxySecretEsperado))
+    {
+        var secretRecibido = httpContext.Request.Headers["X-Proxy-Secret"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(secretRecibido))
+        {
+            var bytesEsperados = Encoding.UTF8.GetBytes(proxySecretEsperado);
+            var bytesRecibidos = Encoding.UTF8.GetBytes(secretRecibido);
+            if (CryptographicOperations.FixedTimeEquals(bytesEsperados, bytesRecibidos))
+            {
+                var ipProxy = httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(ipProxy))
+                    return ipProxy.Trim();
+            }
+        }
+    }
+
+    return httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido";
+}
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -111,11 +145,11 @@ builder.Services.AddRateLimiter(options =>
         }, cancellationToken);
     };
 
-    // Usa RemoteIpAddress ya resuelta de forma segura por UseForwardedHeaders (ForwardLimit = 2),
-    // evitando que un atacante falsifique cabeceras personalizadas para evadir el límite.
+    // Resuelve la IP real del cliente validando X-Proxy-Secret en tiempo constante si está configurado,
+    // o usando RemoteIpAddress del balanceador de Render para impedir spoofing de X-Forwarded-For.
     options.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
+            partitionKey: ObtenerIpClienteSegura(httpContext, proxySecretConfigurado),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
@@ -125,9 +159,9 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("ia", httpContext =>
     {
-        var usuarioId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? httpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "anonimo";
+        var usuarioId = httpContext.User.FindFirstValue("usuarioId")
+            ?? httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? ObtenerIpClienteSegura(httpContext, proxySecretConfigurado);
 
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: $"ia:{usuarioId}",
@@ -159,7 +193,8 @@ builder.Services.AddHttpClient<IGeneradorDeMisiones, GeneradorDeMisionesHttp>(cl
 
     client.Timeout = TimeSpan.FromSeconds(90);
 
-    var tokenInterno = builder.Configuration["AiService:TokenInterno"]?
+    var tokenInterno = (builder.Configuration["AiService:TokenInterno"]
+        ?? builder.Configuration["TOKEN_INTERNO_BACKEND"])?
         .Replace("\r", "").Replace("\n", "").Trim()
         ?? throw new InvalidOperationException("Falta configurar AiService:TokenInterno.");
 
@@ -198,7 +233,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    // Si se habilita ApplyMigrationsOnStartup (por ejemplo en el primer deploy a Neon),
+    // Si se habilita ApplyMigrationsOnStartup (por ejemplo en el deploy a Neon),
     // aplica las migraciones pendientes antes de verificar la tabla de roles.
     if (app.Configuration.GetValue<bool>("ApplyMigrationsOnStartup"))
     {
@@ -225,7 +260,16 @@ using (var scope = app.Services.CreateScope())
     if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("SeedDemoData"))
     {
         var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Usuario>();
-        var passwordSeed = app.Configuration["SeedDemoPassword"] ?? "Cambiar123!";
+        var passwordSeedConfig = app.Configuration["SeedDemoPassword"];
+
+        if (!app.Environment.IsDevelopment() &&
+            (string.IsNullOrWhiteSpace(passwordSeedConfig) || passwordSeedConfig == "Cambiar123!"))
+        {
+            throw new InvalidOperationException(
+                "Por seguridad, cuando SeedDemoData está habilitado en producción es obligatorio configurar una contraseña privada en la variable de entorno SeedDemoPassword.");
+        }
+
+        var passwordSeed = string.IsNullOrWhiteSpace(passwordSeedConfig) ? "Cambiar123!" : passwordSeedConfig;
 
         var docenteId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var alumnoId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -270,11 +314,6 @@ using (var scope = app.Services.CreateScope())
             directivo.EstablecerContrasena(hasher.HashPassword(directivo, passwordSeed));
             context.Usuarios.Add(directivo);
         }
-
-        context.Database.ExecuteSqlRaw(@"
-            ALTER TABLE borradores_ia ADD COLUMN IF NOT EXISTS mision_origen_id uuid;
-            ALTER TABLE misiones_activas ADD COLUMN IF NOT EXISTS mision_origen_id uuid;
-        ");
 
         if (!context.Aulas.Any(a => a.Id == aulaId))
         {
@@ -395,3 +434,47 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+public partial class Program
+{
+    /// <summary>
+    /// Convierte automáticamente URIs de Neon/PostgreSQL (postgresql://user:pass@host/db?sslmode=require)
+    /// al formato Key-Value requerido por Npgsql, o devuelve la cadena intacta si ya está en formato Key-Value.
+    /// </summary>
+    public static string? NormalizarConnectionStringPostgres(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return connectionString;
+
+        var limpia = connectionString.Trim().Trim('"', '\'');
+
+        if (!limpia.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+            !limpia.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            return limpia;
+        }
+
+        var uri = new Uri(limpia);
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = Uri.UnescapeDataString(userInfo[0]);
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+        var database = uri.AbsolutePath.Trim('/');
+        var port = uri.Port > 0 ? uri.Port : 5432;
+
+        var sb = new StringBuilder();
+        sb.Append($"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};");
+
+        if (uri.Query.Contains("sslmode=require", StringComparison.OrdinalIgnoreCase) ||
+            uri.Host.EndsWith(".neon.tech", StringComparison.OrdinalIgnoreCase))
+        {
+            sb.Append("SSL Mode=Require;");
+        }
+
+        if (uri.Query.Contains("channel_binding=require", StringComparison.OrdinalIgnoreCase))
+        {
+            sb.Append("Channel Binding=Require;");
+        }
+
+        return sb.ToString();
+    }
+}

@@ -33,7 +33,9 @@ app = FastAPI(
     openapi_url=None if _es_produccion else "/openapi.json",
 )
 
-_token_interno: str | None = os.getenv("TOKEN_INTERNO_BACKEND")
+_token_interno: str | None = (
+    os.getenv("TOKEN_INTERNO_BACKEND") or os.getenv("AiService__TokenInterno")
+)
 _gemini_api_keys: list[str] = [
     k.strip() for k in (os.getenv("GEMINI_API_KEY") or "").split(",") if k.strip()
 ]

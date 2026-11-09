@@ -15,11 +15,6 @@ services:
         value: http://127.0.0.1:8001
       - key: AiService__TokenInterno
         generateValue: true
-      - key: TOKEN_INTERNO_BACKEND
-        fromService:
-          type: web
-          name: gamificacion-pfc-api
-          envVarKey: AiService__TokenInterno
       - key: JwtSettings__Issuer
         value: GamificacionPFC
       - key: JwtSettings__Audience
@@ -35,7 +30,11 @@ services:
       - key: ApplyMigrationsOnStartup
         value: "true"
       - key: SeedDemoData
-        value: "false"
+        value: "true"
+      - key: SeedDemoPassword
+        sync: false
+      - key: ProxySecret
+        sync: false
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: GEMINI_API_KEY

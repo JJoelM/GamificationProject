@@ -6,7 +6,8 @@
  * cookies de terceros en Safari / iOS / Brave.
  *
  * Configuración en Cloudflare Pages -> Settings -> Environment Variables:
- *   BACKEND_URL = https://tu-servicio-backend.onrender.com
+ *   BACKEND_URL  = https://tu-servicio-backend.onrender.com
+ *   PROXY_SECRET = (Opcional, mismo valor que ProxySecret en Render para blindar IP real)
  */
 export async function onRequest(context) {
   const { request, env } = context;
@@ -35,6 +36,8 @@ export async function onRequest(context) {
   headers.delete('cf-ipcountry');
   headers.delete('cf-ray');
   headers.delete('cf-visitor');
+  headers.delete('x-real-client-ip');
+  headers.delete('x-proxy-secret');
 
   headers.set('X-Forwarded-Host', incomingUrl.host);
   headers.set('X-Forwarded-Proto', incomingUrl.protocol.replace(':', ''));
@@ -42,6 +45,11 @@ export async function onRequest(context) {
   const clientIp = request.headers.get('CF-Connecting-IP');
   if (clientIp) {
     headers.set('X-Forwarded-For', clientIp);
+    headers.set('X-Real-Client-IP', clientIp);
+  }
+
+  if (env.PROXY_SECRET) {
+    headers.set('X-Proxy-Secret', env.PROXY_SECRET);
   }
 
   const init = {
@@ -52,15 +60,22 @@ export async function onRequest(context) {
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     init.body = request.body;
+    init.duplex = 'half';
   }
 
   try {
     const response = await fetch(targetUrl.toString(), init);
 
+    // El runtime de Cloudflare descomprime automáticamente respuestas gzip/br;
+    // eliminamos content-encoding y content-length para evitar ERR_CONTENT_DECODING_FAILED en el navegador.
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.delete('content-encoding');
+    responseHeaders.delete('content-length');
+
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: responseHeaders,
     });
   } catch {
     return new Response(
