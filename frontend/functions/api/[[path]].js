@@ -26,9 +26,16 @@ export async function onRequest(context) {
   }
 
   const incomingUrl = new URL(request.url);
-  const targetUrl = `${backendBaseUrl}${incomingUrl.pathname}${incomingUrl.search}`;
+  const targetUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, backendBaseUrl);
 
+  // Copiar cabeceras eliminando hop-by-hop headers y 'host' para evitar Error 1003 / 421 en Render
   const headers = new Headers(request.headers);
+  headers.delete('host');
+  headers.delete('cf-connecting-ip');
+  headers.delete('cf-ipcountry');
+  headers.delete('cf-ray');
+  headers.delete('cf-visitor');
+
   headers.set('X-Forwarded-Host', incomingUrl.host);
   headers.set('X-Forwarded-Proto', incomingUrl.protocol.replace(':', ''));
 
@@ -47,12 +54,24 @@ export async function onRequest(context) {
     init.body = request.body;
   }
 
-  const response = await fetch(targetUrl, init);
+  try {
+    const response = await fetch(targetUrl.toString(), init);
 
-  const responseHeaders = new Headers(response.headers);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: responseHeaders,
-  });
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } catch {
+    return new Response(
+      JSON.stringify({
+        title: 'Servidor despertando o no disponible',
+        detail: 'El servidor backend está iniciando o no pudo ser contactado. Intentá nuevamente en unos segundos.',
+      }),
+      {
+        status: 502,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      }
+    );
+  }
 }

@@ -32,6 +32,8 @@ services:
         value: "5"
       - key: RateLimits__IaWindowMinutes
         value: "10"
+      - key: ApplyMigrationsOnStartup
+        value: "true"
       - key: SeedDemoData
         value: "false"
       - key: ConnectionStrings__DefaultConnection

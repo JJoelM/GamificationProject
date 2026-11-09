@@ -36,6 +36,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 2;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -110,21 +111,17 @@ builder.Services.AddRateLimiter(options =>
         }, cancellationToken);
     };
 
+    // Usa RemoteIpAddress ya resuelta de forma segura por UseForwardedHeaders (ForwardLimit = 2),
+    // evitando que un atacante falsifique cabeceras personalizadas para evadir el límite.
     options.AddPolicy("auth", httpContext =>
-    {
-        var ipReal = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
-            ?? httpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "desconocido";
-
-        return RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: ipReal,
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
-            });
-    });
+            }));
 
     options.AddPolicy("ia", httpContext =>
     {
@@ -174,16 +171,17 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseCors("Frontend");
 app.UseExceptionHandler();
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseHttpsRedirection();
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck")
@@ -199,6 +197,13 @@ app.MapDirectivoEndpoints();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // Si se habilita ApplyMigrationsOnStartup (por ejemplo en el primer deploy a Neon),
+    // aplica las migraciones pendientes antes de verificar la tabla de roles.
+    if (app.Configuration.GetValue<bool>("ApplyMigrationsOnStartup"))
+    {
+        context.Database.Migrate();
+    }
 
     var rolDocenteId = Guid.Parse("A0000000-0000-0000-0000-000000000000");
     var rolAlumnoId = Guid.Parse("B0000000-0000-0000-0000-000000000000");
