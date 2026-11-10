@@ -114,12 +114,11 @@ function SelectorPage() {
           className={[
             'w-20 h-20 flex items-center justify-center',
             'rounded-[20px_28px_22px_26px]',
-            'bg-[var(--brand-primary)]',
-            'shadow-[5px_5px_0px_var(--border)] animate-float',
+            'bg-[#FEF3C7] border-3 border-[var(--border)] shadow-[5px_5px_0px_var(--border)] animate-float p-3',
           ].join(' ')}
           aria-hidden="true"
         >
-          <Swords size={36} strokeWidth={2} style={{ color: '#FCD34D' }} />
+          <img src="/images/landing/logo.png" alt="Logo Armored" className="w-full h-full object-contain" />
         </div>
 
         <div>
@@ -130,7 +129,7 @@ function SelectorPage() {
               'tracking-tight leading-none mb-2',
             ].join(' ')}
           >
-            EduQuest
+            Armored
           </h1>
           <p className="text-[var(--text-secondary)] text-lg font-medium">
             Plataforma de Gamificación Educativa
@@ -220,3 +219,4 @@ function SelectorPage() {
 }
 
 export default SelectorPage;
+
