@@ -20,7 +20,7 @@ export default function DashboardDirectivo() {
   const handleCopiarReporte = () => {
     if (!metricas) return;
 
-    const texto = `Reporte Institucional EduQuest\n` +
+    const texto = `Reporte Institucional Armored\n` +
       `------------------------------------\n` +
       `Docentes: ${metricas.docentesActivos} activos de ${metricas.totalDocentes}\n` +
       `Alumnos: ${metricas.totalAlumnos} matriculados (${metricas.alumnosActivosUltimos7Dias} activos en últimos 7 días)\n` +
@@ -296,3 +296,4 @@ export default function DashboardDirectivo() {
     </div>
   );
 }
+

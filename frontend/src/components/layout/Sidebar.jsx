@@ -273,17 +273,16 @@ function SidebarContent({ onCloseMobile }) {
           <div
             className={[
               'w-10 h-10 rounded-[10px_14px_10px_12px] flex items-center justify-center',
-              'bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-violet,var(--brand-primary))]',
-              'shadow-[2px_2px_0px_var(--border)]',
+              'bg-[#FEF3C7] border-2 border-[var(--border)] shadow-[2px_2px_0px_var(--border)] p-1.5',
               'shrink-0',
             ].join(' ')}
             aria-hidden="true"
           >
-            <Swords size={18} strokeWidth={2.5} style={{ color: '#FCD34D' }} />
+            <img src="/images/landing/logo.png" alt="Logo Armored" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-sm font-display font-bold leading-tight text-[var(--text-primary)]">
-              EduQuest
+              Armored
             </h1>
             <p className="text-[11px] text-[var(--text-muted)]">Plataforma RPG Educativa</p>
           </div>
@@ -474,3 +473,6 @@ export default function Sidebar({ isOpenMobile, onCloseMobile }) {
     </>
   );
 }
+
+
+

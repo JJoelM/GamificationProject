@@ -254,11 +254,9 @@ function AuthPage() {
         transition={{ duration: 0.4 }}
         className="flex flex-col items-center gap-2.5 mb-6 sm:mb-8 text-center max-w-md px-2"
       >
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[16px_22px_18px_20px] bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-gold)] flex items-center justify-center text-white shadow-lg border-2 border-white/40">
-          <Swords size={28} className="sm:size-8" />
-        </div>
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#FEF3C7] border-3 border-[var(--border)] shadow-[3px_3px_0px_var(--border)] flex items-center justify-center p-2"><img src="/images/landing/logo.png" alt="Logo Armored" className="w-full h-full object-contain" /></div>
         <h1 className="font-display font-black text-2xl sm:text-3xl text-[var(--text-primary)] tracking-wide">
-          EduQuest
+          Armored
         </h1>
         <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
           Portal de acceso y registro para la comunidad educativa de la UNNE
@@ -657,3 +655,4 @@ function AuthPage() {
 }
 
 export default AuthPage;
+
