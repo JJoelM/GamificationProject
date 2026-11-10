@@ -1,5 +1,5 @@
 # Etapa 1: Compilación del Backend .NET 9
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-dotnet
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build-dotnet
 WORKDIR /src
 
 COPY ["backend/Directory.Packages.props", "./"]
