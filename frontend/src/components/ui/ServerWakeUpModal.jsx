@@ -96,7 +96,7 @@ export default function ServerWakeUpModal() {
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-labelledby="wake-modal-title"
@@ -107,11 +107,11 @@ export default function ServerWakeUpModal() {
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: 'spring', damping: 22, stiffness: 280 }}
           className={[
-            'relative w-full max-w-md overflow-hidden text-center p-6 sm:p-8',
-            'rounded-[28px_36px_30px_34px]',
+            'relative w-full max-w-sm sm:max-w-md overflow-hidden text-center p-5 sm:p-8 my-auto',
+            'rounded-[24px_32px_26px_30px] sm:rounded-[28px_36px_30px_34px]',
             'bg-gradient-to-b from-[var(--bg-panel)] via-[var(--bg-muted)] to-[var(--bg-panel)]',
-            'border-3 border-[var(--border)]',
-            'shadow-[6px_6px_0px_var(--border)]',
+            'border-2 sm:border-3 border-[var(--border)]',
+            'shadow-[5px_5px_0px_var(--border)] sm:shadow-[6px_6px_0px_var(--border)]',
           ].join(' ')}
           style={{
             boxShadow: '6px 6px 0px var(--border)',
@@ -222,12 +222,12 @@ export default function ServerWakeUpModal() {
             🌱 <strong className="text-[var(--text-primary)]">Modo Ecológico Activo:</strong> Tu campus virtual duerme cuando no hay alumnos conectados para cuidar el planeta y los recursos. ¡Solo tarda unos segundos en despertar!
           </div>
 
-          {/* Botones de acción */}
-          <div className="flex items-center gap-2 justify-center">
+          {/* Botones de acción accesibles y responsivos */}
+          <div className="flex flex-col-reverse sm:flex-row items-center gap-2 justify-center w-full">
             <button
               type="button"
               onClick={handleCancelar}
-              className="px-4 py-2 rounded-xl text-xs font-display font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)] border border-transparent hover:border-[var(--border-muted)] transition-all cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-display font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-accent)] border border-transparent hover:border-[var(--border-muted)] transition-all cursor-pointer text-center"
             >
               Cerrar y esperar
             </button>
@@ -236,7 +236,7 @@ export default function ServerWakeUpModal() {
               <button
                 type="button"
                 onClick={handleReintentar}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-display font-bold text-white bg-[var(--brand-primary)] hover:brightness-110 shadow-[2px_2px_0px_var(--border)] border border-[var(--border)] transition-transform active:translate-y-0.5 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-display font-bold text-white bg-[var(--brand-primary)] hover:brightness-110 shadow-[2px_2px_0px_var(--border)] border border-[var(--border)] transition-transform active:translate-y-0.5 cursor-pointer"
               >
                 <RefreshCw size={12} className="animate-spin" />
                 <span>Probar conexión</span>
