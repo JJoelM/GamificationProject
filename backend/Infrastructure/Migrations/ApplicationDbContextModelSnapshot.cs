@@ -17,7 +17,7 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.19")
+                .HasAnnotation("ProductVersion", "9.0.22")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -42,6 +42,10 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("estado_validacion");
+
+                    b.Property<Guid?>("MisionOrigenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_origen_id");
 
                     b.Property<string>("MotivoRechazo")
                         .HasColumnType("text")
@@ -187,6 +191,10 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("EstaVisible")
                         .HasColumnType("boolean")
                         .HasColumnName("esta_visible");
+
+                    b.Property<Guid?>("MisionOrigenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_origen_id");
 
                     b.Property<string>("Narrativa")
                         .IsRequired()

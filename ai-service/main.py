@@ -5,8 +5,10 @@ Correr con: uvicorn main:app --reload --port 8001
 Un endpoint por tipo de mision. Cada uno pide a Gemini un esquema distinto y
 valida/transforma el resultado con contenido.py antes de devolverlo.
 """
+import itertools
 import logging
 import os
+import secrets
 from typing import Callable, TypeVar
 
 from dotenv import load_dotenv
@@ -22,10 +24,22 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Motor de generacion de misiones")
+_es_produccion = os.getenv("ENVIRONMENT", "development").lower() == "production"
 
-_token_interno: str | None = os.getenv("TOKEN_INTERNO_BACKEND")
-_gemini_api_key: str | None = os.getenv("GEMINI_API_KEY")
+app = FastAPI(
+    title="Motor de generacion de misiones",
+    docs_url=None if _es_produccion else "/docs",
+    redoc_url=None if _es_produccion else "/redoc",
+    openapi_url=None if _es_produccion else "/openapi.json",
+)
+
+_token_interno: str | None = (
+    os.getenv("TOKEN_INTERNO_BACKEND") or os.getenv("AiService__TokenInterno")
+)
+_gemini_api_keys: list[str] = [
+    k.strip() for k in (os.getenv("GEMINI_API_KEY") or "").split(",") if k.strip()
+]
+_ciclo_keys = itertools.cycle(_gemini_api_keys) if _gemini_api_keys else None
 
 MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
@@ -80,14 +94,14 @@ TIA = TypeVar("TIA", bound=BaseModel)
 def _verificar_token(x_internal_token: str | None) -> None:
     if not _token_interno:
         raise HTTPException(status_code=500, detail="Servicio mal configurado.")
-    if x_internal_token != _token_interno:
+    if not x_internal_token or not secrets.compare_digest(x_internal_token, _token_interno):
         raise HTTPException(status_code=401, detail="No autorizado.")
 
 
 def _obtener_cliente() -> genai.Client:
-    if not _gemini_api_key:
+    if not _ciclo_keys:
         raise HTTPException(status_code=500, detail="API key de Gemini no configurada.")
-    return genai.Client(api_key=_gemini_api_key)
+    return genai.Client(api_key=next(_ciclo_keys))
 
 
 def _generar(
@@ -96,13 +110,13 @@ def _generar(
     instruccion: str,
     procesar: Callable[[TIA], dict],
 ) -> dict:
-    client = _obtener_cliente()
     prompt = (
         f"Tema curricular: {peticion.tema_curricular}\n\n"
         f"Texto a procesar:\n###\n{peticion.texto_fuente}\n###"
     )
 
     for intento in range(1, MAX_INTENTOS + 1):
+        client = _obtener_cliente()
         try:
             respuesta = client.models.generate_content(
                 model=MODEL,
@@ -131,6 +145,11 @@ def _generar(
             )
 
     raise HTTPException(status_code=502, detail="La IA no devolvio contenido valido para este tipo de mision.")
+
+
+@app.get("/health", include_in_schema=False)
+def health():
+    return {"status": "ok"}
 
 
 @app.post("/generar/opcion-multiple", response_model=e.OpcionMultipleGenerada)
