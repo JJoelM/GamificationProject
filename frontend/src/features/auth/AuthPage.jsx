@@ -9,6 +9,8 @@ import {
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi, aulasApi } from '../../services/api';
 import Button from '../../components/ui/Button';
+import useServerWakeUpStore from '../../store/useServerWakeUpStore';
+import ServerWakeUpModal from '../../components/ui/ServerWakeUpModal';
 import ThemeToggle from '../../components/layout/ThemeToggle';
 import SoundToggle from '../../components/layout/SoundToggle';
 import ErrorBanner from '../../components/ui/ErrorBanner';
@@ -38,6 +40,8 @@ function AuthPage() {
   };
 
   const setUsuario = useSessionStore((s) => s.setUsuario);
+  const abrirWakeUpModal = useServerWakeUpStore((s) => s.abrirModal);
+  const cerrarWakeUpModal = useServerWakeUpStore((s) => s.cerrarModal);
 
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState(null);
@@ -83,8 +87,20 @@ function AuthPage() {
     setError(null);
     setIsPending(true);
 
+    // Si el backend en Render está dormido, tardará más de 2.5s. Desplegamos el modal tierno.
+    const wakeUpTimer = setTimeout(() => {
+      abrirWakeUpModal({
+        mensaje: 'Iniciando el Reino para tu Sesión...',
+        onRetry: () => handleLogin(),
+        onCancel: () => setIsPending(false),
+      });
+    }, 2500);
+
     try {
       const data = await usuariosApi.login({ email, password });
+      clearTimeout(wakeUpTimer);
+      cerrarWakeUpModal();
+
       // Limpiar caché previa antes de fijar nuevo usuario
       queryClient.clear();
       setUsuario(data);
@@ -105,6 +121,25 @@ function AuthPage() {
 
       redirectByRole(data.rol);
     } catch (err) {
+      clearTimeout(wakeUpTimer);
+
+      if (err.isWakingUp || err.status === 502 || err.status === 503 || err.status === 0) {
+        abrirWakeUpModal({
+          mensaje: 'El Reino se está despertando...',
+          onRetry: () => handleLogin(),
+          onCancel: () => setIsPending(false),
+        });
+        // Auto-reintento a los 6 segundos
+        setTimeout(() => {
+          if (useServerWakeUpStore.getState().isOpen) {
+            handleLogin();
+          }
+        }, 6000);
+        return;
+      }
+
+      cerrarWakeUpModal();
+
       if (!err.isApiError && import.meta.env.DEV) {
         console.warn('Backend desconectado en desarrollo. Usando sesión offline simulada.');
         const isDocente = email.includes('docente');
@@ -146,6 +181,14 @@ function AuthPage() {
 
     setIsPending(true);
 
+    const wakeUpTimer = setTimeout(() => {
+      abrirWakeUpModal({
+        mensaje: 'Iniciando el Reino para tu Registro Docente...',
+        onRetry: () => handleRegistroDocente(e),
+        onCancel: () => setIsPending(false),
+      });
+    }, 2500);
+
     try {
       await usuariosApi.registrarDocente({
         email,
@@ -153,6 +196,8 @@ function AuthPage() {
         password,
         aceptaUsoInvestigacion: aceptaInvestigacion,
       });
+      clearTimeout(wakeUpTimer);
+      cerrarWakeUpModal();
       setSuccessMessage('¡Cuenta docente creada con éxito! Iniciando sesión...');
       // Auto-login con limpieza de caché
       const loginData = await usuariosApi.login({ email, password });
@@ -160,6 +205,21 @@ function AuthPage() {
       setUsuario(loginData);
       setTimeout(() => redirectByRole(loginData.rol), 1000);
     } catch (err) {
+      clearTimeout(wakeUpTimer);
+      if (err.isWakingUp || err.status === 502 || err.status === 503 || err.status === 0) {
+        abrirWakeUpModal({
+          mensaje: 'El Reino se está despertando...',
+          onRetry: () => handleRegistroDocente(e),
+          onCancel: () => setIsPending(false),
+        });
+        setTimeout(() => {
+          if (useServerWakeUpStore.getState().isOpen) {
+            handleRegistroDocente(e);
+          }
+        }, 6000);
+        return;
+      }
+      cerrarWakeUpModal();
       setError(err);
     } finally {
       setIsPending(false);
@@ -174,6 +234,14 @@ function AuthPage() {
 
     setIsPending(true);
 
+    const wakeUpTimer = setTimeout(() => {
+      abrirWakeUpModal({
+        mensaje: 'Iniciando el Reino para tu Inscripción de Alumno...',
+        onRetry: () => handleRegistroAlumno(e),
+        onCancel: () => setIsPending(false),
+      });
+    }, 2500);
+
     try {
       const res = await usuariosApi.registrarAlumno({
         codigoInvitacion: codigoInvitacion.trim().toUpperCase(),
@@ -184,6 +252,8 @@ function AuthPage() {
         emailTutor: esMenorDeEdad() ? emailTutor : null,
         aceptaUsoInvestigacion: aceptaInvestigacion,
       });
+      clearTimeout(wakeUpTimer);
+      cerrarWakeUpModal();
 
       if (res?.requiereAprobacionParental) {
         setParentalNotice(
@@ -201,6 +271,21 @@ function AuthPage() {
         setTimeout(() => redirectByRole(loginData.rol), 1000);
       }
     } catch (err) {
+      clearTimeout(wakeUpTimer);
+      if (err.isWakingUp || err.status === 502 || err.status === 503 || err.status === 0) {
+        abrirWakeUpModal({
+          mensaje: 'El Reino se está despertando...',
+          onRetry: () => handleRegistroAlumno(e),
+          onCancel: () => setIsPending(false),
+        });
+        setTimeout(() => {
+          if (useServerWakeUpStore.getState().isOpen) {
+            handleRegistroAlumno(e);
+          }
+        }, 6000);
+        return;
+      }
+      cerrarWakeUpModal();
       setError(err);
     } finally {
       setIsPending(false);
@@ -650,6 +735,9 @@ function AuthPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* ── Modal tierno y cuki de despertar del servidor en frío ── */}
+      <ServerWakeUpModal />
     </div>
   );
 }
