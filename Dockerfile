@@ -19,7 +19,7 @@ WORKDIR "/src/WebApi"
 RUN dotnet publish "WebApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Etapa 2: Imagen Final Unificada (.NET 9 Runtime + Python 3 para FastAPI en 127.0.0.1)
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
