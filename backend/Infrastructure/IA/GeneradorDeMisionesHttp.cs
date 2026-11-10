@@ -4,6 +4,8 @@ using System.Text.Json;
 using Core.Application.Common;
 using Core.Domain.Agregados.Misiones;
 using Core.Domain.SeedWork;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Infrastructure.IA;
 
@@ -15,8 +17,13 @@ public class GeneradorDeMisionesHttp : IGeneradorDeMisiones
         "La IA no pudo generar este tipo de misión con ese material. Probá con más texto o con otro tipo de misión.";
 
     private readonly HttpClient _http;
+    private readonly ILogger<GeneradorDeMisionesHttp> _logger;
 
-    public GeneradorDeMisionesHttp(HttpClient http) => _http = http;
+    public GeneradorDeMisionesHttp(HttpClient http, ILogger<GeneradorDeMisionesHttp>? logger = null)
+    {
+        _http = http;
+        _logger = logger ?? NullLogger<GeneradorDeMisionesHttp>.Instance;
+    }
 
     public async Task<ContenidoGeneradoPorIA> GenerarAsync(
         TipoPlantilla tipo, string temaCurricular, string textoFuente, CancellationToken ct = default)
@@ -55,13 +62,16 @@ public class GeneradorDeMisionesHttp : IGeneradorDeMisiones
                 }
                 catch { /* ignorar fallo al leer detalle */ }
 
+                _logger.LogWarning(
+                    "El microservicio de IA devolvió HTTP {StatusCode} en {Ruta}. Detalle interno: {DetalleError}",
+                    (int)respuesta.StatusCode, ruta, detalleError);
+
+                // Nunca filtramos detalles internos del microservicio Python (como esquemas Pydantic,
+                // errores de configuración de API keys o tokens internos) hacia el navegador.
                 var mensaje = respuesta.StatusCode switch
                 {
-                    HttpStatusCode.BadGateway => MensajeGenerico,
                     HttpStatusCode.TooManyRequests => "Se superó temporalmente la cuota de generación con IA. Por favor, aguardá un momento e intentá nuevamente.",
-                    _ => string.IsNullOrWhiteSpace(detalleError)
-                        ? MensajeGenerico
-                        : $"El servicio de IA no pudo generar la misión (HTTP {(int)respuesta.StatusCode}). {detalleError}"
+                    _ => MensajeGenerico
                 };
 
                 throw new GeneracionFallidaException(mensaje);

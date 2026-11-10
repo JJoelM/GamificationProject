@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Swords, LogIn, GraduationCap, BookOpen, ShieldCheck,
-  CheckCircle2, ArrowLeft, ShieldAlert, Sparkles, AlertCircle
+  CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
 import { usuariosApi, aulasApi } from '../../services/api';
@@ -105,8 +105,8 @@ function AuthPage() {
 
       redirectByRole(data.rol);
     } catch (err) {
-      if (!err.isApiError) {
-        console.warn('Backend desconectado. Usando sesión offline simulada.');
+      if (!err.isApiError && import.meta.env.DEV) {
+        console.warn('Backend desconectado en desarrollo. Usando sesión offline simulada.');
         const isDocente = email.includes('docente');
         const isAdmin = email.includes('admin') || email.includes('directivo');
         const rolSimulado = isDocente ? 'Docente' : isAdmin ? 'Directivo' : 'Alumno';
@@ -211,15 +211,16 @@ function AuthPage() {
     playParchment();
     setError(null);
     setTab('login');
+    const demoPassword = import.meta.env.DEV ? 'Cambiar123!' : '';
     if (role === 'Docente') {
       setEmail('docente@unne.edu.ar');
-      setPassword('Cambiar123!');
+      setPassword(demoPassword);
     } else if (role === 'Alumno') {
       setEmail('joel@alumno.unne.edu.ar');
-      setPassword('Cambiar123!');
+      setPassword(demoPassword);
     } else if (role === 'Directivo') {
       setEmail('admin@unne.edu.ar');
-      setPassword('Cambiar123!');
+      setPassword(demoPassword);
     }
   };
 

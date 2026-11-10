@@ -134,8 +134,8 @@ def procesar_linea_temporal(ia, rng=None):
 
     descripciones = [_texto(d, "evento", 400) for d in ia.eventos_en_orden_correcto]
     cantidad = len(descripciones)
-    if not 4 <= cantidad <= 7:
-        raise ContenidoInvalido(f"Se esperaban entre 4 y 7 eventos y llegaron {cantidad}.")
+    if not 4 <= cantidad <= 8:
+        raise ContenidoInvalido(f"Se esperaban entre 4 y 8 eventos y llegaron {cantidad}.")
 
     claves = [d.casefold() for d in descripciones]
     if len(set(claves)) != cantidad:

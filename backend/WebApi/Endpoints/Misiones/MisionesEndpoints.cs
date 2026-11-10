@@ -45,7 +45,8 @@ public static class MisionesEndpoints
             return Results.Created($"/api/misiones/{misionId}", new { misionId });
         })
         .WithName("SolicitarGeneracionConIA")
-        .RequireAuthorization(p => p.RequireRole("Docente"));
+        .RequireAuthorization(p => p.RequireRole("Docente"))
+        .RequireRateLimiting("ia");
 
         grupo.MapPut("/{id:guid}/editar", async (Guid id, EditarMisionRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {

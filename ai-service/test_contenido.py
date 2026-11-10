@@ -105,13 +105,16 @@ class LineaTemporal(unittest.TestCase):
             with self.assertRaises(c.ContenidoInvalido):
                 c.procesar_linea_temporal(linea(culpable=indice))
 
-    def test_rechaza_eventos_repetidos_y_cantidad_invalida(self):
+    def test_admite_hasta_ocho_eventos_y_rechaza_repetidos_o_fuera_de_rango(self):
+        r8 = c.procesar_linea_temporal(linea(eventos=tuple(f"evento_{i}" for i in range(8)), culpable=8), random.Random(1))
+        self.assertEqual(8, len(r8["eventos_desordenados"]))
+
         with self.assertRaises(c.ContenidoInvalido):
             c.procesar_linea_temporal(linea(eventos=("uno", "UNO", "tres", "cuatro")))
         with self.assertRaises(c.ContenidoInvalido):
             c.procesar_linea_temporal(linea(eventos=("uno", "dos", "tres"), culpable=1))
         with self.assertRaises(c.ContenidoInvalido):
-            c.procesar_linea_temporal(linea(eventos=tuple(f"e{i}" for i in range(8)), culpable=1))
+            c.procesar_linea_temporal(linea(eventos=tuple(f"e{i}" for i in range(9)), culpable=1))
 
 
 if __name__ == "__main__":
