@@ -7,6 +7,7 @@ import ThemeToggle from './ThemeToggle';
 import SoundToggle from './SoundToggle';
 import LevelUpModal from '../ui/LevelUpModal';
 import SelectorAulaModal from './SelectorAulaModal';
+import ServerWakeUpModal from '../ui/ServerWakeUpModal';
 import useSessionStore from '../../store/useSessionStore';
 import { useMisAulas } from '../../hooks/useAulas';
 
@@ -32,6 +33,9 @@ function AppShell() {
     <div className="flex h-screen overflow-hidden bg-[var(--bg-base)]">
       {/* ── Modal global de Level Up ── */}
       <LevelUpModal />
+
+      {/* ── Modal global de despertar del servidor en frío ── */}
+      <ServerWakeUpModal />
 
       {/* ── Modal interactivo de Selector de Aula ── */}
       <SelectorAulaModal

@@ -46,6 +46,14 @@ async function apiFetch(endpoint, options = {}) {
           'No estás inscripto en esta aula o tu sesión no tiene los permisos necesarios (っ- ‸ - ς).';
       }
 
+      if (response.status === 502 || response.status === 503 || errorData.isWakingUp) {
+        errorData.title = errorData.title || 'Servidor despertando (っ˘ω˘ς )';
+        errorData.detail =
+          errorData.detail ||
+          'El servidor del aula está despertando de su modo reposo ecológico. Aguardá unos segundos...';
+        errorData.isWakingUp = true;
+      }
+
       if (!errorData.detail && errorData.errors) {
         const errorList = Object.values(errorData.errors).flat();
         if (errorList.length > 0) {
@@ -57,6 +65,7 @@ async function apiFetch(endpoint, options = {}) {
       problemError.status = response.status;
       problemError.title = errorData.title || 'Error en la solicitud';
       problemError.detail = errorData.detail || '';
+      problemError.isWakingUp = !!errorData.isWakingUp || response.status === 502 || response.status === 503;
       problemError.isApiError = true;
       throw problemError;
     }
