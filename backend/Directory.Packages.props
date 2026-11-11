@@ -19,8 +19,8 @@
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
 
     <!-- MediatR & OpenAPI/Scalar -->
-    <PackageVersion Include="MediatR" Version="14.2.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.18.3" />
+    <PackageVersion Include="MediatR" Version="14.3.0" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.19.0" />
 
     <!-- Testing -->
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
