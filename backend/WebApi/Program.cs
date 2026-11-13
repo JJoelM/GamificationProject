@@ -113,23 +113,22 @@ static string ObtenerIpClienteSegura(HttpContext httpContext, string? proxySecre
     // 1. Si hay ProxySecret configurado, validamos la autenticidad del proxy en tiempo constante
     if (!string.IsNullOrEmpty(proxySecretEsperado))
     {
-        var secretRecibido = httpContext.Request.Headers["X-Proxy-Secret"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(secretRecibido))
+        var bytesEsperados = Encoding.UTF8.GetBytes(proxySecretEsperado);
+        if (ProxySecretMiddleware.EsSecretoValido(httpContext.Request.Headers, bytesEsperados))
         {
-            var bytesEsperados = Encoding.UTF8.GetBytes(proxySecretEsperado);
-            var bytesRecibidos = Encoding.UTF8.GetBytes(secretRecibido);
-            if (CryptographicOperations.FixedTimeEquals(bytesEsperados, bytesRecibidos))
-            {
-                var ipProxy = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
-                           ?? httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault()
-                           ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(ipProxy))
-                    return ipProxy.Split(',')[0].Trim();
-            }
+            var ipProxy = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
+                       ?? httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault()
+                       ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(ipProxy))
+                return ipProxy.Split(',')[0].Trim();
         }
+
+        // Sin X-Proxy-Secret válido (ej. ping directo a /health), usar exclusivamente RemoteIpAddress
+        // ya resuelto de forma segura por UseForwardedHeaders con ForwardLimit = 1 (impide spoofing).
+        return httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido";
     }
 
-    // 2. Si no hay ProxySecret o falló el secreto, leer CF-Connecting-IP o X-Forwarded-For del cliente
+    // 2. Sin ProxySecret configurado (entorno Development), leer headers estándar o RemoteIpAddress
     var cfIp = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault();
     if (!string.IsNullOrWhiteSpace(cfIp))
         return cfIp.Trim();
@@ -235,9 +234,12 @@ builder.Services.AddHttpClient<IGeneradorDeMisiones, GeneradorDeMisionesHttp>(cl
 
 var app = builder.Build();
 
+ProxySecretMiddleware.ValidarConfiguracion(proxySecretConfigurado, app.Environment.IsDevelopment());
+
 app.UseForwardedHeaders();
-app.UseCors("Frontend");
 app.UseExceptionHandler();
+app.UseMiddleware<ProxySecretMiddleware>(proxySecretConfigurado, app.Environment.IsDevelopment());
+app.UseCors("Frontend");
 
 if (app.Environment.IsDevelopment())
 {
