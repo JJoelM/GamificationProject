@@ -8,6 +8,7 @@ import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
 import ArtFrame from '../../../components/ui/ArtFrame';
+import ErrorBanner from '../../../components/ui/ErrorBanner';
 import { AVATARES_RPG, getAvatarPorId } from './AvataresData';
 import useSessionStore, { calcularNivel, formatearTitulo } from '../../../store/useSessionStore';
 import { usePersonaje } from '../../../hooks/usePersonaje';
@@ -64,15 +65,21 @@ function SelectorAvatarModal({ isOpen, onClose }) {
   const [selectedTitulo, setSelectedTitulo] = useState(tituloEquipadoActual);
   const [guardarError, setGuardarError] = useState(null);
 
+  const actualAvatar = personaje?.avatarEquipado || avatarEquipado;
+  const actualMarco = personaje?.marcoEquipado || marcoEstiloActual;
+  const actualMascota =
+    personaje?.mascotaEquipada !== undefined ? personaje.mascotaEquipada : mascotaEquipadaActual;
+  const actualTitulo = personaje?.tituloEquipado || tituloEquipadoActual;
+
   useEffect(() => {
     if (isOpen) {
-      setSelectedAvatarId(personaje?.avatarEquipado || avatarEquipado);
-      setSelectedMarco(personaje?.marcoEquipado || marcoEstiloActual);
-      setSelectedMascota(personaje?.mascotaEquipada || mascotaEquipadaActual);
-      setSelectedTitulo(personaje?.tituloEquipado || tituloEquipadoActual);
+      setSelectedAvatarId(actualAvatar);
+      setSelectedMarco(actualMarco);
+      setSelectedMascota(actualMascota ?? null);
+      setSelectedTitulo(actualTitulo);
       setGuardarError(null);
     }
-  }, [isOpen, avatarEquipado, marcoEstiloActual, mascotaEquipadaActual, tituloEquipadoActual, personaje]);
+  }, [isOpen, actualAvatar, actualMarco, actualMascota, actualTitulo]);
 
   const avatarSeleccionado = getAvatarPorId(selectedAvatarId);
   const AvatarIcon = avatarSeleccionado?.IconoPreview;
@@ -81,18 +88,26 @@ function SelectorAvatarModal({ isOpen, onClose }) {
   const handleGuardar = () => {
     setGuardarError(null);
 
+    const payload = {};
+    if (selectedAvatarId !== actualAvatar) payload.avatarId = selectedAvatarId;
+    if (selectedMarco !== actualMarco) payload.marco = selectedMarco;
+    if ((selectedMascota ?? null) !== (actualMascota ?? null)) {
+      payload.mascota = selectedMascota === null ? 'ninguna' : selectedMascota;
+    }
+    if (selectedTitulo !== actualTitulo) payload.titulo = selectedTitulo;
+
+    if (Object.keys(payload).length === 0) {
+      onClose();
+      return;
+    }
+
     personalizar(
-      {
-        avatarId: selectedAvatarId,
-        marco: selectedMarco,
-        mascota: selectedMascota,
-        titulo: selectedTitulo,
-      },
+      payload,
       {
         onSuccess: () => {
           setAvatarEquipado(selectedAvatarId);
           setMarcoEstilo(selectedMarco);
-          setMascotaEquipada(selectedMascota);
+          setMascotaEquipada(selectedMascota ?? null);
           setTituloEquipado(selectedTitulo);
           playSuccess();
           onClose();
@@ -116,19 +131,9 @@ function SelectorAvatarModal({ isOpen, onClose }) {
     >
       <div className="flex flex-col gap-5 pb-2">
         {/* Error de guardado */}
-        <AnimatePresence>
-          {guardarError && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="p-3 rounded-xl border-2 border-[var(--brand-crimson)] bg-[color-mix(in_oklch,var(--brand-crimson)_12%,var(--bg-panel))] text-[var(--brand-crimson)] text-xs font-semibold flex items-center gap-2"
-            >
-              <AlertCircle size={16} />
-              <span>{guardarError}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {guardarError && (
+          <ErrorBanner error={guardarError} onDismiss={() => setGuardarError(null)} />
+        )}
 
         {/* ── Vista previa en vivo con Marco, Mascota y Título ── */}
         <div className="flex flex-col sm:flex-row items-center gap-5 p-5 rounded-[16px_22px_18px_20px] bg-gradient-to-br from-[var(--bg-accent)] to-[var(--bg-panel)] border-2 border-[var(--border)] shadow-[var(--shadow-c)]">
@@ -288,7 +293,11 @@ function SelectorAvatarModal({ isOpen, onClose }) {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {MARCOS_DISPONIBLES.map((marco) => {
-                const isUnlocked = marco.base || cosmeticosComprados.includes(marco.id) || cosmeticosComprados.includes(marco.shape);
+                const isUnlocked =
+                  marco.base ||
+                  cosmeticosComprados.includes(marco.id) ||
+                  cosmeticosComprados.includes(marco.shape) ||
+                  cosmeticosComprados.includes(`marco_${marco.id}`);
                 const isSelected = selectedMarco === marco.id || selectedMarco === marco.shape;
 
                 return (

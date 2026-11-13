@@ -27,7 +27,6 @@ export const TITULOS_MAP = {
   titulo_centinela_saber: 'Centinela del Saber',
   titulo_erudito: 'Erudito Arcano',
   titulo_maestro_grimorios: 'Maestro de Grimorios',
-  titulo_cazador: 'Cazador de Anomalías',
 };
 
 export function formatearTitulo(titulo) {
@@ -64,7 +63,7 @@ const PROGRESION_BASE = {
   avatarEquipado: 'erudito_arcano',
   auraColor: '#2563EB',
   marcoEstilo: 'scroll',
-  mascotaEquipada: 'buho_erudito',
+  mascotaEquipada: null,
 
   // Inventario de artículos comprados en el Bazar
   articulosComprados: [],
@@ -162,7 +161,10 @@ const useSessionStore = create(
           escudosRachaDisponibles: datosBackend.escudosRachaDisponibles ?? s.escudosRachaDisponibles,
           avatarEquipado: datosBackend.avatarEquipado || s.avatarEquipado,
           marcoEstilo: datosBackend.marcoEquipado || s.marcoEstilo,
-          mascotaEquipada: datosBackend.mascotaEquipada || s.mascotaEquipada,
+          mascotaEquipada:
+            datosBackend.mascotaEquipada !== undefined
+              ? datosBackend.mascotaEquipada
+              : s.mascotaEquipada,
           tituloEquipado: datosBackend.tituloEquipado || s.tituloEquipado,
           cosmeticosComprados: datosBackend.cosmeticosComprados ?? s.cosmeticosComprados,
           articulosComprados: datosBackend.cosmeticosComprados ?? s.articulosComprados,

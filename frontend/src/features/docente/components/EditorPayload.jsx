@@ -217,7 +217,7 @@ function EditorOpcionMultiple({ payload, onChange }) {
  */
 function EditorBatallaDeJefe({ payload, onChange }) {
   const fases = payload?.fases ?? [];
-  const totalDanio = fases.reduce((acc, f) => acc + (Number(f.danio) || 0), 0);
+  const totalDanio = fases.reduce((acc, f) => acc + (Number(f.danioAlJefe ?? f.danio) || 0), 0);
   const esDanioExacto = totalDanio === 100;
 
   const handleJefeChange = (campo, valor) => {
@@ -230,9 +230,17 @@ function EditorBatallaDeJefe({ payload, onChange }) {
     onChange({ ...payload, fases: updated });
   };
 
+  const handleEnunciadoFaseChange = (fIndex, valor) => {
+    const updated = [...fases];
+    updated[fIndex] = { ...updated[fIndex], enunciado: valor, pregunta: valor };
+    onChange({ ...payload, fases: updated });
+  };
+
   const handleDanioChange = (fIndex, valor) => {
     const num = Math.max(0, parseInt(valor, 10) || 0);
-    handleFaseFieldChange(fIndex, 'danio', num);
+    const updated = [...fases];
+    updated[fIndex] = { ...updated[fIndex], danioAlJefe: num, danio: num };
+    onChange({ ...payload, fases: updated });
   };
 
   const handleOpcionChange = (fIndex, oIndex, valor) => {
@@ -278,12 +286,15 @@ function EditorBatallaDeJefe({ payload, onChange }) {
     const nuevaFaseNum = fases.length + 1;
     const nuevaFase = {
       fase: nuevaFaseNum,
-      narrativa: `La criatura adopta una nueva postura defensiva en la fase ${nuevaFaseNum}...`,
+      narrativa: `La bestia acorazada azota su cola de mazo contra el suelo rocoso en la fase ${nuevaFaseNum}...`,
+      enunciado: 'Pregunta táctica de la fase...',
       pregunta: 'Pregunta táctica de la fase...',
-      opciones: ['Opción A', 'Opción B', 'Opción C'],
+      opciones: ['Opción A', 'Opción B', 'Opción C', 'Opción D'],
       respuestaCorrecta: 'Opción A',
-      explicacion: 'Explicación del golpe certero contra el jefe.',
+      explicacion: 'Explicación del golpe certero contra la criatura.',
+      danioAlJefe: 25,
       danio: 25,
+      penalizacionFallo: 'temblor',
     };
     onChange({ ...payload, fases: [...fases, nuevaFase] });
   };
@@ -302,10 +313,10 @@ function EditorBatallaDeJefe({ payload, onChange }) {
     const base = Math.floor(100 / n);
     const resto = 100 % n;
 
-    const updated = fases.map((f, idx) => ({
-      ...f,
-      danio: base + (idx < resto ? 1 : 0),
-    }));
+    const updated = fases.map((f, idx) => {
+      const d = base + (idx < resto ? 1 : 0);
+      return { ...f, danio: d, danioAlJefe: d };
+    });
 
     onChange({ ...payload, fases: updated });
   };
@@ -338,7 +349,7 @@ function EditorBatallaDeJefe({ payload, onChange }) {
               type="text"
               value={payload?.descripcionJefe || ''}
               onChange={(e) => handleJefeChange('descripcionJefe', e.target.value)}
-              placeholder="Ej: Una criatura ancestral que distorsiona los principios de..."
+              placeholder="Ej: Bestia cuadrúpeda ciega con lomo de roca y cola de mazo pesada, habitante de cañones áridos..."
               className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] text-sm focus:border-[var(--brand-crimson)] outline-none"
             />
           </div>
@@ -420,7 +431,7 @@ function EditorBatallaDeJefe({ payload, onChange }) {
                   type="number"
                   min={1}
                   max={100}
-                  value={fase.danio ?? 25}
+                  value={fase.danioAlJefe ?? fase.danio ?? 25}
                   onChange={(e) => handleDanioChange(fIndex, e.target.value)}
                   className="w-12 text-center text-xs font-display font-bold bg-transparent outline-none text-[var(--text-primary)]"
                 />
@@ -442,13 +453,13 @@ function EditorBatallaDeJefe({ payload, onChange }) {
 
           {/* Narrativa de la Fase */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--text-secondary)]">Narrativa / Comportamiento del Jefe en esta fase</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)]">Narrativa / Comportamiento de la Criatura en esta fase</label>
             <textarea
               rows={2}
               value={fase.narrativa || ''}
               onChange={(e) => handleFaseFieldChange(fIndex, 'narrativa', e.target.value)}
               className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] text-xs focus:border-[var(--brand-crimson)] outline-none resize-y italic"
-              placeholder="Narrativa de la fase..."
+              placeholder="Ej: La bestia ciega azota su cola de mazo contra el suelo rocoso levantando una cortina de polvo..."
             />
           </div>
 
@@ -457,10 +468,10 @@ function EditorBatallaDeJefe({ payload, onChange }) {
             <label className="text-xs font-medium text-[var(--text-secondary)]">Pregunta para acertar el ataque</label>
             <input
               type="text"
-              value={fase.pregunta || ''}
-              onChange={(e) => handleFaseFieldChange(fIndex, 'pregunta', e.target.value)}
+              value={fase.enunciado || fase.pregunta || ''}
+              onChange={(e) => handleEnunciadoFaseChange(fIndex, e.target.value)}
               className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] text-sm focus:border-[var(--brand-crimson)] outline-none"
-              placeholder="Pregunta táctica..."
+              placeholder="Pregunta táctica para asestar el golpe..."
             />
           </div>
 

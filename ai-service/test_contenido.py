@@ -12,7 +12,11 @@ def pregunta(opciones=("A", "B", "C", "D"), correcta="A", **extra):
 
 
 def fase(**kw):
-    return pregunta(penalizacion_fallo=kw.pop("penalizacion_fallo", "temblor"), **kw)
+    return pregunta(
+        narrativa=kw.pop("narrativa", "La criatura brama y golpea el suelo con su cola de mazo."),
+        penalizacion_fallo=kw.pop("penalizacion_fallo", "temblor"),
+        **kw
+    )
 
 
 def linea(eventos=("uno", "dos", "tres", "cuatro", "cinco"), culpable=3):
@@ -76,6 +80,13 @@ class BatallaDeJefe(unittest.TestCase):
                 fases=[fase(penalizacion_fallo="Ceguera_UI"), fase(penalizacion_fallo=" DESTELLO "), fase(penalizacion_fallo="temblor")])
         pens = [f["penalizacion_fallo"] for f in c.procesar_batalla_de_jefe(ia, random.Random(1))["fases"]]
         self.assertEqual(["destello", "destello", "temblor"], pens)
+
+    def test_cada_fase_conserva_narrativa_de_comportamiento(self):
+        ia = NS(narrativa="n", nombre_jefe="Coloso",
+                fases=[fase(narrativa="El monstruo azota su mazo rocoso contra el suelo.") for _ in range(3)])
+        r = c.procesar_batalla_de_jefe(ia, random.Random(1))
+        for f in r["fases"]:
+            self.assertEqual("El monstruo azota su mazo rocoso contra el suelo.", f["narrativa"])
 
     def test_rechaza_cantidad_de_fases_fuera_de_rango(self):
         for n in (2, 7):

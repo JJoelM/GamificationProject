@@ -15,7 +15,7 @@ public sealed record ContenidoOpcionMultiple(List<PreguntaOpcionMultiple> Pregun
 // necesita saber nada de barras de HP.
 public sealed record FaseDeBatalla(
     string Enunciado, List<string> Opciones, string RespuestaCorrecta, string Explicacion,
-    int DanioAlJefe, string? PenalizacionFallo);
+    int DanioAlJefe, string? PenalizacionFallo, string? Narrativa = null);
 
 public sealed record ContenidoBatallaDeJefe(string NombreJefe, int HpMaximo, List<FaseDeBatalla> Fases);
 

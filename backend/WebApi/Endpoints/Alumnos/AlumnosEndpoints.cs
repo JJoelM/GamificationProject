@@ -20,8 +20,8 @@ public static class AlumnosEndpoints
         grupo.MapPost("/misiones/{misionId:guid}/resolver", async (
             Guid misionId, ResolverMisionRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
-            var respuestas = request.Respuestas
-                .Select(r => new RespuestaAlumno(r.IndicePregunta, r.OpcionElegida))
+            var respuestas = (request?.Respuestas ?? new List<RespuestaRequest>())
+                .Select(r => new RespuestaAlumno(r.IndicePregunta, r.OpcionElegida ?? string.Empty))
                 .ToList();
 
             var comando = new ResolverMisionCommand(
@@ -36,7 +36,9 @@ public static class AlumnosEndpoints
             Guid misionId, ResolverOrdenTemporalRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
             var comando = new ResolverMisionOrdenTemporalCommand(
-                misionId, usuario.ObtenerUsuarioId(), request.OrdenPropuesto, request.EventoCulpableElegido,
+                misionId, usuario.ObtenerUsuarioId(),
+                request?.OrdenPropuesto ?? new List<string>(),
+                request?.EventoCulpableElegido ?? string.Empty,
                 DateOnly.FromDateTime(DateTime.UtcNow));
 
             var resultado = await mediator.Send(comando);

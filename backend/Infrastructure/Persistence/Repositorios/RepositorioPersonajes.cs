@@ -44,7 +44,15 @@ public class RepositorioPersonajes : IRepositorioPersonajes
         var pendientes = personaje.EventosNoConfirmados;
         if (pendientes.Count == 0) return;
 
-        var version = personaje.Version - pendientes.Count;
+        // Si existiera un hueco de versiones en eventos_almacenados para este agregado,
+        // tomar el mayor entre la versión reconstruida y el máximo persistido evita
+        // colisiones permanentes sin perder control de concurrencia entre peticiones paralelas.
+        var maxVersionDb = await _db.EventosPersistidos
+            .Where(e => e.AggregateId == personaje.Id)
+            .Select(e => (int?)e.Version)
+            .MaxAsync(ct) ?? -1;
+
+        var version = Math.Max(personaje.Version - pendientes.Count, maxVersionDb);
 
         foreach (var evento in pendientes)
         {
@@ -108,19 +116,22 @@ public class RepositorioPersonajes : IRepositorioPersonajes
             case ArticuloEquipado:
                 var resumenBazar = await _db.PersonajesResumen
                     .FirstOrDefaultAsync(p => p.PersonajeId == personaje.Id, ct);
-                if (resumenBazar is not null)
+                if (resumenBazar is null)
                 {
-                    resumenBazar.ActualizarProgreso(
-                        personaje.ExperienciaXP,
-                        personaje.PuntosAccionAP,
-                        personaje.RachaDiasActivos,
-                        personaje.MisionesCompletadas);
-                    resumenBazar.ActualizarPersonalizacion(
-                        personaje.AvatarEquipado,
-                        personaje.MarcoEquipado,
-                        personaje.MascotaEquipada,
-                        personaje.TituloEquipado);
+                    resumenBazar = new PersonajeResumen(personaje.Id, personaje.AlumnoId, personaje.AulaId);
+                    _db.PersonajesResumen.Add(resumenBazar);
                 }
+
+                resumenBazar.ActualizarProgreso(
+                    personaje.ExperienciaXP,
+                    personaje.PuntosAccionAP,
+                    personaje.RachaDiasActivos,
+                    personaje.MisionesCompletadas);
+                resumenBazar.ActualizarPersonalizacion(
+                    personaje.AvatarEquipado,
+                    personaje.MarcoEquipado,
+                    personaje.MascotaEquipada,
+                    personaje.TituloEquipado);
                 break;
         }
     }
