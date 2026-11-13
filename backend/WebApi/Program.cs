@@ -113,23 +113,22 @@ static string ObtenerIpClienteSegura(HttpContext httpContext, string? proxySecre
     // 1. Si hay ProxySecret configurado, validamos la autenticidad del proxy en tiempo constante
     if (!string.IsNullOrEmpty(proxySecretEsperado))
     {
-        var secretRecibido = httpContext.Request.Headers["X-Proxy-Secret"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(secretRecibido))
+        var bytesEsperados = Encoding.UTF8.GetBytes(proxySecretEsperado);
+        if (ProxySecretMiddleware.EsSecretoValido(httpContext.Request.Headers, bytesEsperados))
         {
-            var bytesEsperados = Encoding.UTF8.GetBytes(proxySecretEsperado);
-            var bytesRecibidos = Encoding.UTF8.GetBytes(secretRecibido);
-            if (CryptographicOperations.FixedTimeEquals(bytesEsperados, bytesRecibidos))
-            {
-                var ipProxy = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
-                           ?? httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault()
-                           ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(ipProxy))
-                    return ipProxy.Split(',')[0].Trim();
-            }
+            var ipProxy = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
+                       ?? httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault()
+                       ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(ipProxy))
+                return ipProxy.Split(',')[0].Trim();
         }
+
+        // Sin X-Proxy-Secret válido (ej. ping directo a /health), usar exclusivamente RemoteIpAddress
+        // ya resuelto de forma segura por UseForwardedHeaders con ForwardLimit = 1 (impide spoofing).
+        return httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido";
     }
 
-    // 2. Si no hay ProxySecret o falló el secreto, leer CF-Connecting-IP o X-Forwarded-For del cliente
+    // 2. Sin ProxySecret configurado (entorno Development), leer headers estándar o RemoteIpAddress
     var cfIp = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault();
     if (!string.IsNullOrWhiteSpace(cfIp))
         return cfIp.Trim();
@@ -235,9 +234,12 @@ builder.Services.AddHttpClient<IGeneradorDeMisiones, GeneradorDeMisionesHttp>(cl
 
 var app = builder.Build();
 
+ProxySecretMiddleware.ValidarConfiguracion(proxySecretConfigurado, app.Environment.IsDevelopment());
+
 app.UseForwardedHeaders();
-app.UseCors("Frontend");
 app.UseExceptionHandler();
+app.UseMiddleware<ProxySecretMiddleware>(proxySecretConfigurado, app.Environment.IsDevelopment());
+app.UseCors("Frontend");
 
 if (app.Environment.IsDevelopment())
 {
@@ -414,14 +416,14 @@ using (var scope = app.Services.CreateScope())
             personaje2.EquiparArticulo("exploradora_reliquias", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Avatar, "exploradora_reliquias");
             personaje2.ComprarArticulo("orlado_dorado", 100, Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Marco, "orlado_dorado");
             personaje2.ComprarArticulo("dragon", 250, Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Mascota, "dragon");
-            personaje2.EquiparArticulo("Buscador de Respuestas", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Titulo, "Buscador de Respuestas");
+            personaje2.EquiparArticulo("Iniciado del Saber", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Titulo, "Iniciado del Saber");
 
             repoPersonajes.GuardarAsync(personaje2).GetAwaiter().GetResult();
 
             var resumenP2 = context.PersonajesResumen.FirstOrDefault(p => p.PersonajeId == personaje2Id);
             if (resumenP2 is not null)
             {
-                resumenP2.ActualizarPersonalizacion("exploradora_reliquias", "orlado_dorado", "dragon", "Buscador de Respuestas");
+                resumenP2.ActualizarPersonalizacion("exploradora_reliquias", "orlado_dorado", "dragon", "Iniciado del Saber");
                 resumenP2.ActualizarProgreso(180, 150, 1, 1);
                 context.SaveChanges();
             }
@@ -516,3 +518,5 @@ public partial class Program
         return sb.ToString();
     }
 }
+
+public partial class Program { }

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config/env';
+import { API_BASE_URL, BACKEND_WAKEUP_URL } from '../config/env';
 import useSessionStore from '../store/useSessionStore';
 
 /**
@@ -93,6 +93,32 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
+let ultimoWakeUpMs = 0;
+const WAKEUP_COOLDOWN_MS = 45000;
+
+/**
+ * Envía un único ping GET /health directo en modo 'no-cors' y sin credenciales
+ * para despertar el contenedor de Render cuando el proxy de Cloudflare devuelve 502/503.
+ * Protegido en cliente con cooldown en memoria de 45s para evitar ráfagas en el polling.
+ */
+function triggerDirectWakeUp() {
+  if (!BACKEND_WAKEUP_URL) return;
+
+  const ahora = Date.now();
+  if (ahora - ultimoWakeUpMs < WAKEUP_COOLDOWN_MS) return;
+  ultimoWakeUpMs = ahora;
+
+  fetch(`${BACKEND_WAKEUP_URL}/health`, {
+    method: 'GET',
+    mode: 'no-cors',
+    credentials: 'omit',
+    cache: 'no-store',
+    keepalive: true,
+  }).catch(() => {
+    // El polling sobre /api/health confirmará cuando el backend esté listo.
+  });
+}
+
 /**
  * Realiza un chequeo liviano de salud al backend (/api/health) con AbortController.
  * Corta la conexión a los timeoutMs (por defecto 2.5s) para liberar inmediatamente los sockets
@@ -109,8 +135,12 @@ export async function checkHealth(timeoutMs = 2500) {
       cache: 'no-store',
       signal: controller.signal,
     });
+    if (!res.ok) {
+      triggerDirectWakeUp();
+    }
     return res.ok;
   } catch {
+    triggerDirectWakeUp();
     return false;
   } finally {
     clearTimeout(timeoutId);
