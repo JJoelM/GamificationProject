@@ -24,7 +24,7 @@ export function usePersonaje() {
           escudosRachaDisponibles: state.escudosRachaDisponibles ?? state.escudosRacha ?? 1,
           avatarEquipado: state.avatarEquipado || 'erudito_arcano',
           marcoEquipado: state.marcoEstilo || 'orlado_dorado',
-          mascotaEquipada: state.mascotaEquipada || 'buho_erudito',
+          mascotaEquipada: state.mascotaEquipada ?? null,
           tituloEquipado: state.tituloEquipado || 'Centinela del Saber',
           cosmeticosComprados: state.cosmeticosComprados?.length
             ? state.cosmeticosComprados

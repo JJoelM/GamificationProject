@@ -40,8 +40,8 @@ public sealed class ResolverMisionCommandHandler : IRequestHandler<ResolverMisio
             ?? throw new AgregadoNoEncontradoException(nameof(Mision), request.MisionId);
 
         if (mision.Estado != EstadoMision.Validada)
-            throw new InvalidOperationException(
-                $"No se puede resolver una mision en estado {mision.Estado}. Solo las Validadas están disponibles.");
+            throw new TransicionDeEstadoInvalidaException(
+                $"No se puede resolver una misión en estado '{mision.Estado}'. Solo las misiones Validadas están disponibles.");
 
         // La verificación que faltaba: sin esto, cualquier alumno autenticado
         // podía resolver una misión de un Aula a la que nunca fue invitado.

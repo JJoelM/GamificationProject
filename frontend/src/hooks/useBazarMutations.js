@@ -67,10 +67,13 @@ export function usePersonalizarPersonaje() {
 
   return useMutation({
     mutationFn: async ({ avatarId, marco, mascota, titulo }) => {
+      const mascotaNormalizada =
+        mascota === 'ninguna' || mascota === '' ? null : mascota;
+
       if (import.meta.env.VITE_USE_MOCK === 'true') {
         if (avatarId) setAvatarEquipado(avatarId);
         if (marco) setMarcoEstilo(marco);
-        if (mascota) setMascotaEquipada(mascota);
+        if (mascota !== undefined) setMascotaEquipada(mascotaNormalizada);
         if (titulo) setTituloEquipado(titulo);
         return { exito: true };
       }
@@ -85,7 +88,7 @@ export function usePersonalizarPersonaje() {
       // Actualizar también estado local inmediato para máxima reactividad UI
       if (avatarId) setAvatarEquipado(avatarId);
       if (marco) setMarcoEstilo(marco);
-      if (mascota) setMascotaEquipada(mascota);
+      if (mascota !== undefined) setMascotaEquipada(mascotaNormalizada);
       if (titulo) setTituloEquipado(titulo);
 
       return res;
@@ -96,7 +99,9 @@ export function usePersonalizarPersonaje() {
     onError: (error) => {
       if (error?.status === 409) {
         error.mensajeAmigable =
-          error.detail || 'No puedes equipar un artículo que aún no has adquirido en el Bazar.';
+          error.detail ||
+          error.message ||
+          'No se pudo aplicar la personalización por un conflicto con el estado actual.';
       } else {
         error.mensajeAmigable =
           error.detail || error.message || 'No se pudo guardar la personalización del personaje.';

@@ -2,6 +2,7 @@ using Core.Application.Common;
 using Core.Domain.SeedWork;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApi;
 
@@ -39,12 +40,13 @@ public class ManejadorDeExcepciones : IExceptionHandler
             GeneracionFallidaException =>
                 (StatusCodes.Status502BadGateway, "Error en generación con IA", exception.Message),
 
-            // Todo lo demás (InvalidOperationException de LINQ, errores de DI,
-            // HttpRequestException al llamar al microservicio de IA, etc.) es un
-            // error interno real -- se loguea completo del lado del servidor y
-            // nunca se filtra el mensaje al cliente.
+            DbUpdateException =>
+                (StatusCodes.Status409Conflict, "Conflicto al guardar el progreso",
+                 "No se pudo registrar el progreso debido a una colisión concurrente de datos. Por favor reintenta."),
+
+            // Todo lo demás (errores inesperados) se loguea completo y entrega detalle diagnóstico
             _ => (StatusCodes.Status500InternalServerError, "Error interno",
-                  "Ocurrió un error inesperado. Si persiste, contactá al equipo."),
+                  $"Ocurrió un error inesperado ({exception.GetType().Name}: {exception.Message}). Si persiste, contactá al equipo."),
         };
 
         if (status == StatusCodes.Status500InternalServerError)

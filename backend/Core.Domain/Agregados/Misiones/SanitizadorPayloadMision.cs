@@ -53,6 +53,7 @@ public static class SanitizadorPayloadMision
 
         var fasesSanitizadas = contenido.Fases.Select(f => new
         {
+            narrativa = f.Narrativa ?? string.Empty,
             enunciado = f.Enunciado,
             opciones = f.Opciones,
             danioAlJefe = f.DanioAlJefe,

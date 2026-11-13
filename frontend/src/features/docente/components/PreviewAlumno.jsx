@@ -182,8 +182,14 @@ function PreviewAlumno({ narrativa, payload, recompensaXp, temaCurricular, tipoP
           transition={{ duration: 0.18 }}
         >
           <Card className="flex flex-col gap-4">
+            {pregunta.narrativa && (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs italic text-amber-200/90 leading-relaxed">
+                "{pregunta.narrativa}"
+              </div>
+            )}
+
             <p className="font-display font-bold text-[var(--text-primary)] text-base leading-snug">
-              {pregunta.enunciado}
+              {pregunta.enunciado || pregunta.pregunta}
             </p>
 
             <div className="flex flex-col gap-2">

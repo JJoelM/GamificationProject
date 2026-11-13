@@ -52,7 +52,8 @@ function HojaPersonaje() {
   const avatarEquipado = personaje?.avatarEquipado || storeAvatar || 'erudito_arcano';
   const auraColor = storeAura || '#2563EB';
   const marcoEstilo = personaje?.marcoEquipado || storeMarco || 'scroll';
-  const mascotaEquipada = personaje?.mascotaEquipada || storeMascota || 'buho_erudito';
+  const mascotaEquipada =
+    personaje?.mascotaEquipada !== undefined ? personaje.mascotaEquipada : storeMascota;
 
   const nivelInfo = calcularNivel(xpTotal);
   const xpProgreso = xpTotal - nivelInfo.xpMin;
@@ -109,8 +110,14 @@ function HojaPersonaje() {
 
   const handleSelectTitulo = (titulo) => {
     playParchment();
-    setTituloEquipado(titulo);
     setIsSelectorOpen(false);
+    if (
+      titulo === tituloEquipado ||
+      titulo === formatearTitulo(tituloEquipado)
+    ) {
+      return;
+    }
+    setTituloEquipado(titulo);
 
     personalizar({
       titulo,

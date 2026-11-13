@@ -222,6 +222,25 @@ public class MisionTests
     }
 
     [Fact]
+    public void Calificar_BatallaDeJefe_ConFormatoEditorDocente_PreguntaYDanio()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "BatallaDeJefe",
+            payloadJson: """
+                {"nombreJefe":"Criatura","hpMaximo":100,"fases":[
+                    {"fase":1,"pregunta":"¿Qué es un bucle?","opciones":["Repeticion","Un tipo de dato"],"respuestaCorrecta":"Repeticion","explicacion":"Ejecuta varias veces.","danio":50},
+                    {"fase":2,"pregunta":"¿Qué es un break?","opciones":["Termina el bucle","Pausa"],"respuestaCorrecta":"Termina el bucle","explicacion":"Sale de la estructura.","danio":50}
+                ]}
+                """,
+            nivelConfianzaIA: 85, recompensaXpSugerida: 100);
+        mision.Validar(Guid.NewGuid());
+
+        var resultado = mision.Calificar(new List<RespuestaAlumno> { new(0, "Repeticion"), new(1, "Termina el bucle") });
+
+        Assert.Equal(100, resultado.PorcentajeCorrecto);
+    }
+
+    [Fact]
     public void CalificarOrdenTemporal_ConOrdenYCulpableCorrectos_Da100PorCiento()
     {
         var mision = Mision.Generar(

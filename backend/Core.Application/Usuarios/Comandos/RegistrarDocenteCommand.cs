@@ -19,13 +19,14 @@ public sealed class RegistrarDocenteCommandHandler : IRequestHandler<RegistrarDo
     {
         ValidadorPassword.Validar(request.Password);
 
-        if (await _db.Usuarios.AnyAsync(u => u.Email == request.Email, cancellationToken))
+        var emailNormalizado = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == emailNormalizado, cancellationToken))
             throw new ArgumentException("Ya existe una cuenta registrada con ese email.");
 
         var rolDocente = await _db.Roles.FirstOrDefaultAsync(r => r.Nombre == "Docente", cancellationToken)
             ?? throw new InvalidOperationException("El rol 'Docente' no está sembrado en la base.");
 
-        var usuario = new Usuario(request.Email, request.NombreCompleto, rolDocente.Id);
+        var usuario = new Usuario(emailNormalizado, request.NombreCompleto.Trim(), rolDocente.Id);
         usuario.EstablecerContrasena(_hasher.HashPassword(usuario, request.Password));
         usuario.ActualizarConsentimientoInvestigacion(request.AceptaUsoInvestigacion);
 

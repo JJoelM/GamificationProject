@@ -35,10 +35,12 @@ public sealed class RegistrarAlumnoConInvitacionCommandHandler
     {
         ValidadorPassword.Validar(request.Password);
 
-        var aula = await _db.Aulas.FirstOrDefaultAsync(a => a.CodigoInvitacion == request.CodigoInvitacion, cancellationToken)
+        var codigoNormalizado = request.CodigoInvitacion?.Trim().ToUpperInvariant();
+        var aula = await _db.Aulas.FirstOrDefaultAsync(a => a.CodigoInvitacion == codigoNormalizado, cancellationToken)
             ?? throw new ArgumentException("El código de invitación no es válido.");
 
-        if (await _db.Usuarios.AnyAsync(u => u.Email == request.Email, cancellationToken))
+        var emailNormalizado = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == emailNormalizado, cancellationToken))
             throw new ArgumentException("Ya existe una cuenta registrada con ese email.");
 
         var rolAlumno = await _db.Roles.FirstOrDefaultAsync(r => r.Nombre == "Alumno", cancellationToken)
@@ -49,7 +51,7 @@ public sealed class RegistrarAlumnoConInvitacionCommandHandler
         if (esMenor && string.IsNullOrWhiteSpace(request.EmailTutor))
             throw new ArgumentException("Los menores de edad deben registrar el email de un tutor.");
 
-        var usuario = new Usuario(request.Email, request.NombreCompleto, rolAlumno.Id);
+        var usuario = new Usuario(emailNormalizado, request.NombreCompleto.Trim(), rolAlumno.Id);
         usuario.EstablecerContrasena(_hasher.HashPassword(usuario, request.Password));
         usuario.ActualizarConsentimientoInvestigacion(request.AceptaUsoInvestigacion);
 

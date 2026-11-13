@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Zap, Shield, Check, ShoppingBag, ArrowLeft,
@@ -181,6 +181,13 @@ function BazarRecompensas() {
   const [subFiltroCosmetico, setSubFiltroCosmetico] = useState('todos');
   const [feedbackMensaje, setFeedbackMensaje] = useState(null);
   const [articuloEnProcesoId, setArticuloEnProcesoId] = useState(null);
+  const feedbackRef = useRef(null);
+
+  useEffect(() => {
+    if (feedbackMensaje?.tipo === 'error' && feedbackRef.current) {
+      feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [feedbackMensaje]);
 
   // Estados consolidados
   const apTotal = personaje?.puntosAccionAP ?? storeAp ?? 0;
@@ -189,7 +196,8 @@ function BazarRecompensas() {
   const cosmeticosComprados = personaje?.cosmeticosComprados ?? storeCosmeticos ?? [];
 
   const marcoEstilo = personaje?.marcoEquipado || storeMarco;
-  const mascotaEquipada = personaje?.mascotaEquipada || storeMascota;
+  const mascotaEquipada =
+    personaje?.mascotaEquipada !== undefined ? personaje.mascotaEquipada : storeMascota;
   const tituloEquipado = personaje?.tituloEquipado || storeTitulo;
   const avatarEquipado = personaje?.avatarEquipado || storeAvatar;
 
@@ -222,18 +230,62 @@ function BazarRecompensas() {
     ? articulosCosmeticos
     : articulosCosmeticos.filter((a) => a.tipo.toLowerCase() === subFiltroCosmetico.toLowerCase());
 
+  const normalizarIdArticulo = (tipo, id) => {
+    if (!id) return '';
+    const v = String(id).trim().toLowerCase();
+    if (tipo === 'Mascota') {
+      if (v.includes('buho') || v.includes('lechuza')) return 'buho';
+      if (v.includes('dragon')) return 'dragon';
+      if (v.includes('gato')) return 'gato';
+    }
+    if (tipo === 'Marco') {
+      if (v === 'marco-pergamino' || v === 'default' || v === 'parchment') return 'scroll';
+      if (v === 'marco_dorado' || v === 'marco_orlado_dorado') return 'orlado_dorado';
+      if (v === 'marco_cristal_celeste') return 'cristal_celeste';
+      if (v === 'marco_runa_violeta') return 'runa_violeta';
+    }
+    if (tipo === 'Titulo') {
+      if (v === 'titulo_centinela_saber' || v === 'centinela del saber') return 'titulo_centinela';
+      if (v === 'erudito arcano') return 'titulo_erudito';
+      if (v === 'maestro de grimorios') return 'titulo_maestro_grimorios';
+    }
+    if (tipo === 'Avatar') {
+      return getAvatarPorId(id)?.id || v;
+    }
+    return v;
+  };
+
+  const esCosmeticoComprado = (articulo) => {
+    if (articulo.costoAp === 0) return true;
+    if (cosmeticosComprados.includes(articulo.id)) return true;
+    const norm = normalizarIdArticulo(articulo.tipo, articulo.id);
+    return cosmeticosComprados.some((c) => normalizarIdArticulo(articulo.tipo, c) === norm);
+  };
+
+  const isEquipado = (articulo) => {
+    const normArt = normalizarIdArticulo(articulo.tipo, articulo.id);
+    if (articulo.tipo === 'Marco') return normalizarIdArticulo('Marco', marcoEstilo || 'scroll') === normArt;
+    if (articulo.tipo === 'Mascota') return Boolean(mascotaEquipada) && normalizarIdArticulo('Mascota', mascotaEquipada) === normArt;
+    if (articulo.tipo === 'Titulo') return normalizarIdArticulo('Titulo', tituloEquipado) === normArt;
+    if (articulo.tipo === 'Avatar') return normalizarIdArticulo('Avatar', avatarEquipado) === normArt;
+    return false;
+  };
+
   // Acción de compra o equipamiento
   const handleAccionArticulo = (articulo) => {
     const esConsumible = articulo.tipo === 'Pista' || articulo.tipo === 'EscudoRacha';
-    const yaComprado =
-      articulo.costoAp === 0 ||
-      cosmeticosComprados.includes(articulo.id) ||
-      (articulo.tipo === 'Avatar' &&
-        cosmeticosComprados.some((c) => getAvatarPorId(c)?.id === getAvatarPorId(articulo.id)?.id)) ||
-      (articulo.tipo === 'Marco' && (articulo.id === 'scroll' || cosmeticosComprados.includes(articulo.id)));
+    const yaComprado = esCosmeticoComprado(articulo);
 
     // Si ya fue comprado y es cosmético -> EQUIPAR
     if (!esConsumible && yaComprado) {
+      if (isEquipado(articulo)) {
+        setFeedbackMensaje({
+          tipo: 'info',
+          texto: `Ya tienes equipado "${articulo.nombre}".`,
+        });
+        return;
+      }
+
       setArticuloEnProcesoId(articulo.id);
       const payload = {};
       if (articulo.tipo === 'Marco') payload.marco = articulo.id;
@@ -293,14 +345,6 @@ function BazarRecompensas() {
         },
       }
     );
-  };
-
-  const isEquipado = (articulo) => {
-    if (articulo.tipo === 'Marco') return (marcoEstilo || 'scroll') === articulo.id;
-    if (articulo.tipo === 'Mascota') return mascotaEquipada === articulo.id;
-    if (articulo.tipo === 'Titulo') return tituloEquipado === articulo.id;
-    if (articulo.tipo === 'Avatar') return getAvatarPorId(avatarEquipado)?.id === getAvatarPorId(articulo.id)?.id;
-    return false;
   };
 
   return (
@@ -372,6 +416,7 @@ function BazarRecompensas() {
       <AnimatePresence>
         {feedbackMensaje && (
           <motion.div
+            ref={feedbackRef}
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -579,10 +624,7 @@ function BazarRecompensas() {
                     }
               );
               const Icono = meta.IconoVisual;
-              const yaComprado =
-                cosmeticosComprados.includes(articulo.id) ||
-                (articulo.tipo === 'Avatar' &&
-                  cosmeticosComprados.some((c) => getAvatarPorId(c)?.id === getAvatarPorId(articulo.id)?.id));
+              const yaComprado = esCosmeticoComprado(articulo);
               const equipado = isEquipado(articulo);
               const tieneSuficiente = apTotal >= articulo.costoAp;
               const enProceso =

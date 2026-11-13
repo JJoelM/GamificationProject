@@ -47,7 +47,7 @@ const EXPRESSIONS = {
   },
 };
 
-function MascotFace({ expression = 'sad', customImage = null, className = '' }) {
+function MascotFace({ expression = 'sad', customImage = null, compact = false, className = '' }) {
   const current = EXPRESSIONS[expression] ?? EXPRESSIONS.sad;
 
   return (
@@ -55,8 +55,8 @@ function MascotFace({ expression = 'sad', customImage = null, className = '' }) 
       data-mascot-slot="true"
       className={[
         'w-full flex flex-col items-center justify-center select-none text-center',
-        // Asegura ocupar al menos el 50% del tamaño vertical del contenedor
-        'min-h-[45vh] md:min-h-[50vh] py-8',
+        // Si es compacto (formularios/tarjetas), ocupa un alto proporcional y no sobredimensionado
+        compact ? 'py-2 min-h-0' : 'min-h-[45vh] md:min-h-[50vh] py-8',
         className,
       ].join(' ')}
     >
@@ -71,7 +71,10 @@ function MascotFace({ expression = 'sad', customImage = null, className = '' }) 
         <img
           src={customImage}
           alt="Mascota"
-          className="max-h-64 object-contain animate-float"
+          className={[
+            'object-contain animate-float',
+            compact ? 'max-h-24' : 'max-h-64',
+          ].join(' ')}
         />
       ) : (
         <motion.div
@@ -83,32 +86,43 @@ function MascotFace({ expression = 'sad', customImage = null, className = '' }) 
           {/* Contenedor central de la carita con aura suave */}
           <div
             className={[
-              'relative px-8 py-7 md:px-12 md:py-10 rounded-[28px_36px_30px_34px]',
-              'border-2 border-[var(--border)]',
+              'relative border-2 border-[var(--border)]',
               'bg-gradient-to-b from-[var(--bg-panel)] to-[var(--bg-muted)]',
-              'shadow-[5px_5px_0px_var(--border)]',
               'animate-float flex flex-col items-center justify-center',
+              compact
+                ? 'px-5 py-3 md:px-6 md:py-3.5 rounded-[20px_26px_22px_24px] shadow-[4px_4px_0px_var(--border)]'
+                : 'px-8 py-7 md:px-12 md:py-10 rounded-[28px_36px_30px_34px] shadow-[5px_5px_0px_var(--border)]',
             ].join(' ')}
-            style={{
-              boxShadow: `6px 6px 0px var(--border)`,
-            }}
           >
             {/* Expresión facial ASCII/Kaomoji de gran escala */}
             <span
-              className="font-display font-black text-4xl sm:text-5xl md:text-6xl tracking-wider text-[var(--text-primary)] block drop-shadow-sm"
+              className={[
+                'font-display font-black tracking-wider text-[var(--text-primary)] block drop-shadow-sm',
+                compact ? 'text-2xl sm:text-3xl' : 'text-4xl sm:text-5xl md:text-6xl',
+              ].join(' ')}
               aria-label={current.subtitle}
             >
               {current.face}
             </span>
 
             {/* Sombra sutil tipo suelo */}
-            <span className="text-xs font-display font-bold uppercase tracking-widest text-[var(--text-muted)] mt-3">
+            <span
+              className={[
+                'font-display font-bold uppercase tracking-widest text-[var(--text-muted)]',
+                compact ? 'text-[10px] mt-1' : 'text-xs mt-3',
+              ].join(' ')}
+            >
               {current.subtitle}
             </span>
           </div>
 
           {/* Sombra de proyección en el suelo */}
-          <div className="w-32 h-3 bg-[var(--border-muted)] rounded-full opacity-40 blur-xs mt-3" />
+          <div
+            className={[
+              'bg-[var(--border-muted)] rounded-full opacity-40 blur-xs',
+              compact ? 'w-20 h-2 mt-2' : 'w-32 h-3 mt-3',
+            ].join(' ')}
+          />
         </motion.div>
       )}
     </div>

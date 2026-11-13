@@ -158,16 +158,38 @@ public sealed class Mision : AgregadoRaiz
         switch (TipoPlantilla)
         {
             case "OpcionMultiple":
-                var om = JsonSerializer.Deserialize<ContenidoOpcionMultiple>(PayloadJson, OpcionesJsonMision.Instancia)
-                    ?? throw new InvalidOperationException("El payload de la mision no tiene el formato esperado.");
-                return om.Preguntas
-                    .Select(p => (p.Enunciado, p.Opciones, p.RespuestaCorrecta, p.Explicacion)).ToList();
+                var om = JsonSerializer.Deserialize<ContenidoOpcionMultiple>(PayloadJson, OpcionesJsonMision.Instancia);
+                if (om?.Preguntas is not null)
+                {
+                    return om.Preguntas
+                        .Select(p => (p.Enunciado ?? string.Empty, p.Opciones ?? new List<string>(), p.RespuestaCorrecta ?? string.Empty, p.Explicacion ?? string.Empty))
+                        .ToList();
+                }
+                var fallbackBj = JsonSerializer.Deserialize<ContenidoBatallaDeJefe>(PayloadJson, OpcionesJsonMision.Instancia);
+                if (fallbackBj?.Fases is not null)
+                {
+                    return fallbackBj.Fases
+                        .Select(f => (f.Enunciado ?? string.Empty, f.Opciones ?? new List<string>(), f.RespuestaCorrecta ?? string.Empty, f.Explicacion ?? string.Empty))
+                        .ToList();
+                }
+                throw new InvalidOperationException("El payload de la misión no contiene preguntas válidas.");
 
             case "BatallaDeJefe":
-                var bj = JsonSerializer.Deserialize<ContenidoBatallaDeJefe>(PayloadJson, OpcionesJsonMision.Instancia)
-                    ?? throw new InvalidOperationException("El payload de la mision no tiene el formato esperado.");
-                return bj.Fases
-                    .Select(f => (f.Enunciado, f.Opciones, f.RespuestaCorrecta, f.Explicacion)).ToList();
+                var bj = JsonSerializer.Deserialize<ContenidoBatallaDeJefe>(PayloadJson, OpcionesJsonMision.Instancia);
+                if (bj?.Fases is not null)
+                {
+                    return bj.Fases
+                        .Select(f => (f.Enunciado ?? string.Empty, f.Opciones ?? new List<string>(), f.RespuestaCorrecta ?? string.Empty, f.Explicacion ?? string.Empty))
+                        .ToList();
+                }
+                var fallbackOm = JsonSerializer.Deserialize<ContenidoOpcionMultiple>(PayloadJson, OpcionesJsonMision.Instancia);
+                if (fallbackOm?.Preguntas is not null)
+                {
+                    return fallbackOm.Preguntas
+                        .Select(p => (p.Enunciado ?? string.Empty, p.Opciones ?? new List<string>(), p.RespuestaCorrecta ?? string.Empty, p.Explicacion ?? string.Empty))
+                        .ToList();
+                }
+                throw new InvalidOperationException("El payload de la Batalla de Jefe no contiene fases válidas.");
 
             default:
                 throw new NotSupportedException(

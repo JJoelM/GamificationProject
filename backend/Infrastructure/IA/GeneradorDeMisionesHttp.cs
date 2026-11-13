@@ -113,7 +113,7 @@ public class GeneradorDeMisionesHttp : IGeneradorDeMisiones
 
         var payload = new ContenidoBatallaDeJefe(dto.nombre_jefe, dto.hp_maximo, dto.fases
             .Select(f => new FaseDeBatalla(
-                f.enunciado, f.opciones, f.respuesta_correcta, f.explicacion, f.danio_al_jefe, f.penalizacion_fallo))
+                f.enunciado, f.opciones, f.respuesta_correcta, f.explicacion, f.danio_al_jefe, f.penalizacion_fallo, f.narrativa))
             .ToList());
 
         return new ContenidoGeneradoPorIA(
@@ -141,7 +141,7 @@ public class GeneradorDeMisionesHttp : IGeneradorDeMisiones
 
     private sealed record FaseDto(
         string enunciado, List<string> opciones, string respuesta_correcta, string explicacion,
-        int danio_al_jefe, string penalizacion_fallo);
+        int danio_al_jefe, string penalizacion_fallo, string? narrativa = null);
     private sealed record RespuestaBatalla(string narrativa, string nombre_jefe, int hp_maximo, List<FaseDto> fases);
 
     private sealed record EventoDto(string id, string descripcion, int orden_correcto);
