@@ -559,12 +559,12 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
               </div>
 
               {/* Pergamino de Narrativa General */}
-              <div className="p-4 rounded-xl bg-black/35 border border-amber-500/20 text-[var(--text-primary)] text-xs sm:text-sm leading-relaxed italic font-serif shadow-inner">
+              <div className="p-4 rounded-xl bg-amber-50/90 dark:bg-black/35 border border-amber-500/30 text-[var(--text-primary)] text-xs sm:text-sm leading-relaxed italic font-serif shadow-inner">
                 "{mision?.narrativa || 'Una bestia cuadrúpeda acorazada bloquea el desfiladero árido. Sin ojos en sus cuencas, alza sus fauces afiladas y azota su cola de mazo contra el suelo rocoso, sintiendo cada paso de los aventureros...'}"
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
-                <Shield size={16} className="shrink-0 text-amber-400" />
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/35 text-amber-900 dark:text-amber-300 text-xs flex items-center gap-2">
+                <Shield size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
                 <span>
                   Asesta respuestas certeras en cada fase para drenar los <strong>{hpMaximo} HP</strong> de la criatura antes de que resista tu ofensiva.
                 </span>
@@ -624,8 +624,8 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
 
               {/* Narrativa descriptiva de la acción de la criatura en esta fase */}
               {faseActual.narrativa && (
-                <div className="p-3 mb-2.5 rounded-xl bg-black/40 border border-amber-500/30 text-amber-200/90 italic text-xs leading-relaxed flex items-start gap-2 shadow-inner">
-                  <Flame size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                <div className="p-3 mb-2.5 rounded-xl bg-amber-50 dark:bg-black/40 border border-amber-500/40 text-amber-900 dark:text-amber-200 italic text-xs leading-relaxed flex items-start gap-2 shadow-inner">
+                  <Flame size={14} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <span>"{faseActual.narrativa}"</span>
                 </div>
               )}

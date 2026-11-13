@@ -82,7 +82,7 @@ function PreviewAlumno({ narrativa, payload, recompensaXp, temaCurricular, tipoP
         )}
 
         {parsedPayload?.estadoErroneoDescripcion && (
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs text-amber-900 dark:text-amber-200">
             <strong>Anomalía:</strong> {parsedPayload.estadoErroneoDescripcion}
           </div>
         )}
@@ -183,7 +183,7 @@ function PreviewAlumno({ narrativa, payload, recompensaXp, temaCurricular, tipoP
         >
           <Card className="flex flex-col gap-4">
             {pregunta.narrativa && (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs italic text-amber-200/90 leading-relaxed">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs italic text-amber-900 dark:text-amber-200 leading-relaxed">
                 "{pregunta.narrativa}"
               </div>
             )}

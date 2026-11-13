@@ -561,7 +561,7 @@ function FormGenerarMision({ isOpen, onClose }) {
                   </div>
 
                   {pdfError && (
-                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/35 text-amber-900 dark:text-amber-300 text-xs flex items-center gap-2">
                       <AlertCircle size={15} className="shrink-0" />
                       <span>{pdfError}</span>
                     </div>
@@ -595,15 +595,15 @@ function FormGenerarMision({ isOpen, onClose }) {
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.97 }}
-                  className="p-3.5 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 text-amber-300 flex flex-col gap-2.5"
+                  className="p-3.5 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-300 flex flex-col gap-2.5"
                 >
                   <div className="flex items-start gap-2">
-                    <AlertCircle size={18} className="shrink-0 text-amber-400 mt-0.5" />
+                    <AlertCircle size={18} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
                     <div className="text-xs">
-                      <strong className="block font-display font-bold text-amber-200">
+                      <strong className="block font-display font-bold text-amber-950 dark:text-amber-200">
                         ¿Reemplazar el texto existente?
                       </strong>
-                      <p className="mt-0.5 text-amber-300/90 leading-relaxed">
+                      <p className="mt-0.5 text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
                         El campo de texto ya contiene <strong>{textoLen} caracteres</strong>. Si continúas, será reemplazado por los <strong>{textoPdfPendiente.length} caracteres</strong> extraídos del PDF.
                       </p>
                     </div>
@@ -636,7 +636,7 @@ function FormGenerarMision({ isOpen, onClose }) {
 
             {/* Chip de éxito de extracción */}
             {pdfExtraccionExitosa && !pdfInfo && (
-              <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/35 text-emerald-800 dark:text-emerald-300 text-xs">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={15} className="text-[var(--brand-emerald)] shrink-0" />
                   <span>

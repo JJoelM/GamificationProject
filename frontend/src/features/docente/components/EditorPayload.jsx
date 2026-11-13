@@ -360,8 +360,8 @@ function EditorBatallaDeJefe({ payload, onChange }) {
       <div className={[
         'p-3.5 rounded-xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3',
         esDanioExacto
-          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-          : 'bg-amber-500/10 border-amber-500/40 text-amber-300',
+          ? 'bg-emerald-500/10 border-emerald-500/35 text-emerald-800 dark:text-emerald-300'
+          : 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-300',
       ].join(' ')}>
         <div className="flex items-center gap-2.5">
           {esDanioExacto ? (
@@ -675,7 +675,7 @@ function EditorLineaTemporal({ payload, onChange }) {
 
       {/* Alerta de Culpable */}
       {!tieneCulpableValido && eventos.length > 0 && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/35 text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2">
           <AlertTriangle size={16} className="shrink-0" />
           <span>Selecciona un evento culpable válido para que el alumno pueda identificar la anomalía.</span>
         </div>
