@@ -94,7 +94,7 @@ function LineaTemporal({ mision, isOpen, onClose }) {
 
   // Enviar resolución al backend
   const handleEnviar = () => {
-    if (!mision?.misionId || !culpableElegido) return;
+    if (!mision?.misionId || !culpableElegido || isPending) return;
     playChime();
 
     const ordenPropuesto = eventos.map((e) => e.id);

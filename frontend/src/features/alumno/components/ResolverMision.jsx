@@ -125,7 +125,7 @@ function ResolverQuiz({ mision, isOpen, onClose }) {
   };
 
   const handleEnviar = () => {
-    if (!mision?.misionId) return;
+    if (!mision?.misionId || isPending) return;
     const respuestasArray = preguntas.map((_, idx) => ({
       indicePregunta: idx,
       opcionElegida: respuestas[idx] || '',

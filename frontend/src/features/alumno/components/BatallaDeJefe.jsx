@@ -323,7 +323,7 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
 
   // Disolver la criatura y mostrar pantalla final
   const finalizarBatalla = (respuestasFinales) => {
-    if (!mision?.misionId) return;
+    if (!mision?.misionId || isPending) return;
     playChime();
 
     const respuestasArray = fases.map((_, idx) => ({
@@ -406,6 +406,7 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
 
   // Pasar a la siguiente fase o finalizar la batalla
   const handleAvanzarFase = () => {
+    if (isPending) return;
     if (faseActualIdx < totalFases - 1) {
       setFaseActualIdx((i) => i + 1);
       setTurnoEjecutado(false);
