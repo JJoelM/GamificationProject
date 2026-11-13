@@ -39,6 +39,7 @@ public class SanitizadorPayloadMisionTests
                 "hpMaximo": 150,
                 "fases": [
                     {
+                        "narrativa": "La bestia ruge y azota su cola de mazo.",
                         "enunciado": "¿Qué hace null pointer?",
                         "opciones": ["Apunta a nada", "Es un tipo"],
                         "respuestaCorrecta": "Apunta a nada",
@@ -56,6 +57,7 @@ public class SanitizadorPayloadMisionTests
         Assert.DoesNotContain("explicacion", resultado);
         Assert.DoesNotContain("Null indica ausencia", resultado);
         Assert.Contains("Bug Gigante", resultado);
+        Assert.Contains("La bestia ruge y azota su cola de mazo.", resultado);
         Assert.Contains("danioAlJefe", resultado);
         Assert.Contains("temblor", resultado);
     }

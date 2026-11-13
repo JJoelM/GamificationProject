@@ -29,6 +29,7 @@ class OpcionMultipleIA(BaseModel):
 
 
 class FaseIA(BaseModel):
+    narrativa: str
     enunciado: str
     opciones: list[str]
     respuesta_correcta: str
@@ -65,6 +66,7 @@ class OpcionMultipleGenerada(BaseModel):
 
 
 class FaseGenerada(BaseModel):
+    narrativa: str
     enunciado: str
     opciones: list[str]
     respuesta_correcta: str

@@ -67,13 +67,16 @@ INSTRUCCION_OPCION_MULTIPLE = REGLAS_COMUNES + (
 )
 
 INSTRUCCION_BATALLA_DE_JEFE = REGLAS_COMUNES + (
-    "\nTAREA: disenar una batalla contra un jefe. El jefe es la personificacion de un concepto dificil del tema.\n"
-    "- 'nombre_jefe': un nombre breve y tematico (ej: 'El Bug Ancestral').\n"
-    "- 'fases': entre 3 y 6 preguntas (fases de combate) proporcionales a la complejidad del tema, ordenadas de "
-    "menor a mayor dificultad. Cada fase tiene exactamente 4 opciones, una sola correcta ('respuesta_correcta' "
-    "identica a una opcion) y una 'explicacion' de 1 o 2 oraciones.\n"
-    "- 'penalizacion_fallo': lo que le pasa al alumno si falla esa fase. Debe ser EXACTAMENTE uno de: "
-    "temblor, destello, enfriamiento. Variá entre fases.\n"
+    "\nTAREA: disenar una batalla contra un jefe. El jefe es un monstruo/criatura que personifica un concepto dificil del tema (no habla con palabras).\n"
+    "- CANON VISUAL DEL JEFE: Es una bestia cuadrupeda de zonas deserticas, riscos y montanas rocosas, ciega (sin ojos, caza por calor y vibraciones terrestres), con fauces abiertas de dientes afilados, lomo acorazado con protuberancias de roca y una cola pesada rematada en mazo petreo (tipo anquilosaurio).\n"
+    "- 'nombre_jefe': un nombre breve y tematico acorde a su naturaleza rocosa y al tema (ej: 'El Coloso del Sofisma', 'El Devorador de Silicio').\n"
+    "- 'fases': entre 3 y 6 fases de combate ordenadas de menor a mayor dificultad. Cada fase contiene:\n"
+    "  * 'narrativa': 1 oracion descriptiva sobre la accion fisica, postura o embestida del monstruo en esa fase (ej: 'La bestia azota su cola de mazo contra el suelo haciendo temblar el desfiladero', 'Al no tener ojos, alza su hocico rugiente rastreando el calor de los aventureros', 'Se repliega protegiendose tras las rocas afiladas de su lomo').\n"
+    "  * 'enunciado': la pregunta o desafio conceptual que el estudiante debe resolver para asestar el golpe tactico.\n"
+    "  * 'opciones': exactamente 4 opciones de respuesta.\n"
+    "  * 'respuesta_correcta': identica a una opcion.\n"
+    "  * 'explicacion': 1 o 2 oraciones pedagogicas.\n"
+    "  * 'penalizacion_fallo': EXACTAMENTE uno de: temblor, destello, enfriamiento. Varia entre fases.\n"
 )
 
 INSTRUCCION_LINEA_TEMPORAL = REGLAS_COMUNES + (

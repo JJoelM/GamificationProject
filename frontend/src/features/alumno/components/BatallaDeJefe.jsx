@@ -145,7 +145,7 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
   const [respuestas, setRespuestas] = useState({});
   const [descartesPorFase, setDescartesPorFase] = useState({});
   const [modalSinPistasOpen, setModalSinPistasOpen] = useState(false);
-  const [pantalla, setPantalla] = useState('combate'); // 'combate' | 'final'
+  const [pantalla, setPantalla] = useState('intro'); // 'intro' | 'combate' | 'final'
   const [hpBoss, setHpBoss] = useState(hpMaximo);
   const [enfriamientoActivo, setEnfriamientoActivo] = useState(false);
   const [turnoEjecutado, setTurnoEjecutado] = useState(false);
@@ -229,7 +229,7 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
     setDescartesPorFase({});
     setModalSinPistasOpen(false);
     setFaseActualIdx(0);
-    setPantalla('combate');
+    setPantalla('intro');
     setHpBoss(hpMaximo);
     setEnfriamientoActivo(false);
     setTurnoEjecutado(false);
@@ -428,7 +428,9 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
           ? jefeDerrotado
             ? '¡Victoria Épica!'
             : 'Resultado del Asalto'
-          : `Batalla de Jefe: ${nombreJefe}`
+          : pantalla === 'intro'
+            ? `Encuentro con ${nombreJefe}`
+            : `Batalla de Jefe: ${nombreJefe}`
       }
       size="lg"
     >
@@ -527,12 +529,62 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* ── 2. Interacción Turno a Turno (Daño Instantáneo) ── */}
+        {/* ── 2. Pantalla de Encuentro Preliminar (Narrativa General) ── */}
+        {pantalla === 'intro' && (
+          <div className="flex flex-col gap-4 animate-fadeIn">
+            <div className="p-5 rounded-[14px_18px_16px_16px] bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-accent)] border-2 border-[var(--border)] shadow-[3px_3px_0px_var(--border)] flex flex-col gap-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-muted)] pb-2.5">
+                <div className="flex items-center gap-2 text-[var(--brand-crimson)]">
+                  <Swords size={18} />
+                  <span className="font-display font-black text-sm uppercase tracking-wider">
+                    Encuentro en los Riscos Rocosos
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="racha" className="text-xs">
+                    {totalFases} Fases de Combate
+                  </Badge>
+                  <Badge variant="crimson" className="text-xs font-bold">
+                    {hpMaximo} HP
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Pergamino de Narrativa General */}
+              <div className="p-4 rounded-xl bg-black/35 border border-amber-500/20 text-[var(--text-primary)] text-xs sm:text-sm leading-relaxed italic font-serif shadow-inner">
+                "{mision?.narrativa || 'Una bestia cuadrúpeda acorazada bloquea el desfiladero árido. Sin ojos en sus cuencas, alza sus fauces afiladas y azota su cola de mazo contra el suelo rocoso, sintiendo cada paso de los aventureros...'}"
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
+                <Shield size={16} className="shrink-0 text-amber-400" />
+                <span>
+                  Asesta respuestas certeras en cada fase para drenar los <strong>{hpMaximo} HP</strong> de la criatura antes de que resista tu ofensiva.
+                </span>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => {
+                playSuccess();
+                setPantalla('combate');
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 text-base font-display font-black bg-[var(--brand-crimson)] hover:bg-red-700 text-white shadow-[0_4px_16px_rgba(239,68,68,0.35)] active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <Swords size={20} />
+              <span>¡Entrar en Combate!</span>
+              <ChevronRight size={18} />
+            </Button>
+          </div>
+        )}
+
+        {/* ── 3. Interacción Turno a Turno (Daño Instantáneo) ── */}
         {pantalla === 'combate' && faseActual && (
           <div className="flex flex-col gap-3">
             {/* Mensaje de diálogo del Jefe (Prompt de la Fase) con botón de Pista */}
             <div className="p-4 rounded-[12px_16px_14px_14px] bg-gradient-to-br from-[var(--bg-panel)] to-[var(--bg-accent)] border-2 border-[var(--border)] shadow-[3px_3px_0px_var(--border)]">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 text-[var(--brand-crimson)]">
                   <Flame size={15} />
                   <span className="text-[10px] font-display font-black tracking-widest uppercase">
@@ -561,8 +613,17 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
                   </button>
                 )}
               </div>
+
+              {/* Narrativa descriptiva de la acción de la criatura en esta fase */}
+              {faseActual.narrativa && (
+                <div className="p-3 mb-2.5 rounded-xl bg-black/40 border border-amber-500/30 text-amber-200/90 italic text-xs leading-relaxed flex items-start gap-2 shadow-inner">
+                  <Flame size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                  <span>"{faseActual.narrativa}"</span>
+                </div>
+              )}
+
               <p className="font-display font-bold text-sm sm:text-base text-[var(--text-primary)] leading-snug">
-                {faseActual.enunciado}
+                {faseActual.enunciado || faseActual.pregunta}
               </p>
             </div>
 

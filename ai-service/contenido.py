@@ -100,7 +100,10 @@ def procesar_batalla_de_jefe(ia, rng=None):
         if penalizacion not in PENALIZACIONES_VALIDAS:
             penalizacion = PENALIZACION_POR_DEFECTO  # vocabulario cerrado: el frontend solo sabe animar estos
 
+        narrativa_fase = _texto(getattr(fase, "narrativa", "") or "La bestia brama y prepara su siguiente embestida.", "narrativa_fase", 300)
+
         fases.append({
+            "narrativa": narrativa_fase,
             "enunciado": enunciado,
             "opciones": opciones,
             "respuesta_correcta": correcta,
