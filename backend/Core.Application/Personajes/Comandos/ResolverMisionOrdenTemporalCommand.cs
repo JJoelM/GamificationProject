@@ -66,7 +66,7 @@ public sealed class ResolverMisionOrdenTemporalCommandHandler
         personaje.RegistrarResolucionDeMision(
             mision.Id, mision.RecompensaXp, recompensaApBase, resultado.PorcentajeCorrecto, request.Fecha);
 
-        var eventoGenerado = (ProgresoActualizado)personaje.EventosNoConfirmados[^1];
+        var eventoGenerado = personaje.EventosNoConfirmados.OfType<ProgresoActualizado>().Last();
 
         await _repositorioPersonajes.GuardarAsync(personaje, cancellationToken);
 

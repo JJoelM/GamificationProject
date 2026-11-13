@@ -21,12 +21,12 @@ public static class SanitizadorPayloadMision
                 "OpcionMultiple" => SanitizarOpcionMultiple(payloadJson),
                 "BatallaDeJefe" => SanitizarBatallaDeJefe(payloadJson),
                 "LineaTemporal" => SanitizarLineaTemporal(payloadJson),
-                _ => payloadJson,
+                _ => "{}",
             };
         }
         catch
         {
-            return payloadJson;
+            return "{}";
         }
     }
 
@@ -34,7 +34,7 @@ public static class SanitizadorPayloadMision
     {
         var contenido = JsonSerializer.Deserialize<ContenidoOpcionMultiple>(payloadJson, OpcionesJsonMision.Instancia);
         if (contenido?.Preguntas is null)
-            return payloadJson;
+            return "{}";
 
         var preguntasSanitizadas = contenido.Preguntas.Select(p => new
         {
@@ -49,7 +49,7 @@ public static class SanitizadorPayloadMision
     {
         var contenido = JsonSerializer.Deserialize<ContenidoBatallaDeJefe>(payloadJson, OpcionesJsonMision.Instancia);
         if (contenido?.Fases is null)
-            return payloadJson;
+            return "{}";
 
         var fasesSanitizadas = contenido.Fases.Select(f => new
         {
@@ -72,7 +72,7 @@ public static class SanitizadorPayloadMision
     {
         var contenido = JsonSerializer.Deserialize<ContenidoLineaTemporal>(payloadJson, OpcionesJsonMision.Instancia);
         if (contenido?.EventosDesordenados is null)
-            return payloadJson;
+            return "{}";
 
         // Desordenar aleatoriamente para evitar que el orden original del array filtre la solucion
         var eventosSanitizados = contenido.EventosDesordenados

@@ -32,9 +32,11 @@ public sealed class ObtenerMetricasGlobalesQueryHandler
     {
         var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var docentes = await _db.Usuarios
-            .Where(u => u.Rol.Nombre == "Docente" && u.EstadoCuenta == Core.Domain.Entidades.EstadoCuenta.Activa)
-            .CountAsync(cancellationToken);
+        var totalDocentes = await _db.Usuarios
+            .CountAsync(u => u.Rol.Nombre == "Docente", cancellationToken);
+
+        var docentesActivos = await _db.Usuarios
+            .CountAsync(u => u.Rol.Nombre == "Docente" && u.EstadoCuenta == Core.Domain.Entidades.EstadoCuenta.Activa, cancellationToken);
 
         var totalAlumnos = await _db.Usuarios
             .CountAsync(u => u.Rol.Nombre == "Alumno", cancellationToken);
@@ -69,7 +71,7 @@ public sealed class ObtenerMetricasGlobalesQueryHandler
             .ToListAsync(cancellationToken);
 
         return new MetricasGlobalesDto(
-            docentes, docentes, totalAlumnos, activos7, activos30,
+            totalDocentes, docentesActivos, totalAlumnos, activos7, activos30,
             generadas, validadas, rechazadas, tasaHitl, aulasMasActivas);
     }
 }

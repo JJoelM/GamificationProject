@@ -24,20 +24,23 @@ function GrimorioSaber() {
     const rawFichas = grimorioData?.fichas || [];
 
     if (rawFichas.length === 0) {
-      // Si aún no hay fichas en backend, usar fichas base de ejemplo
-      return FICHAS_GRIMORIO.map((f, idx) => ({
-        fichaId: f.id,
-        misionId: f.misionIdAsociada,
-        temaCurricular: f.temaCurricular,
-        narrativa: f.resumenConceptual,
-        conceptosClave: f.conceptosClave.map((c) =>
-          typeof c === 'string' ? c : `${c.termino}: ${c.definicion}`
-        ),
-        desbloqueada: idx === 0,
-        area: f.area,
-        IconoVisual: f.IconoVisual,
-        sabiduriaCurricular: f.sabiduriaCurricular,
-      }));
+      if (import.meta.env.VITE_USE_MOCK === 'true') {
+        // Solo en modo mock: usar fichas base de ejemplo
+        return FICHAS_GRIMORIO.map((f, idx) => ({
+          fichaId: f.id,
+          misionId: f.misionIdAsociada,
+          temaCurricular: f.temaCurricular,
+          narrativa: f.resumenConceptual,
+          conceptosClave: f.conceptosClave.map((c) =>
+            typeof c === 'string' ? c : `${c.termino}: ${c.definicion}`
+          ),
+          desbloqueada: idx === 0,
+          area: f.area,
+          IconoVisual: f.IconoVisual,
+          sabiduriaCurricular: f.sabiduriaCurricular,
+        }));
+      }
+      return [];
     }
 
     return rawFichas.map((f, idx) => {

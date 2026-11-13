@@ -25,6 +25,7 @@ import ArtFrame from '../../components/ui/ArtFrame';
 function DashboardAlumno() {
   const navigate = useNavigate();
   const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const apTotal = useSessionStore((s) => s.apTotal) || 0;
   const { data: aulas, isLoading: isLoadingAulas } = useMisAulas();
   usePersonaje(); // Sincroniza XP, AP y racha con backend
   const { data: misiones, isLoading: isLoadingMisiones } = useMisionesActivas();
@@ -215,7 +216,7 @@ function DashboardAlumno() {
                   Bazar del Alquimista
                 </h4>
                 <Badge variant="violet">
-                  {useSessionStore.getState().apTotal || 0} AP
+                  {apTotal} AP
                 </Badge>
               </div>
               <p className="text-xs text-[var(--text-secondary)]">

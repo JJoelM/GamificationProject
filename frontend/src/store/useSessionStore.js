@@ -171,8 +171,18 @@ const useSessionStore = create(
         }));
       },
 
-      setAulaActivaId: (aulaId) => set({ aulaActivaId: aulaId }),
-      setAulaActiva: (aulaId) => set({ aulaActivaId: aulaId }),
+      setAulaActivaId: (aulaId) =>
+        set((s) =>
+          s.aulaActivaId === aulaId
+            ? { aulaActivaId: aulaId }
+            : { aulaActivaId: aulaId, misionesResueltas: [] }
+        ),
+      setAulaActiva: (aulaId) =>
+        set((s) =>
+          s.aulaActivaId === aulaId
+            ? { aulaActivaId: aulaId }
+            : { aulaActivaId: aulaId, misionesResueltas: [] }
+        ),
 
       setCodigoInvitacion: (codigo) => set({ codigoInvitacionAula: codigo }),
 

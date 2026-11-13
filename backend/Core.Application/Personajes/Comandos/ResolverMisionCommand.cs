@@ -1,4 +1,5 @@
 using Core.Application.Common;
+using Core.Application.Misiones.Proyecciones;
 using Core.Domain.Agregados.Misiones;
 using Core.Domain.Agregados.Personajes;
 using Core.Domain.Agregados.Personajes.Eventos;
@@ -60,7 +61,41 @@ public sealed class ResolverMisionCommandHandler : IRequestHandler<ResolverMisio
         personaje.RegistrarResolucionDeMision(
             mision.Id, mision.RecompensaXp, recompensaApBase, resultado.PorcentajeCorrecto, request.Fecha);
 
-        var eventoGenerado = (ProgresoActualizado)personaje.EventosNoConfirmados[^1];
+        var eventoGenerado = personaje.EventosNoConfirmados.OfType<ProgresoActualizado>().Last();
+
+        // Actualizar proyección pre-agregada de fallos por pregunta (CQRS Read Model)
+        var fallos = resultado.Feedback.Where(f => !f.EsCorrecta).ToList();
+        if (fallos.Count > 0)
+        {
+            var metricasExistentes = await _db.MetricasPreguntas
+                .Where(m => m.AulaId == mision.AulaId && m.MisionId == mision.Id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var fb in fallos)
+            {
+                var respuesta = request.Respuestas.FirstOrDefault(r => r.IndicePregunta == fb.IndicePregunta);
+                var opcionElegida = respuesta?.OpcionElegida ?? "(Sin respuesta)";
+                if (opcionElegida.Length > 500) opcionElegida = opcionElegida[..500];
+
+                var enunciado = mision.ObtenerEnunciadoPregunta(fb.IndicePregunta);
+                if (enunciado.Length > 1000) enunciado = enunciado[..1000];
+
+                var existente = metricasExistentes.FirstOrDefault(m =>
+                    m.IndicePregunta == fb.IndicePregunta &&
+                    string.Equals(m.OpcionElegida, opcionElegida, StringComparison.Ordinal));
+
+                if (existente is not null)
+                {
+                    existente.RegistrarFallo();
+                }
+                else
+                {
+                    var nuevaMetrica = new MetricaPregunta(mision.AulaId, mision.Id, fb.IndicePregunta, enunciado, opcionElegida);
+                    _db.Add(nuevaMetrica);
+                    metricasExistentes.Add(nuevaMetrica);
+                }
+            }
+        }
 
         await _repositorioPersonajes.GuardarAsync(personaje, cancellationToken);
 

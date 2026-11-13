@@ -13,6 +13,7 @@ public class ResolucionRegistrada
     public Guid MisionId { get; private set; }
     public int NumeroDeIntento { get; private set; }
     public int PorcentajeCorrecto { get; private set; }
+    public int XpGanado { get; private set; }
     public bool EsRepaso { get; private set; }
     public string FeedbackJson { get; private set; } = default!;
     public DateOnly Fecha { get; private set; }
@@ -23,7 +24,7 @@ public class ResolucionRegistrada
     public ResolucionRegistrada(
         Guid personajeId, Guid alumnoId, Guid aulaId, Guid misionId,
         int numeroDeIntento, int porcentajeCorrecto, bool esRepaso,
-        string feedbackJson, DateOnly fecha, DateTime ocurridoEn)
+        string feedbackJson, DateOnly fecha, DateTime ocurridoEn, int xpGanado = 0)
     {
         Id = Guid.NewGuid();
         PersonajeId = personajeId;
@@ -32,6 +33,7 @@ public class ResolucionRegistrada
         MisionId = misionId;
         NumeroDeIntento = numeroDeIntento;
         PorcentajeCorrecto = porcentajeCorrecto;
+        XpGanado = xpGanado;
         EsRepaso = esRepaso;
         FeedbackJson = feedbackJson;
         Fecha = fecha;

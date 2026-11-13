@@ -91,4 +91,12 @@ public class SanitizadorPayloadMisionTests
         Assert.Contains("ev2", resultado);
         Assert.Contains("ev3", resultado);
     }
+
+    [Fact]
+    public void Sanitizar_PayloadInvalidoONulo_FailClosedRetornaObjetoVacio()
+    {
+        Assert.Equal("{}", SanitizadorPayloadMision.SanitizarParaAlumno("OpcionMultiple", "{json-roto"));
+        Assert.Equal("{}", SanitizadorPayloadMision.SanitizarParaAlumno("BatallaDeJefe", ""));
+        Assert.Equal("{}", SanitizadorPayloadMision.SanitizarParaAlumno("LineaTemporal", "null"));
+    }
 }

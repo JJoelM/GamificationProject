@@ -1,3 +1,4 @@
+using Core.Application.Common.Behaviors;
 using Core.Domain.Agregados.Misiones;
 using MediatR;
 
@@ -14,7 +15,7 @@ public sealed record GenerarMisionCommand(
     string TipoPlantilla,
     string PayloadJson,
     int NivelConfianzaIA,
-    int RecompensaXpSugerida) : IRequest<Guid>;
+    int RecompensaXpSugerida) : IRequest<Guid>, IAutorizacionDocenteAula;
 
 public sealed class GenerarMisionCommandHandler : IRequestHandler<GenerarMisionCommand, Guid>
 {

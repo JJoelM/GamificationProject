@@ -31,9 +31,9 @@ export function useMisAulas() {
         if (Array.isArray(data)) {
           return data;
         }
-        return AULAS_DEFAULT;
+        return import.meta.env.VITE_USE_MOCK === 'true' ? AULAS_DEFAULT : [];
       } catch (err) {
-        if (!err.isApiError) {
+        if (import.meta.env.VITE_USE_MOCK === 'true' && !err.isApiError) {
           return AULAS_DEFAULT;
         }
         throw err;

@@ -173,6 +173,54 @@ namespace Infrastructure.Migrations
                     b.ToTable("fichas_grimorio_desbloqueadas", (string)null);
                 });
 
+            modelBuilder.Entity("Core.Application.Misiones.Proyecciones.MetricaPregunta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AulaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("aula_id");
+
+                    b.Property<int>("CantidadFallos")
+                        .HasColumnType("integer")
+                        .HasColumnName("cantidad_fallos");
+
+                    b.Property<string>("Enunciado")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("enunciado");
+
+                    b.Property<int>("IndicePregunta")
+                        .HasColumnType("integer")
+                        .HasColumnName("indice_pregunta");
+
+                    b.Property<Guid>("MisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mision_id");
+
+                    b.Property<string>("OpcionElegida")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("opcion_elegida");
+
+                    b.HasKey("Id")
+                        .HasName("pk_metricas_preguntas");
+
+                    b.HasIndex("AulaId", "CantidadFallos")
+                        .HasDatabaseName("ix_metricas_preguntas_aula_id_cantidad_fallos");
+
+                    b.HasIndex("AulaId", "MisionId", "IndicePregunta", "OpcionElegida")
+                        .IsUnique()
+                        .HasDatabaseName("ix_metricas_preguntas_aula_id_mision_id_indice_pregunta_opcion");
+
+                    b.ToTable("metricas_preguntas", (string)null);
+                });
+
             modelBuilder.Entity("Core.Application.Misiones.Proyecciones.MisionActiva", b =>
                 {
                     b.Property<Guid>("MisionId")
@@ -331,6 +379,10 @@ namespace Infrastructure.Migrations
                     b.Property<int>("PorcentajeCorrecto")
                         .HasColumnType("integer")
                         .HasColumnName("porcentaje_correcto");
+
+                    b.Property<int>("XpGanado")
+                        .HasColumnType("integer")
+                        .HasColumnName("xp_ganado");
 
                     b.HasKey("Id")
                         .HasName("pk_resoluciones_registradas");
