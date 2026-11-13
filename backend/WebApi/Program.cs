@@ -416,14 +416,14 @@ using (var scope = app.Services.CreateScope())
             personaje2.EquiparArticulo("exploradora_reliquias", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Avatar, "exploradora_reliquias");
             personaje2.ComprarArticulo("orlado_dorado", 100, Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Marco, "orlado_dorado");
             personaje2.ComprarArticulo("dragon", 250, Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Mascota, "dragon");
-            personaje2.EquiparArticulo("Buscador de Respuestas", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Titulo, "Buscador de Respuestas");
+            personaje2.EquiparArticulo("Iniciado del Saber", Core.Domain.Agregados.Personajes.Eventos.TipoArticulo.Titulo, "Iniciado del Saber");
 
             repoPersonajes.GuardarAsync(personaje2).GetAwaiter().GetResult();
 
             var resumenP2 = context.PersonajesResumen.FirstOrDefault(p => p.PersonajeId == personaje2Id);
             if (resumenP2 is not null)
             {
-                resumenP2.ActualizarPersonalizacion("exploradora_reliquias", "orlado_dorado", "dragon", "Buscador de Respuestas");
+                resumenP2.ActualizarPersonalizacion("exploradora_reliquias", "orlado_dorado", "dragon", "Iniciado del Saber");
                 resumenP2.ActualizarProgreso(180, 150, 1, 1);
                 context.SaveChanges();
             }
@@ -518,3 +518,5 @@ public partial class Program
         return sb.ToString();
     }
 }
+
+public partial class Program { }

@@ -142,6 +142,8 @@ El contenedor unificado (`Dockerfile` multi-stage) ejecuta .NET 9 y FastAPI conj
    - `PROXY_SECRET`: El mismo valor secreto configurado en Render (obligatorio en producción; el backend bloquea con `403` cualquier petición directa a `/api/*` sin este secreto).
    - `VITE_BACKEND_WAKEUP_URL`: URL pública de Render (`https://tu-api.onrender.com`) para enviar únicamente el ping `GET /health` de despertar cuando el servicio gratuito esté en reposo.
 
+   > **Nota de operación y seguridad:** El bloqueo `403` protege toda la API (`/api/*`) contra acceso directo sin el proxy, mientras que `/health` permanece público por diseño y no consulta la base de datos (por lo que ni el despertar del frontend ni el *healthcheck* de Render mantienen activa la cuota de cómputo de Neon). En Render, asegúrate de configurar el *Health Check Path* en `/health` (no `/api/health`) para evitar respuestas `403` al no incluir `X-Proxy-Secret`.
+
 ---
 
 ## 💻 Puesta en Marcha en Desarrollo Local
