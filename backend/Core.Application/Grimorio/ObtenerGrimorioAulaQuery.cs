@@ -28,8 +28,13 @@ public sealed class ObtenerGrimorioAulaQueryHandler : IRequestHandler<ObtenerGri
         if (!estaInscripto)
             throw new UnauthorizedAccessException("No estás inscripto en esta Aula.");
 
+        var misionesVisiblesIds = await _db.MisionesActivas
+            .Where(m => m.AulaId == request.AulaId && m.EstaVisible)
+            .Select(m => m.MisionId)
+            .ToListAsync(cancellationToken);
+
         var fichas = await _db.FichasGrimorio
-            .Where(f => f.AulaId == request.AulaId)
+            .Where(f => f.AulaId == request.AulaId && misionesVisiblesIds.Contains(f.MisionId))
             .ToListAsync(cancellationToken);
 
         var desbloqueadas = await _db.FichasGrimorioDesbloqueadas
@@ -37,11 +42,17 @@ public sealed class ObtenerGrimorioAulaQueryHandler : IRequestHandler<ObtenerGri
             .Select(d => d.FichaId)
             .ToHashSetAsync(cancellationToken);
 
-        var dtos = fichas.Select(f => new FichaGrimorioDto(
-            f.FichaId, f.MisionId, f.TemaCurricular, f.Narrativa,
-            JsonSerializer.Deserialize<List<string>>(f.ConceptosClave) ?? new(),
-            desbloqueadas.Contains(f.FichaId)))
-            .ToList();
+        var dtos = fichas.Select(f =>
+        {
+            var desbloqueada = desbloqueadas.Contains(f.FichaId);
+            return new FichaGrimorioDto(
+                f.FichaId,
+                f.MisionId,
+                f.TemaCurricular,
+                desbloqueada ? f.Narrativa : "Completá esta misión para desbloquear su crónica en el Grimorio.",
+                desbloqueada ? (JsonSerializer.Deserialize<List<string>>(f.ConceptosClave) ?? new()) : new List<string>(),
+                desbloqueada);
+        }).ToList();
 
         return new GrimorioDto(dtos, dtos.Count(d => d.Desbloqueada), fichas.Count);
     }

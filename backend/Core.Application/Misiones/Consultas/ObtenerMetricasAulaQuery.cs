@@ -68,15 +68,33 @@ public sealed class ObtenerMetricasAulaQueryHandler : IRequestHandler<ObtenerMet
             .Where(r => r.AulaId == request.AulaId && !r.EsRepaso)
             .ToListAsync(cancellationToken);
 
+        var metricasPreguntas = await _db.MetricasPreguntas
+            .Where(m => m.AulaId == request.AulaId)
+            .ToListAsync(cancellationToken);
+
         var metricasPorMision = resoluciones
             .GroupBy(r => r.MisionId)
-            .Select(g => new MetricaPorMision(
-                g.Key,
-                borradores.FirstOrDefault(b => b.MisionId == g.Key)?.TemaCurricular ?? "Sin tema",
-                g.Count(),
-                g.Average(r => r.PorcentajeCorrecto),
-                "N/D",
-                "N/D"))
+            .Select(g =>
+            {
+                var fallosMision = metricasPreguntas.Where(m => m.MisionId == g.Key).ToList();
+                var preguntaMasFallida = fallosMision
+                    .GroupBy(m => new { m.IndicePregunta, m.Enunciado })
+                    .OrderByDescending(pg => pg.Sum(x => x.CantidadFallos))
+                    .Select(pg => pg.Key.Enunciado)
+                    .FirstOrDefault() ?? "N/D";
+                var opcionMasFrecuente = fallosMision
+                    .OrderByDescending(m => m.CantidadFallos)
+                    .Select(m => m.OpcionElegida)
+                    .FirstOrDefault() ?? "N/D";
+
+                return new MetricaPorMision(
+                    g.Key,
+                    borradores.FirstOrDefault(b => b.MisionId == g.Key)?.TemaCurricular ?? "Sin tema",
+                    g.Count(),
+                    g.Average(r => r.PorcentajeCorrecto),
+                    preguntaMasFallida,
+                    opcionMasFrecuente);
+            })
             .ToList();
 
         var distribucion = new List<DistribucionAcierto>

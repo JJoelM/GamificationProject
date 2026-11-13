@@ -1,3 +1,4 @@
+using Core.Application.Common.Behaviors;
 using Core.Domain.Agregados.Personajes;
 using Core.Domain.Agregados.Personajes.Eventos;
 using Core.Domain.SeedWork;
@@ -7,7 +8,7 @@ namespace Core.Application.Personajes.Comandos;
 
 public sealed record PersonalizarPersonajeCommand(
     Guid AlumnoId, Guid AulaId,
-    string? AvatarId, string? Marco, string? Mascota, string? Titulo = null) : IRequest;
+    string? AvatarId, string? Marco, string? Mascota, string? Titulo = null) : IRequest, IAutorizacionAlumnoAula;
 
 public sealed class PersonalizarPersonajeCommandHandler : IRequestHandler<PersonalizarPersonajeCommand>
 {

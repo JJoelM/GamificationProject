@@ -26,6 +26,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<FichaGrimorio> FichasGrimorio => Set<FichaGrimorio>();
     public DbSet<FichaGrimorioDesbloqueada> FichasGrimorioDesbloqueadas => Set<FichaGrimorioDesbloqueada>();
     public DbSet<ConexionMision> ConexionesMision => Set<ConexionMision>();
+    public DbSet<MetricaPregunta> MetricasPreguntas => Set<MetricaPregunta>();
 
     // Proyecciones de Personaje
     public DbSet<PersonajeResumen> PersonajesResumen => Set<PersonajeResumen>();
@@ -43,6 +44,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     IQueryable<PersonajeResumen> IApplicationDbContext.PersonajesResumen => PersonajesResumen;
     IQueryable<ResolucionRegistrada> IApplicationDbContext.ResolucionesRegistradas => ResolucionesRegistradas;
     IQueryable<ConexionMision> IApplicationDbContext.ConexionesMision => ConexionesMision;
+    IQueryable<MetricaPregunta> IApplicationDbContext.MetricasPreguntas => MetricasPreguntas;
 
     void IApplicationDbContext.Add<TEntity>(TEntity entity) => Add(entity);
 

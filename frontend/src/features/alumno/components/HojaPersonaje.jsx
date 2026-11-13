@@ -356,7 +356,11 @@ function HojaPersonaje() {
           <XpBar
             current={xpProgreso}
             max={xpMetaNivel}
-            label={`Progreso al Nivel ${nivelInfo.nivel + 1}`}
+            label={
+              nivelInfo.nivel >= 5
+                ? `Nivel Máximo (${nivelInfo.titulo})`
+                : `Progreso al Nivel ${nivelInfo.nivel + 1}`
+            }
             glowing
           />
         </div>

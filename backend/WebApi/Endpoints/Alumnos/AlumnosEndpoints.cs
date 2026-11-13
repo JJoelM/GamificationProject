@@ -1,12 +1,15 @@
 using System.Security.Claims;
+using Core.Application.Common;
 using Core.Application.Grimorio;
 using Core.Application.Misiones.Consultas;
 using Core.Application.Personajes.Comandos;
 using Core.Application.Personajes.Consultas;
 using Core.Domain.Agregados.Misiones;
 using Core.Domain.Agregados.Personajes;
+using Core.Domain.SeedWork;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApi.Endpoints.Alumnos;
 
@@ -55,6 +58,34 @@ public static class AlumnosEndpoints
             return Results.Ok(await mediator.Send(cmd));
         })
         .WithName("UsarPista");
+
+        grupo.MapPost("/misiones/{misionId:guid}/verificar-fase", async (
+            Guid misionId,
+            VerificarFaseRequest request,
+            ClaimsPrincipal usuario,
+            IRepositorioMisiones repositorioMisiones,
+            IApplicationDbContext db,
+            CancellationToken ct) =>
+        {
+            var mision = await repositorioMisiones.ObtenerPorIdAsync(misionId, ct)
+                ?? throw new AgregadoNoEncontradoException(nameof(Mision), misionId);
+
+            if (mision.Estado != EstadoMision.Validada)
+                throw new TransicionDeEstadoInvalidaException(
+                    $"No se puede verificar una fase de una misión en estado '{mision.Estado}'.");
+
+            var alumnoId = usuario.ObtenerUsuarioId();
+            var estaInscripto = await db.Inscripciones
+                .AnyAsync(i => i.AulaId == mision.AulaId && i.AlumnoId == alumnoId, ct);
+            if (!estaInscripto)
+                throw new UnauthorizedAccessException("No estás inscripto en el Aula de esta misión.");
+
+            var (esCorrecta, explicacion) = mision.VerificarFase(
+                request.IndiceFase, request.RespuestaElegida ?? string.Empty);
+
+            return Results.Ok(new { esCorrecta, explicacion });
+        })
+        .WithName("VerificarFaseMision");
 
         grupo.MapGet("/camino/{aulaId:guid}", async (Guid aulaId, ClaimsPrincipal usuario, IMediator mediator) =>
             Results.Ok(await mediator.Send(new ObtenerCaminoParaAlumnoQuery(aulaId, usuario.ObtenerUsuarioId()))))
@@ -149,3 +180,5 @@ public static class AlumnosEndpoints
         .WithName("PersonalizarPersonaje");
     }
 }
+
+public sealed record VerificarFaseRequest(int IndiceFase, string RespuestaElegida);

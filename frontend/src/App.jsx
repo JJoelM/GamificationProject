@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
+import useSessionStore from './store/useSessionStore';
 import LandingPage from './features/landing/LandingPage';
 import AuthPage from './features/auth/AuthPage';
 import DashboardDocente from './features/docente/DashboardDocente';
@@ -37,6 +38,21 @@ import DashboardDirectivo from './features/directivo/DashboardDirectivo';
  * Rutas Directivo:
  * /directivo/docentes            → GestionDocentes (gestión de cuentas y aprobación de menores)
  */
+const RUTA_POR_ROL = {
+  Docente: '/docente/dashboard',
+  Alumno: '/alumno/dashboard',
+  Directivo: '/directivo/dashboard',
+};
+
+function ProtectedRoute({ allowedRoles, children }) {
+  const usuario = useSessionStore((s) => s.usuario);
+  if (!usuario) return <Navigate to="/auth" replace />;
+  if (allowedRoles && !allowedRoles.includes(usuario.rol)) {
+    return <Navigate to={RUTA_POR_ROL[usuario.rol] || '/'} replace />;
+  }
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -51,22 +67,22 @@ function App() {
         {/* Rutas principales envueltas en AppShell (sidebar + topbar + audio + level up) */}
         <Route element={<AppShell />}>
           {/* Entorno Docente */}
-          <Route path="/docente/dashboard" element={<DashboardDocente />} />
-          <Route path="/docente/misiones/pendientes" element={<InboxBorradores />} />
-          <Route path="/docente/misiones/:id/validar" element={<ValidadorMision />} />
-          <Route path="/docente/metricas" element={<MetricasAula />} />
-          <Route path="/docente/camino" element={<SecuenciaCurricularDocente />} />
+          <Route path="/docente/dashboard" element={<ProtectedRoute allowedRoles={['Docente']}><DashboardDocente /></ProtectedRoute>} />
+          <Route path="/docente/misiones/pendientes" element={<ProtectedRoute allowedRoles={['Docente']}><InboxBorradores /></ProtectedRoute>} />
+          <Route path="/docente/misiones/:id/validar" element={<ProtectedRoute allowedRoles={['Docente']}><ValidadorMision /></ProtectedRoute>} />
+          <Route path="/docente/metricas" element={<ProtectedRoute allowedRoles={['Docente']}><MetricasAula /></ProtectedRoute>} />
+          <Route path="/docente/camino" element={<ProtectedRoute allowedRoles={['Docente']}><SecuenciaCurricularDocente /></ProtectedRoute>} />
 
           {/* Entorno Alumno */}
-          <Route path="/alumno/dashboard" element={<DashboardAlumno />} />
-          <Route path="/alumno/misiones" element={<TableroMisiones />} />
-          <Route path="/alumno/ranking" element={<SalonAventureros />} />
-          <Route path="/alumno/bazar" element={<BazarRecompensas />} />
-          <Route path="/alumno/grimorio" element={<GrimorioSaber />} />
+          <Route path="/alumno/dashboard" element={<ProtectedRoute allowedRoles={['Alumno']}><DashboardAlumno /></ProtectedRoute>} />
+          <Route path="/alumno/misiones" element={<ProtectedRoute allowedRoles={['Alumno']}><TableroMisiones /></ProtectedRoute>} />
+          <Route path="/alumno/ranking" element={<ProtectedRoute allowedRoles={['Alumno']}><SalonAventureros /></ProtectedRoute>} />
+          <Route path="/alumno/bazar" element={<ProtectedRoute allowedRoles={['Alumno']}><BazarRecompensas /></ProtectedRoute>} />
+          <Route path="/alumno/grimorio" element={<ProtectedRoute allowedRoles={['Alumno']}><GrimorioSaber /></ProtectedRoute>} />
 
           {/* Entorno Directivo / Administrador */}
-          <Route path="/directivo/dashboard" element={<DashboardDirectivo />} />
-          <Route path="/directivo/docentes" element={<GestionDocentes />} />
+          <Route path="/directivo/dashboard" element={<ProtectedRoute allowedRoles={['Directivo']}><DashboardDirectivo /></ProtectedRoute>} />
+          <Route path="/directivo/docentes" element={<ProtectedRoute allowedRoles={['Directivo']}><GestionDocentes /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

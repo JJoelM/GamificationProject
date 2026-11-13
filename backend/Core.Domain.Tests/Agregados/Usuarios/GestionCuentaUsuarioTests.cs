@@ -27,6 +27,7 @@ public class GestionCuentaUsuarioTests
         public IQueryable<Core.Application.Personajes.Proyecciones.PersonajeResumen> PersonajesResumen => new TestAsyncEnumerable<Core.Application.Personajes.Proyecciones.PersonajeResumen>(Enumerable.Empty<Core.Application.Personajes.Proyecciones.PersonajeResumen>());
         public IQueryable<Core.Application.Personajes.Proyecciones.ResolucionRegistrada> ResolucionesRegistradas => new TestAsyncEnumerable<Core.Application.Personajes.Proyecciones.ResolucionRegistrada>(Enumerable.Empty<Core.Application.Personajes.Proyecciones.ResolucionRegistrada>());
         public IQueryable<Core.Application.Misiones.Proyecciones.ConexionMision> ConexionesMision => new TestAsyncEnumerable<Core.Application.Misiones.Proyecciones.ConexionMision>(Enumerable.Empty<Core.Application.Misiones.Proyecciones.ConexionMision>());
+        public IQueryable<Core.Application.Misiones.Proyecciones.MetricaPregunta> MetricasPreguntas => new TestAsyncEnumerable<Core.Application.Misiones.Proyecciones.MetricaPregunta>(Enumerable.Empty<Core.Application.Misiones.Proyecciones.MetricaPregunta>());
 
         public void Add<TEntity>(TEntity entity) where TEntity : class { }
         public Task<int> SaveChangesAsync(CancellationToken ct = default) => Task.FromResult(0);

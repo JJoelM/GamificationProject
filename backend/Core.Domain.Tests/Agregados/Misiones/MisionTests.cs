@@ -352,4 +352,29 @@ public class MisionTests
         var mision = CrearMisionValida(); // Generada
         Assert.Throws<TransicionDeEstadoInvalidaException>(() => mision.Ocultar(Guid.NewGuid()));
     }
+
+    [Fact]
+    public void VerificarFase_BatallaDeJefe_ValidaRespuestaSinGenerarEventos()
+    {
+        var mision = Mision.Generar(
+            Guid.NewGuid(), Guid.NewGuid(), "Tema", "Texto", "Narrativa", "BatallaDeJefe",
+            payloadJson: """
+                {"nombreJefe":"Jefe","hpMaximo":100,"fases":[
+                    {"enunciado":"P1","opciones":["A","B"],"respuestaCorrecta":"A","explicacion":"Porque A es correcta.","danioAlJefe":50}
+                ]}
+                """,
+            nivelConfianzaIA: 90, recompensaXpSugerida: 100);
+        mision.Validar(Guid.NewGuid());
+        mision.MarcarEventosComoConfirmados();
+
+        var (esCorrecta, explicacion) = mision.VerificarFase(0, "A");
+        Assert.True(esCorrecta);
+        Assert.Equal("Porque A es correcta.", explicacion);
+
+        var (esIncorrecta, _) = mision.VerificarFase(0, "B");
+        Assert.False(esIncorrecta);
+        Assert.Empty(mision.EventosNoConfirmados);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => mision.VerificarFase(5, "A"));
+    }
 }

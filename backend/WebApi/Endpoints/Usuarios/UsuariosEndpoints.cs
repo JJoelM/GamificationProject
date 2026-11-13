@@ -51,14 +51,15 @@ public static class UsuariosEndpoints
         .WithName("RegistrarAlumno")
         .RequireRateLimiting("auth");
 
-        grupo.MapPost("/login", async (LoginRequest request, HttpContext http, IMediator mediator) =>
+        grupo.MapPost("/login", async (LoginRequest request, HttpContext http, IMediator mediator, IConfiguration config) =>
         {
             var resultado = await mediator.Send(new LoginCommand(request.Email, request.Password));
+            var minutosExpiracion = int.TryParse(config["JwtSettings:MinutosExpiracion"], out var mins) ? mins : 120;
 
             http.Response.Cookies.Append(
                 "access_token",
                 resultado.Token,
-                CrearOpcionesCookie(DateTimeOffset.UtcNow.AddMinutes(120)));
+                CrearOpcionesCookie(DateTimeOffset.UtcNow.AddMinutes(minutosExpiracion)));
 
             return Results.Ok(new { resultado.UsuarioId, resultado.NombreCompleto, resultado.Rol });
         })
