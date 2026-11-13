@@ -90,19 +90,26 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 /**
- * Realiza un chequeo liviano de salud al backend (/api/health).
- * No consume cuotas de autenticación ni lanza excepciones si el servidor está en reposo.
+ * Realiza un chequeo liviano de salud al backend (/api/health) con AbortController.
+ * Corta la conexión a los timeoutMs (por defecto 2.5s) para liberar inmediatamente los sockets
+ * del navegador (evitando el límite de 6 conexiones simultáneas) y prevenir timeouts 524 en Cloudflare.
  * Devuelve `true` si el servidor respondió 200 OK, `false` en caso contrario.
  */
-export async function checkHealth() {
+export async function checkHealth(timeoutMs = 2500) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const res = await fetch(`${API_BASE_URL}/api/health`, {
       method: 'GET',
       cache: 'no-store',
+      signal: controller.signal,
     });
     return res.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

@@ -63,15 +63,16 @@ function AuthPage() {
 
   const detenerPolling = () => {
     if (pollingRef.current) {
-      clearInterval(pollingRef.current);
+      clearTimeout(pollingRef.current);
       pollingRef.current = null;
     }
   };
 
   useEffect(() => {
     // Precalentamiento proactivo: mientras el usuario observa la pantalla o tipea
-    // credenciales, lanzamos un ping silencioso a /api/health para despertar Render.
-    checkHealth();
+    // credenciales, lanzamos un ping con timeout corto a /api/health para despertar Render
+    // sin mantener conexiones abiertas ni agotar los sockets del navegador.
+    checkHealth(2500);
 
     return () => {
       detenerPolling();
@@ -93,20 +94,34 @@ function AuthPage() {
       },
     });
 
-    // Sondear /api/health cada 3.5s (no consume tokens del rate-limiter de autenticación)
-    pollingRef.current = setInterval(async () => {
+    // Sondeo secuencial con AbortController: garantiza estrictamente 1 sola petición activa.
+    // Cada ping aborta a los 2.5s si el servidor duerme, liberando el socket del navegador
+    // (máx 6 conexiones por dominio) y evitando timeouts 524 en Cloudflare Pages Functions.
+    const sondear = async () => {
       if (!useServerWakeUpStore.getState().isOpen) {
         detenerPolling();
         return;
       }
 
-      const listo = await checkHealth();
+      const listo = await checkHealth(2500);
+
+      if (!useServerWakeUpStore.getState().isOpen) {
+        detenerPolling();
+        return;
+      }
+
       if (listo) {
         detenerPolling();
         cerrarWakeUpModal();
         accionReintento();
+        return;
       }
-    }, 3500);
+
+      // Aguarda 1.5s antes del próximo intento (ciclo ~4s sin colas ni peticiones colgadas)
+      pollingRef.current = setTimeout(sondear, 1500);
+    };
+
+    sondear();
   };
 
   // Calcular si es menor de 18 años

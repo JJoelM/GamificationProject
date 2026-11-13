@@ -52,6 +52,7 @@ export async function onRequest(context) {
 
   const clientIp = request.headers.get('CF-Connecting-IP');
   if (clientIp) {
+    headers.set('CF-Connecting-IP', clientIp);
     headers.set('X-Forwarded-For', clientIp);
     headers.set('X-Real-Client-IP', clientIp);
   }

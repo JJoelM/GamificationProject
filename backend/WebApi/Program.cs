@@ -105,9 +105,11 @@ builder.Services.AddAuthorization();
 var iaPermitLimit = builder.Configuration.GetValue("RateLimits:IaPermitLimit", 5);
 var iaWindowMinutes = builder.Configuration.GetValue("RateLimits:IaWindowMinutes", 10);
 var authPermitLimit = builder.Configuration.GetValue("RateLimits:AuthPermitLimit", 15);
+var healthPermitLimit = builder.Configuration.GetValue("RateLimits:HealthPermitLimit", 120);
 
 static string ObtenerIpClienteSegura(HttpContext httpContext, string? proxySecretEsperado)
 {
+    // 1. Si hay ProxySecret configurado, validamos la autenticidad del proxy en tiempo constante
     if (!string.IsNullOrEmpty(proxySecretEsperado))
     {
         var secretRecibido = httpContext.Request.Headers["X-Proxy-Secret"].FirstOrDefault();
@@ -117,12 +119,23 @@ static string ObtenerIpClienteSegura(HttpContext httpContext, string? proxySecre
             var bytesRecibidos = Encoding.UTF8.GetBytes(secretRecibido);
             if (CryptographicOperations.FixedTimeEquals(bytesEsperados, bytesRecibidos))
             {
-                var ipProxy = httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault();
+                var ipProxy = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
+                           ?? httpContext.Request.Headers["X-Real-Client-IP"].FirstOrDefault()
+                           ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(ipProxy))
-                    return ipProxy.Trim();
+                    return ipProxy.Split(',')[0].Trim();
             }
         }
     }
+
+    // 2. Si no hay ProxySecret o falló el secreto, leer CF-Connecting-IP o X-Forwarded-For del cliente
+    var cfIp = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(cfIp))
+        return cfIp.Trim();
+
+    var xff = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(xff))
+        return xff.Split(',')[0].Trim();
 
     return httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido";
 }
@@ -135,6 +148,7 @@ builder.Services.AddRateLimiter(options =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         var esEndpointIa = context.HttpContext.Request.Path.StartsWithSegments("/api/misiones/generar-con-ia");
+        var esEndpointHealth = context.HttpContext.Request.Path.StartsWithSegments("/api/health") || context.HttpContext.Request.Path.StartsWithSegments("/health");
 
         await context.HttpContext.Response.WriteAsJsonAsync(new ProblemDetails
         {
@@ -142,7 +156,9 @@ builder.Services.AddRateLimiter(options =>
             Title = "Límite de solicitudes alcanzado",
             Detail = esEndpointIa
                 ? $"Alcanzaste el límite de {iaPermitLimit} generaciones con IA cada {iaWindowMinutes} minutos. Revisá tus borradores pendientes o aguardá unos minutos antes de generar otra misión."
-                : "Demasiados intentos seguidos. Por favor, aguardá un minuto antes de volver a intentarlo.",
+                : esEndpointHealth
+                    ? "Demasiadas comprobaciones de estado seguidas. Aguardá unos segundos."
+                    : "Demasiados intentos seguidos. Por favor, aguardá un minuto antes de volver a intentarlo.",
         }, cancellationToken);
     };
 
@@ -156,6 +172,17 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = authPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 2,
+            }));
+
+    // Rate limiting para Health Checks (protección contra DDoS de capa 7 en Render Free)
+    options.AddPolicy("health", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ObtenerIpClienteSegura(httpContext, proxySecretConfigurado),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = healthPermitLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 5,
             }));
 
     options.AddPolicy("ia", httpContext =>
@@ -221,10 +248,12 @@ app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck")
+   .RequireRateLimiting("health")
    .ExcludeFromDescription();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }))
    .WithName("ApiHealthCheck")
+   .RequireRateLimiting("health")
    .ExcludeFromDescription();
 
 app.MapMisionesEndpoints();
