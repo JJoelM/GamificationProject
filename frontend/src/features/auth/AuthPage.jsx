@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import {
   CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
-import { usuariosApi, aulasApi } from '../../services/api';
+import { usuariosApi, aulasApi, checkHealth } from '../../services/api';
 import Button from '../../components/ui/Button';
 import useServerWakeUpStore from '../../store/useServerWakeUpStore';
 import ServerWakeUpModal from '../../components/ui/ServerWakeUpModal';
@@ -58,6 +58,72 @@ function AuthPage() {
   const [emailTutor, setEmailTutor] = useState('');
   const [aceptaInvestigacion, setAceptaInvestigacion] = useState(true);
 
+  // Polling y precalentamiento activo de salud (/api/health)
+  const pollingRef = useRef(null);
+
+  const detenerPolling = () => {
+    if (pollingRef.current) {
+      clearTimeout(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    // Precalentamiento proactivo: mientras el usuario observa la pantalla o tipea
+    // credenciales, lanzamos un ping con timeout corto a /api/health para despertar Render
+    // sin mantener conexiones abiertas ni agotar los sockets del navegador.
+    checkHealth(2500);
+
+    return () => {
+      detenerPolling();
+    };
+  }, []);
+
+  const esperarServidorYReintentar = (accionReintento, mensajeModal) => {
+    detenerPolling();
+
+    abrirWakeUpModal({
+      mensaje: mensajeModal || 'Iniciando el Reino para tu aventura...',
+      onRetry: () => {
+        detenerPolling();
+        accionReintento();
+      },
+      onCancel: () => {
+        detenerPolling();
+        setIsPending(false);
+      },
+    });
+
+    // Sondeo secuencial con AbortController: garantiza estrictamente 1 sola petición activa.
+    // Cada ping aborta a los 2.5s si el servidor duerme, liberando el socket del navegador
+    // (máx 6 conexiones por dominio) y evitando timeouts 524 en Cloudflare Pages Functions.
+    const sondear = async () => {
+      if (!useServerWakeUpStore.getState().isOpen) {
+        detenerPolling();
+        return;
+      }
+
+      const listo = await checkHealth(2500);
+
+      if (!useServerWakeUpStore.getState().isOpen) {
+        detenerPolling();
+        return;
+      }
+
+      if (listo) {
+        detenerPolling();
+        cerrarWakeUpModal();
+        accionReintento();
+        return;
+      }
+
+      // Aguarda 1.5s antes del próximo intento (ciclo ~4s sin colas ni peticiones colgadas)
+      pollingRef.current = setTimeout(sondear, 1500);
+    };
+
+    sondear();
+  };
+
   // Calcular si es menor de 18 años
   const esMenorDeEdad = () => {
     if (!fechaNacimiento) return false;
@@ -83,7 +149,8 @@ function AuthPage() {
   };
 
   const handleLogin = async (e) => {
-    e?.preventDefault();
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    detenerPolling();
     setError(null);
     setIsPending(true);
 
@@ -91,14 +158,21 @@ function AuthPage() {
     const wakeUpTimer = setTimeout(() => {
       abrirWakeUpModal({
         mensaje: 'Iniciando el Reino para tu Sesión...',
-        onRetry: () => handleLogin(),
-        onCancel: () => setIsPending(false),
+        onRetry: () => {
+          detenerPolling();
+          handleLogin();
+        },
+        onCancel: () => {
+          detenerPolling();
+          setIsPending(false);
+        },
       });
     }, 2500);
 
     try {
       const data = await usuariosApi.login({ email, password });
       clearTimeout(wakeUpTimer);
+      detenerPolling();
       cerrarWakeUpModal();
 
       // Limpiar caché previa antes de fijar nuevo usuario
@@ -124,20 +198,11 @@ function AuthPage() {
       clearTimeout(wakeUpTimer);
 
       if (err.isWakingUp || err.status === 502 || err.status === 503 || err.status === 0) {
-        abrirWakeUpModal({
-          mensaje: 'El Reino se está despertando...',
-          onRetry: () => handleLogin(),
-          onCancel: () => setIsPending(false),
-        });
-        // Auto-reintento a los 6 segundos
-        setTimeout(() => {
-          if (useServerWakeUpStore.getState().isOpen) {
-            handleLogin();
-          }
-        }, 6000);
+        esperarServidorYReintentar(() => handleLogin(), 'Iniciando el Reino para tu Sesión...');
         return;
       }
 
+      detenerPolling();
       cerrarWakeUpModal();
 
       if (!err.isApiError && import.meta.env.DEV) {
@@ -174,7 +239,8 @@ function AuthPage() {
   };
 
   const handleRegistroDocente = async (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    detenerPolling();
     setError(null);
 
     if (!validarContrasenaYConfirmacion()) return;
@@ -184,8 +250,14 @@ function AuthPage() {
     const wakeUpTimer = setTimeout(() => {
       abrirWakeUpModal({
         mensaje: 'Iniciando el Reino para tu Registro Docente...',
-        onRetry: () => handleRegistroDocente(e),
-        onCancel: () => setIsPending(false),
+        onRetry: () => {
+          detenerPolling();
+          handleRegistroDocente();
+        },
+        onCancel: () => {
+          detenerPolling();
+          setIsPending(false);
+        },
       });
     }, 2500);
 
@@ -197,6 +269,7 @@ function AuthPage() {
         aceptaUsoInvestigacion: aceptaInvestigacion,
       });
       clearTimeout(wakeUpTimer);
+      detenerPolling();
       cerrarWakeUpModal();
       setSuccessMessage('¡Cuenta docente creada con éxito! Iniciando sesión...');
       // Auto-login con limpieza de caché
@@ -207,18 +280,10 @@ function AuthPage() {
     } catch (err) {
       clearTimeout(wakeUpTimer);
       if (err.isWakingUp || err.status === 502 || err.status === 503 || err.status === 0) {
-        abrirWakeUpModal({
-          mensaje: 'El Reino se está despertando...',
-          onRetry: () => handleRegistroDocente(e),
-          onCancel: () => setIsPending(false),
-        });
-        setTimeout(() => {
-          if (useServerWakeUpStore.getState().isOpen) {
-            handleRegistroDocente(e);
-          }
-        }, 6000);
+        esperarServidorYReintentar(() => handleRegistroDocente(), 'Iniciando el Reino para tu Registro Docente...');
         return;
       }
+      detenerPolling();
       cerrarWakeUpModal();
       setError(err);
     } finally {
@@ -227,7 +292,8 @@ function AuthPage() {
   };
 
   const handleRegistroAlumno = async (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    detenerPolling();
     setError(null);
 
     if (!validarContrasenaYConfirmacion()) return;
@@ -237,8 +303,14 @@ function AuthPage() {
     const wakeUpTimer = setTimeout(() => {
       abrirWakeUpModal({
         mensaje: 'Iniciando el Reino para tu Inscripción de Alumno...',
-        onRetry: () => handleRegistroAlumno(e),
-        onCancel: () => setIsPending(false),
+        onRetry: () => {
+          detenerPolling();
+          handleRegistroAlumno();
+        },
+        onCancel: () => {
+          detenerPolling();
+          setIsPending(false);
+        },
       });
     }, 2500);
 
@@ -253,6 +325,7 @@ function AuthPage() {
         aceptaUsoInvestigacion: aceptaInvestigacion,
       });
       clearTimeout(wakeUpTimer);
+      detenerPolling();
       cerrarWakeUpModal();
 
       if (res?.requiereAprobacionParental) {
@@ -273,18 +346,10 @@ function AuthPage() {
     } catch (err) {
       clearTimeout(wakeUpTimer);
       if (err.isWakingUp || err.status === 502 || err.status === 503 || err.status === 0) {
-        abrirWakeUpModal({
-          mensaje: 'El Reino se está despertando...',
-          onRetry: () => handleRegistroAlumno(e),
-          onCancel: () => setIsPending(false),
-        });
-        setTimeout(() => {
-          if (useServerWakeUpStore.getState().isOpen) {
-            handleRegistroAlumno(e);
-          }
-        }, 6000);
+        esperarServidorYReintentar(() => handleRegistroAlumno(), 'Iniciando el Reino para tu Inscripción de Alumno...');
         return;
       }
+      detenerPolling();
       cerrarWakeUpModal();
       setError(err);
     } finally {
