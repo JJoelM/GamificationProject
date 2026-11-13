@@ -56,7 +56,8 @@ function TarjetaCompanero() {
   const { data: personaje } = usePersonaje();
   const storeMascota = useSessionStore((s) => s.mascotaEquipada);
 
-  const mascotaEquipada = personaje?.mascotaEquipada || storeMascota;
+  const mascotaEquipada =
+    personaje?.mascotaEquipada !== undefined ? personaje.mascotaEquipada : storeMascota;
 
   const infoMascota = useMemo(() => {
     if (!mascotaEquipada) return null;

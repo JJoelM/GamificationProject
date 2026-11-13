@@ -76,6 +76,10 @@ const FRAME_CONFIGS = {
   },
 };
 
+FRAME_CONFIGS.marco_orlado_dorado = FRAME_CONFIGS.orlado_dorado;
+FRAME_CONFIGS.marco_cristal_celeste = FRAME_CONFIGS.cristal_celeste;
+FRAME_CONFIGS.marco_runa_violeta = FRAME_CONFIGS.runa_violeta;
+
 /** Renderiza los 4 adornos de esquinas según el tipo de marco */
 function CornerOrnaments({ type }) {
   if (type === 'gold_diamond') {

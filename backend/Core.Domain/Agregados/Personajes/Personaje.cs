@@ -98,9 +98,7 @@ public sealed class Personaje : AgregadoRaiz
         "Buscador de Respuestas",
         "Explorador Curioso",
         "Erudito de las Runas",
-        "Maestro Alquimista",
-        "Centinela del Saber",
-        "Erudito Arcano"
+        "Maestro Alquimista"
     };
 
     private static readonly HashSet<string> ArticulosBase = new(StringComparer.OrdinalIgnoreCase)
@@ -143,10 +141,21 @@ public sealed class Personaje : AgregadoRaiz
     {
         if (tipo is not (TipoArticulo.Avatar or TipoArticulo.Marco or TipoArticulo.Mascota or TipoArticulo.Titulo))
             throw new ArgumentException("Solo se pueden equipar avatares, marcos, mascotas y títulos.");
+        if (tipo == TipoArticulo.Mascota && (string.IsNullOrWhiteSpace(articuloId) || string.Equals(articuloId, "ninguna", StringComparison.OrdinalIgnoreCase)))
+        {
+            DesequiparMascota();
+            return;
+        }
         if (!EsArticuloDesbloqueado(articuloId, tipo))
             throw new TransicionDeEstadoInvalidaException($"No podés equipar '{articuloId}' porque no lo compraste todavía.");
 
         RegistrarEvento(new ArticuloEquipado(Id, articuloId, tipo, valor, DateTime.UtcNow));
+    }
+
+    public void DesequiparMascota()
+    {
+        if (MascotaEquipada is null) return;
+        RegistrarEvento(new ArticuloEquipado(Id, "ninguna", TipoArticulo.Mascota, string.Empty, DateTime.UtcNow));
     }
 
     public void UsarPista(Guid misionId, int indicePregunta)
@@ -217,7 +226,11 @@ public sealed class Personaje : AgregadoRaiz
         {
             case TipoArticulo.Avatar: AvatarEquipado = valor; break;
             case TipoArticulo.Marco: MarcoEquipado = valor; break;
-            case TipoArticulo.Mascota: MascotaEquipada = valor; break;
+            case TipoArticulo.Mascota:
+                MascotaEquipada = string.IsNullOrWhiteSpace(valor) || string.Equals(valor, "ninguna", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : valor;
+                break;
             case TipoArticulo.Titulo: TituloEquipado = valor; break;
         }
     }

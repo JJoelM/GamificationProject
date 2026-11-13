@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Reorder, motion, useReducedMotion } from 'framer-motion';
-import { GitCommit, Clock, AlertCircle, Target, CheckCircle2, XCircle, ArrowRight, Award, Zap } from 'lucide-react';
+import { Reorder, motion, useReducedMotion, useDragControls } from 'framer-motion';
+import { GitCommit, Clock, AlertCircle, Target, CheckCircle2, XCircle, ArrowRight, Award, Zap, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
@@ -30,6 +30,138 @@ function mezclarEventos(array) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+/**
+ * EventoReordenableItem — Tarjeta individual de la línea temporal.
+ * Extraída como componente para poder usar useDragControls() por ítem,
+ * evitar conflictos entre CSS transition-all y Framer Motion layout="position",
+ * y ofrecer controles accesibles ↑ / ↓ además de drag fluido.
+ */
+function EventoReordenableItem({
+  evento,
+  index,
+  total,
+  esCulpable,
+  shouldReduceMotion,
+  disabled,
+  onSelectCulpable,
+  onMove,
+}) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={evento}
+      layout="position"
+      dragListener={true}
+      dragControls={dragControls}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0 }
+          : { type: 'spring', stiffness: 420, damping: 32, mass: 0.8 }
+      }
+      whileDrag={
+        shouldReduceMotion
+          ? {}
+          : {
+              scale: 1.02,
+              boxShadow: '0 14px 28px -6px rgba(0, 0, 0, 0.35)',
+              zIndex: 50,
+            }
+      }
+      className={[
+        'group relative flex items-center gap-3 p-3.5 sm:p-4 rounded-[12px_16px_14px_14px] border-2 transition-colors duration-150 cursor-grab active:cursor-grabbing select-none',
+        'bg-[var(--bg-panel)] shadow-[2px_2px_0px_var(--border)]',
+        esCulpable
+          ? 'border-amber-500 ring-2 ring-amber-400/70 bg-[color-mix(in_oklch,var(--color-amber-500,#f59e0b)_12%,var(--bg-panel))]'
+          : 'border-[var(--border)] hover:border-[var(--brand-primary)] hover:bg-[var(--bg-accent)]',
+      ].join(' ')}
+    >
+      {/* Handle visual de arrastre (táctil y desktop) */}
+      <div
+        onPointerDown={(e) => {
+          if (!disabled) dragControls.start(e);
+        }}
+        className="flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--brand-primary)] touch-none shrink-0 py-1 cursor-grab active:cursor-grabbing"
+        title="Arrastrar para reordenar"
+        aria-hidden="true"
+      >
+        <GripVertical size={18} />
+      </div>
+
+      {/* Badge de orden cronológico */}
+      <div className="flex flex-col items-center gap-0.5 shrink-0">
+        <span className="w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white dark:text-slate-950 text-xs font-display font-black flex items-center justify-center shadow-xs">
+          {index + 1}
+        </span>
+        <span className="text-[9px] font-mono font-bold text-[var(--text-secondary)]">
+          Paso
+        </span>
+      </div>
+
+      {/* Descripción del evento */}
+      <div className="flex-1 min-w-0 pr-1">
+        <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
+          {evento.descripcion}
+        </p>
+      </div>
+
+      {/* Controles de precisión ↑ / ↓ + Botón para acusar */}
+      <div
+        className="flex items-center gap-1.5 shrink-0"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-0.5">
+          <button
+            type="button"
+            disabled={disabled || index === 0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(index, -1);
+            }}
+            className="p-0.5 rounded border border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            title="Subir un paso"
+            aria-label={`Subir paso ${index + 1}`}
+          >
+            <ChevronUp size={13} />
+          </button>
+          <button
+            type="button"
+            disabled={disabled || index === total - 1}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(index, 1);
+            }}
+            className="p-0.5 rounded border border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            title="Bajar un paso"
+            aria-label={`Bajar paso ${index + 1}`}
+          >
+            <ChevronDown size={13} />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelectCulpable(evento.id);
+          }}
+          className={[
+            'px-2.5 py-1.5 rounded-lg text-xs font-display font-bold flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer',
+            esCulpable
+              ? 'bg-amber-500 text-black shadow-sm ring-2 ring-amber-600'
+              : 'border border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-primary)] hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-500 hover:bg-[var(--bg-accent)]',
+          ].join(' ')}
+          title="Marcar este evento como la causa raíz del error"
+        >
+          <Target size={14} className={esCulpable ? 'animate-spin' : ''} />
+          <span>{esCulpable ? 'Causante' : 'Acusar'}</span>
+        </button>
+      </div>
+    </Reorder.Item>
+  );
 }
 
 function LineaTemporal({ mision, isOpen, onClose }) {
@@ -90,6 +222,17 @@ function LineaTemporal({ mision, isOpen, onClose }) {
   const handleSelectCulpable = (id) => {
     playParchment();
     setCulpableElegido(id);
+  };
+
+  const handleMoveEvento = (index, delta) => {
+    const target = index + delta;
+    if (target < 0 || target >= eventos.length) return;
+    playParchment();
+    setEventos((prev) => {
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
   };
 
   // Enviar resolución al backend
@@ -238,68 +381,21 @@ function LineaTemporal({ mision, isOpen, onClose }) {
               axis="y"
               values={eventos}
               onReorder={setEventos}
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-2.5 p-2 rounded-2xl bg-[var(--bg-muted)]/60 border border-dashed border-[var(--border-muted)]"
             >
-              {eventos.map((evento, index) => {
-                const esCulpable = culpableElegido === evento.id;
-
-                return (
-                  <Reorder.Item
-                    key={evento.id}
-                    value={evento}
-                    layout={!shouldReduceMotion}
-                    transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 25 }}
-                    whileDrag={
-                      shouldReduceMotion
-                        ? {}
-                        : { scale: 1.02, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', zIndex: 50 }
-                    }
-                    className={[
-                      'group relative flex items-start gap-3.5 p-4 rounded-[12px_16px_14px_14px] border-2 transition-all cursor-grab active:cursor-grabbing select-none',
-                      'bg-[var(--bg-panel)] shadow-[2px_2px_0px_var(--border)]',
-                      esCulpable
-                        ? 'border-amber-500 ring-2 ring-amber-400 bg-[color-mix(in_oklch,var(--color-amber-500,#f59e0b)_12%,var(--bg-panel))]'
-                        : 'border-[var(--border)] hover:border-[var(--brand-primary)] hover:bg-[var(--bg-accent)]',
-                    ].join(' ')}
-                  >
-                    {/* Badge de orden cronológico */}
-                    <div className="flex flex-col items-center gap-1 shrink-0">
-                      <span className="w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white dark:text-slate-950 text-xs font-display font-black flex items-center justify-center shadow-xs">
-                        {index + 1}
-                      </span>
-                      <span className="text-[9px] font-mono font-bold text-[var(--text-secondary)]">
-                        Paso
-                      </span>
-                    </div>
-
-                    {/* Descripción del evento */}
-                    <div className="flex-1 min-w-0 pr-2">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
-                        {evento.descripcion}
-                      </p>
-                    </div>
-
-                    {/* Botón para acusar / marcar culpable */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectCulpable(evento.id);
-                      }}
-                      className={[
-                        'px-2.5 py-1.5 rounded-lg text-xs font-display font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer',
-                        esCulpable
-                          ? 'bg-amber-500 text-black shadow-sm ring-2 ring-amber-600'
-                          : 'border border-[var(--border-muted)] bg-[var(--bg-base)] text-[var(--text-primary)] hover:text-amber-700 dark:hover:text-amber-400 hover:border-amber-500 hover:bg-[var(--bg-accent)]',
-                      ].join(' ')}
-                      title="Marcar este evento como la causa raíz del error"
-                    >
-                      <Target size={14} className={esCulpable ? 'animate-spin' : ''} />
-                      <span>{esCulpable ? 'Causante' : 'Acusar'}</span>
-                    </button>
-                  </Reorder.Item>
-                );
-              })}
+              {eventos.map((evento, index) => (
+                <EventoReordenableItem
+                  key={evento.id}
+                  evento={evento}
+                  index={index}
+                  total={totalEventos}
+                  esCulpable={culpableElegido === evento.id}
+                  shouldReduceMotion={shouldReduceMotion}
+                  disabled={isPending}
+                  onSelectCulpable={handleSelectCulpable}
+                  onMove={handleMoveEvento}
+                />
+              ))}
             </Reorder.Group>
 
             {/* Acciones */}

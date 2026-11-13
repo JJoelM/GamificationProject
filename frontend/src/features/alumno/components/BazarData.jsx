@@ -95,12 +95,12 @@ export const ARTICULOS_BAZAR = [
 
   // ── 3. Marcos de Retrato Exclusivos ──
   {
-    id: 'marco_orlado_dorado',
+    id: 'orlado_dorado',
     nombre: 'Marco Orlado de Oro',
     categoria: 'marcos',
     tipo: 'marco',
     valor: 'orlado_dorado',
-    costoAp: 120,
+    costoAp: 100,
     descripcion: 'Marco con filigranas de oro pulido y brillo señorial para aventureros distinguidos.',
     rareza: 'Épico',
     colorRareza: 'text-[var(--brand-gold)]',
@@ -111,7 +111,7 @@ export const ARTICULOS_BAZAR = [
     ),
   },
   {
-    id: 'marco_cristal_celeste',
+    id: 'cristal_celeste',
     nombre: 'Marco de Cristal Astral',
     categoria: 'marcos',
     tipo: 'marco',
@@ -127,7 +127,7 @@ export const ARTICULOS_BAZAR = [
     ),
   },
   {
-    id: 'marco_runa_violeta',
+    id: 'runa_violeta',
     nombre: 'Marco de Runas Arcanas',
     categoria: 'marcos',
     tipo: 'marco',
@@ -145,7 +145,7 @@ export const ARTICULOS_BAZAR = [
 
   // ── 4. Títulos Legendarios de Bazar ──
   {
-    id: 'titulo_centinela_saber',
+    id: 'titulo_centinela',
     nombre: 'Centinela del Saber',
     categoria: 'titulos',
     tipo: 'titulo',
@@ -157,6 +157,22 @@ export const ARTICULOS_BAZAR = [
     IconoVisual: ({ className = 'w-12 h-12' }) => (
       <div className={`${className} flex items-center justify-center rounded-xl bg-[var(--bg-panel)] border-2 border-[var(--brand-primary)] text-[var(--brand-primary)]`}>
         <Award size={24} />
+      </div>
+    ),
+  },
+  {
+    id: 'titulo_erudito',
+    nombre: 'Erudito Arcano',
+    categoria: 'titulos',
+    tipo: 'titulo',
+    valor: 'Erudito Arcano',
+    costoAp: 150,
+    descripcion: 'La distinción para los maestros de la deducción causal.',
+    rareza: 'Legendario',
+    colorRareza: 'text-[var(--brand-violet)]',
+    IconoVisual: ({ className = 'w-12 h-12' }) => (
+      <div className={`${className} flex items-center justify-center rounded-xl bg-[var(--bg-panel)] border-2 border-[var(--brand-violet)] text-[var(--brand-violet)]`}>
+        <Feather size={24} />
       </div>
     ),
   },

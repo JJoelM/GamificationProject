@@ -206,4 +206,41 @@ public class PersonajeBazarTests
         Assert.Equal(15, CatalogoBazar.Buscar("pista")?.CostoAp);
         Assert.Equal(50, CatalogoBazar.Buscar("escudo-racha")?.CostoAp);
     }
+
+    [Fact]
+    public void DesequiparMascota_LimpiaMascotaYPersisteEnHistorial()
+    {
+        var personaje = ConAp(300);
+        personaje.ComprarArticulo("buho", 250, TipoArticulo.Mascota, "buho");
+        Assert.Equal("buho", personaje.MascotaEquipada);
+
+        personaje.DesequiparMascota();
+        Assert.Null(personaje.MascotaEquipada);
+
+        var reconstruido = Personaje.ParaReconstruccion();
+        reconstruido.CargarDesdeHistorial(personaje.EventosNoConfirmados.ToList());
+        Assert.Null(reconstruido.MascotaEquipada);
+    }
+
+    [Fact]
+    public void EquiparTituloDeBazarSinComprar_Lanza()
+    {
+        var personaje = ConAp(0);
+
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
+            personaje.EquiparArticulo("Centinela del Saber", TipoArticulo.Titulo, "Centinela del Saber"));
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
+            personaje.EquiparArticulo("Erudito Arcano", TipoArticulo.Titulo, "Erudito Arcano"));
+    }
+
+    [Fact]
+    public void CatalogoBazar_ResuelveAliasesDeMarcosYTitulos()
+    {
+        Assert.Equal("orlado_dorado", CatalogoBazar.Buscar("marco_orlado_dorado")?.Id);
+        Assert.Equal("cristal_celeste", CatalogoBazar.Buscar("marco_cristal_celeste")?.Id);
+        Assert.Equal("runa_violeta", CatalogoBazar.Buscar("marco_runa_violeta")?.Id);
+        Assert.Equal("titulo_centinela", CatalogoBazar.Buscar("Centinela del Saber")?.Id);
+        Assert.Equal("titulo_erudito", CatalogoBazar.Buscar("Erudito Arcano")?.Id);
+        Assert.Equal("titulo_maestro_grimorios", CatalogoBazar.Buscar("Maestro de Grimorios")?.Id);
+    }
 }
