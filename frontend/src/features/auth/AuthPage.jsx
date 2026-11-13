@@ -14,7 +14,7 @@ import ServerWakeUpModal from '../../components/ui/ServerWakeUpModal';
 import ThemeToggle from '../../components/layout/ThemeToggle';
 import SoundToggle from '../../components/layout/SoundToggle';
 import ErrorBanner from '../../components/ui/ErrorBanner';
-import PasswordStrengthIndicator, { isPasswordSecure } from '../../components/ui/PasswordStrengthIndicator';
+import PasswordStrengthIndicator, { isPasswordSecure, checkPasswordRules } from '../../components/ui/PasswordStrengthIndicator';
 import { playSuccess, playParchment } from '../../utils/audio';
 
 /**
@@ -162,12 +162,26 @@ function AuthPage() {
   };
 
   const validarContrasenaYConfirmacion = () => {
-    if (!isPasswordSecure(password)) {
-      setError({ message: 'La contraseña no cumple con todos los requisitos de seguridad requeridos.' });
+    const rules = checkPasswordRules(password);
+    const faltantes = [];
+    if (!rules.minLength) faltantes.push('al menos 8 caracteres');
+    if (!rules.hasUpper) faltantes.push('una letra mayúscula');
+    if (!rules.hasLower) faltantes.push('una letra minúscula');
+    if (!rules.hasNumber) faltantes.push('al menos un número');
+    if (!rules.hasSpecial) faltantes.push('un símbolo o carácter especial (!@#$%...)');
+
+    if (faltantes.length > 0) {
+      setError({
+        title: 'Contraseña no cumple los requisitos',
+        message: `Por favor, agrega a tu contraseña: ${faltantes.join(', ')}.`,
+      });
       return false;
     }
     if (password !== passwordConfirm) {
-      setError({ message: 'Las contraseñas ingresadas no coinciden. Por favor, revísalas.' });
+      setError({
+        title: 'Las contraseñas no coinciden',
+        message: 'Las contraseñas ingresadas no coinciden. Por favor, asegúrate de que sean idénticas.',
+      });
       return false;
     }
     return true;

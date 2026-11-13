@@ -25,9 +25,10 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Resultad
 
     public async Task<ResultadoLogin> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        var emailNormalizado = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
         var usuario = await _db.Usuarios
             .Include(u => u.Rol)
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado, cancellationToken);
 
         // Mismo mensaje tanto si el email no existe como si la contraseña
         // está mal: no le decimos a quien pregunta cuál de las dos acertó.
