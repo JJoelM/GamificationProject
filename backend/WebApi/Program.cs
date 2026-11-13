@@ -6,6 +6,7 @@ using Core.Domain.Agregados.Personajes;
 using Core.Domain.Agregados.Misiones;
 using Core.Application.Misiones.Comandos;
 using Core.Application.Common;
+using Core.Application.Common.Behaviors;
 using Core.Domain.Entidades;
 using Infrastructure.Auth;
 using Infrastructure.Persistence.Repositorios;
@@ -175,7 +176,10 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(ValidarMisionCommand).Assembly));
+{
+    cfg.RegisterServicesFromAssembly(typeof(ValidarMisionCommand).Assembly);
+    cfg.AddOpenBehavior(typeof(AutorizacionAulaBehavior<,>));
+});
 
 builder.Services.AddScoped<IRepositorioMisiones, RepositorioMisiones>();
 

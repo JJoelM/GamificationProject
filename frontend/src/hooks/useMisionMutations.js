@@ -21,7 +21,7 @@ export function useGenerarMisionIa() {
           tipoPlantilla,
         });
       } catch (err) {
-        if (!err.isApiError) {
+        if (import.meta.env.VITE_USE_MOCK === 'true' && !err.isApiError) {
           // Mock fallback
           return { misionId: 'mock-ia-' + Date.now() };
         }
@@ -51,7 +51,7 @@ export function useEditarMision() {
           recompensaXp,
         });
       } catch (err) {
-        if (!err.isApiError) {
+        if (import.meta.env.VITE_USE_MOCK === 'true' && !err.isApiError) {
           return null;
         }
         throw err;
@@ -60,6 +60,9 @@ export function useEditarMision() {
     onSuccess: () => {
       playSuccess();
       queryClient.invalidateQueries({ queryKey: ['misiones', 'borradores'] });
+      queryClient.invalidateQueries({ queryKey: ['misiones', 'activas'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
     },
   });
 }
@@ -77,7 +80,7 @@ export function useValidarMision() {
       try {
         return await misionesApi.validar(misionId);
       } catch (err) {
-        if (!err.isApiError) {
+        if (import.meta.env.VITE_USE_MOCK === 'true' && !err.isApiError) {
           return null;
         }
         throw err;
@@ -87,6 +90,8 @@ export function useValidarMision() {
       playSuccess();
       queryClient.invalidateQueries({ queryKey: ['misiones', 'borradores'] });
       queryClient.invalidateQueries({ queryKey: ['misiones', 'activas', aulaId] });
+      queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-alumno'] });
     },
   });
 }
@@ -103,7 +108,7 @@ export function useRechazarMision() {
       try {
         return await misionesApi.rechazar(misionId, { motivo });
       } catch (err) {
-        if (!err.isApiError) {
+        if (import.meta.env.VITE_USE_MOCK === 'true' && !err.isApiError) {
           return null;
         }
         throw err;
@@ -111,6 +116,7 @@ export function useRechazarMision() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['misiones', 'borradores'] });
+      queryClient.invalidateQueries({ queryKey: ['camino-docente'] });
     },
   });
 }
@@ -166,8 +172,8 @@ export function useResolverMision() {
           apGanado,
         };
       } catch (err) {
-        // Mock fallback offline o para misiones de prueba hardcodeadas (404/401)
-        if (!err.isApiError || err.status === 404 || err.status === 401) {
+        // Mock fallback offline solo cuando VITE_USE_MOCK === 'true'
+        if (import.meta.env.VITE_USE_MOCK === 'true' && (!err.isApiError || err.status === 404 || err.status === 401)) {
           let aciertos = 0;
           const feedback = respuestas.map((r, idx) => {
             const pregunta = preguntasOriginales[idx];
@@ -309,8 +315,8 @@ export function useResolverMisionOrdenTemporal() {
           apGanado,
         };
       } catch (err) {
-        // Mock fallback offline o para misiones de prueba hardcodeadas (404/401)
-        if (!err.isApiError || err.status === 404 || err.status === 401) {
+        // Mock fallback offline solo cuando VITE_USE_MOCK === 'true'
+        if (import.meta.env.VITE_USE_MOCK === 'true' && (!err.isApiError || err.status === 404 || err.status === 401)) {
           const ordenCorrectoEsperado =
             misionId === 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a'
               ? ['ev-auth', 'ev-deposito', 'ev-retiro', 'ev-sync']

@@ -24,6 +24,7 @@ public sealed class Personaje : AgregadoRaiz
     public IReadOnlyCollection<string> CosmeticosComprados => _cosmeticosComprados;
 
     private readonly Dictionary<Guid, int> _intentosPorMision = new();
+    private readonly HashSet<Guid> _misionesAprobadas = new();
     private int _misionesCompletadas;
     public int MisionesCompletadas => _misionesCompletadas;
 
@@ -66,13 +67,19 @@ public sealed class Personaje : AgregadoRaiz
         else if (escudosConsumidos > 0) nuevaRacha = RachaDiasActivos;
         else nuevaRacha = 1;
 
-        var misionesCompletadas = _misionesCompletadas + (numeroDeIntento == 1 && porcentajeCorrecto > 0 ? 1 : 0);
+        var apruebaPorPrimeraVez = porcentajeCorrecto >= 50 && !_misionesAprobadas.Contains(misionId);
 
         RegistrarEvento(new ProgresoActualizado(
             Id, AlumnoId, AulaId, misionId, numeroDeIntento, porcentajeCorrecto, numeroDeIntento > 1,
             xpGanado, apGanado, ExperienciaXP + xpGanado, PuntosAccionAP + apGanado,
-            nuevaRacha, EscudosRachaDisponibles - escudosConsumidos, misionesCompletadas,
+            nuevaRacha, EscudosRachaDisponibles - escudosConsumidos,
+            _misionesCompletadas + (apruebaPorPrimeraVez ? 1 : 0),
             fecha, DateTime.UtcNow));
+
+        if (apruebaPorPrimeraVez)
+        {
+            RegistrarEvento(new MisionSuperadaPorPrimeraVez(Id, misionId, DateTime.UtcNow));
+        }
     }
 
     public void ComprarArticulo(string articuloId, int costoAp, TipoArticulo tipo, string valor)
@@ -92,13 +99,13 @@ public sealed class Personaje : AgregadoRaiz
             Id, articuloId, tipo, valor, costoAp, PuntosAccionAP - costoAp, DateTime.UtcNow));
     }
 
-    private static readonly HashSet<string> TitulosDeNivel = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, int> NivelesPorTitulo = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Iniciado del Saber",
-        "Buscador de Respuestas",
-        "Explorador Curioso",
-        "Erudito de las Runas",
-        "Maestro Alquimista"
+        ["Iniciado del Saber"] = 0,
+        ["Buscador de Respuestas"] = 300,
+        ["Explorador Curioso"] = 700,
+        ["Erudito de las Runas"] = 1200,
+        ["Maestro Alquimista"] = 2000
     };
 
     private static readonly HashSet<string> ArticulosBase = new(StringComparer.OrdinalIgnoreCase)
@@ -116,7 +123,10 @@ public sealed class Personaje : AgregadoRaiz
     {
         if (_cosmeticosComprados.Contains(articuloId)) return true;
         if (ArticulosBase.Contains(articuloId)) return true;
-        if (tipo == TipoArticulo.Titulo && TitulosDeNivel.Contains(articuloId)) return true;
+        if (tipo == TipoArticulo.Titulo &&
+            NivelesPorTitulo.TryGetValue(articuloId, out var xpRequerido) &&
+            ExperienciaXP >= xpRequerido)
+            return true;
 
         var articulo = CatalogoBazar.Buscar(articuloId);
         if (articulo != null && _cosmeticosComprados.Contains(articulo.Id)) return true;
@@ -190,7 +200,15 @@ public sealed class Personaje : AgregadoRaiz
                 RachaDiasActivos = e.RachaDiasActivos;
                 EscudosRachaDisponibles = e.EscudosRachaRestantes;
                 UltimoDiaActivo = e.Fecha;
-                _misionesCompletadas = e.MisionesCompletadas;
+                if (e.PorcentajeCorrecto >= 50)
+                    _misionesAprobadas.Add(e.MisionId);
+                if (e.MisionesCompletadas > _misionesCompletadas)
+                    _misionesCompletadas = e.MisionesCompletadas;
+                break;
+
+            case MisionSuperadaPorPrimeraVez e:
+                if (_misionesAprobadas.Add(e.MisionId))
+                    _misionesCompletadas++;
                 break;
 
             case ArticuloComprado e:

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, BrainCircuit, Zap, BookOpen, Loader2, Compass, Swords, Clock,
   Check, FileUp, FileText, AlertCircle, X, CheckCircle2, RotateCcw
@@ -143,6 +144,7 @@ function PantallaGenerando() {
  * - Tips de uso visible en el formulario
  */
 function FormGenerarMision({ isOpen, onClose }) {
+  const navigate = useNavigate();
   const [temaCurricular, setTemaCurricular] = useState('');
   const [textoFuente, setTextoFuente] = useState('');
   const [tipoPlantilla, setTipoPlantilla] = useState('OpcionMultiple');
@@ -317,14 +319,23 @@ function FormGenerarMision({ isOpen, onClose }) {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-            <Button variant="ghost" onClick={handleClose} className="flex-1">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                handleClose();
+                navigate('/docente/misiones/pendientes');
+              }}
+              className="flex-1"
+            >
               Ir al Inbox
             </Button>
             {misionGeneradaId !== 'nuevo' && (
               <Button
                 variant="primary"
                 onClick={() => {
+                  const id = misionGeneradaId;
                   handleClose();
+                  navigate(`/docente/misiones/${id}/validar`);
                 }}
                 className="flex-1"
               >

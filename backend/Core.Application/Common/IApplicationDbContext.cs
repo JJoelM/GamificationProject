@@ -17,6 +17,7 @@ public interface IApplicationDbContext
     IQueryable<PersonajeResumen> PersonajesResumen { get; }
     IQueryable<ResolucionRegistrada> ResolucionesRegistradas { get; }
     IQueryable<ConexionMision> ConexionesMision { get; }
+    IQueryable<MetricaPregunta> MetricasPreguntas { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken ct = default);

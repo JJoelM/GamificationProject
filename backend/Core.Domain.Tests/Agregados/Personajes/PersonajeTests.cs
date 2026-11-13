@@ -178,4 +178,47 @@ public class PersonajeTests
         Assert.Equal(50, reconstruido.PuntosAccionAP);
         Assert.Equal(IdentidadCompuesta.Combinar(alumnoId, aulaId), reconstruido.Id);
     }
+
+    [Fact]
+    public void MisionesCompletadas_SoloIncrementaCuandoSuperaPorPrimeraVez()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+        var misionId = Guid.NewGuid();
+
+        // Menos de 50% no aprueba
+        personaje.RegistrarResolucionDeMision(misionId, 100, 25, 40, Hoy);
+        Assert.Equal(0, personaje.MisionesCompletadas);
+
+        // >= 50% por primera vez incrementa y emite MisionSuperadaPorPrimeraVez
+        personaje.RegistrarResolucionDeMision(misionId, 100, 25, 80, Hoy);
+        Assert.Equal(1, personaje.MisionesCompletadas);
+        Assert.Contains(personaje.EventosNoConfirmados, e => e is Core.Domain.Agregados.Personajes.Eventos.MisionSuperadaPorPrimeraVez);
+
+        // Reintentar la misma misión aprobada no vuelve a incrementar
+        personaje.RegistrarResolucionDeMision(misionId, 100, 25, 100, Hoy);
+        Assert.Equal(1, personaje.MisionesCompletadas);
+
+        // Reconstrucción desde historial conserva el contador exacto
+        var reconstruido = Personaje.ParaReconstruccion();
+        reconstruido.CargarDesdeHistorial(personaje.EventosNoConfirmados.ToList());
+        Assert.Equal(1, reconstruido.MisionesCompletadas);
+    }
+
+    [Fact]
+    public void EquiparTituloDeNivel_RequiereExperienciaMinima()
+    {
+        var personaje = Personaje.Iniciar(Guid.NewGuid(), Guid.NewGuid());
+
+        // Con 0 XP puede equipar "Iniciado del Saber", pero no "Buscador de Respuestas" (300 XP)
+        personaje.EquiparArticulo("Iniciado del Saber", TipoArticulo.Titulo, "Iniciado del Saber");
+        Assert.Equal("Iniciado del Saber", personaje.TituloEquipado);
+
+        Assert.Throws<TransicionDeEstadoInvalidaException>(() =>
+            personaje.EquiparArticulo("Buscador de Respuestas", TipoArticulo.Titulo, "Buscador de Respuestas"));
+
+        // Al alcanzar 300 XP sí puede equiparlo
+        personaje.RegistrarResolucionDeMision(Guid.NewGuid(), 300, 50, 100, Hoy);
+        personaje.EquiparArticulo("Buscador de Respuestas", TipoArticulo.Titulo, "Buscador de Respuestas");
+        Assert.Equal("Buscador de Respuestas", personaje.TituloEquipado);
+    }
 }

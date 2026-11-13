@@ -42,6 +42,8 @@ public class RegistroYLoginTests
             new TestAsyncEnumerable<Core.Application.Personajes.Proyecciones.ResolucionRegistrada>(Enumerable.Empty<Core.Application.Personajes.Proyecciones.ResolucionRegistrada>());
         public IQueryable<Core.Application.Misiones.Proyecciones.ConexionMision> ConexionesMision =>
             new TestAsyncEnumerable<Core.Application.Misiones.Proyecciones.ConexionMision>(Enumerable.Empty<Core.Application.Misiones.Proyecciones.ConexionMision>());
+        public IQueryable<Core.Application.Misiones.Proyecciones.MetricaPregunta> MetricasPreguntas =>
+            new TestAsyncEnumerable<Core.Application.Misiones.Proyecciones.MetricaPregunta>(Enumerable.Empty<Core.Application.Misiones.Proyecciones.MetricaPregunta>());
 
         public void Add<TEntity>(TEntity entity) where TEntity : class
         {

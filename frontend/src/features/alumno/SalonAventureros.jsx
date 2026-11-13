@@ -5,6 +5,7 @@ import {
   User, ChevronRight, X, Heart, Star, Users, ArrowUpRight
 } from 'lucide-react';
 import { useRankingAula } from '../../hooks/useRankingAula';
+import { useMisAulas } from '../../hooks/useAulas';
 import useSessionStore, { calcularNivel, formatearTitulo } from '../../store/useSessionStore';
 import ArtFrame from '../../components/ui/ArtFrame';
 import Card from '../../components/ui/Card';
@@ -23,6 +24,9 @@ const MASCOTAS_INFO = {
 
 export default function SalonAventureros() {
   const { data, isLoading, isError } = useRankingAula();
+  const aulaActivaId = useSessionStore((s) => s.aulaActivaId);
+  const { data: aulas } = useMisAulas();
+  const nombreAula = aulas?.find((a) => a.aulaId === aulaActivaId)?.nombre || 'Aula Activa';
   const [selectedAlumno, setSelectedAlumno] = useState(null);
   const [vistaModo, setVistaModo] = useState('tarjetas'); // 'tarjetas' | 'tabla'
 
@@ -52,7 +56,7 @@ export default function SalonAventureros() {
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <Badge variant="gold">Salón de Aventureros</Badge>
                 <span className="text-xs font-display font-semibold text-[var(--text-secondary)]">
-                  Laboratorio de Sistemas
+                  {nombreAula}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-display font-black text-[var(--text-primary)] tracking-tight">

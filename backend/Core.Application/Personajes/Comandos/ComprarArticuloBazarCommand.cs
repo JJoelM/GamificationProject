@@ -1,4 +1,5 @@
 using Core.Application.Common;
+using Core.Application.Common.Behaviors;
 using Core.Domain.Agregados.Personajes;
 using Core.Domain.SeedWork;
 using MediatR;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Core.Application.Personajes.Comandos;
 
 public sealed record ComprarArticuloBazarCommand(
-    Guid AlumnoId, Guid AulaId, string ArticuloId) : IRequest;
+    Guid AlumnoId, Guid AulaId, string ArticuloId) : IRequest, IAutorizacionAlumnoAula;
 
 public sealed class ComprarArticuloBazarCommandHandler : IRequestHandler<ComprarArticuloBazarCommand>
 {

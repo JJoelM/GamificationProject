@@ -153,6 +153,25 @@ public sealed class Mision : AgregadoRaiz
     public ResultadoCalificacion Calificar(IReadOnlyList<RespuestaAlumno> respuestas) =>
         CalificarPreguntas(ObtenerPreguntas(), respuestas);
 
+    public (bool EsCorrecta, string Explicacion) VerificarFase(int indiceFase, string respuestaElegida)
+    {
+        var preguntas = ObtenerPreguntas();
+        if (indiceFase < 0 || indiceFase >= preguntas.Count)
+            throw new ArgumentOutOfRangeException(nameof(indiceFase), "El índice de fase está fuera de rango.");
+
+        var fase = preguntas[indiceFase];
+        var esCorrecta = string.Equals(fase.RespuestaCorrecta, respuestaElegida, StringComparison.Ordinal);
+        return (esCorrecta, fase.Explicacion);
+    }
+
+    public string ObtenerEnunciadoPregunta(int indicePregunta)
+    {
+        var preguntas = ObtenerPreguntas();
+        return indicePregunta >= 0 && indicePregunta < preguntas.Count
+            ? preguntas[indicePregunta].Enunciado
+            : $"Pregunta {indicePregunta + 1}";
+    }
+
     private List<(string Enunciado, List<string> Opciones, string RespuestaCorrecta, string Explicacion)> ObtenerPreguntas()
     {
         switch (TipoPlantilla)

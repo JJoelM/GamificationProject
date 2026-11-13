@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config/env';
+import useSessionStore from '../store/useSessionStore';
 
 /**
  * apiFetch — Wrapper para fetch con soporte de cookies HttpOnly y ProblemDetails
@@ -33,6 +34,9 @@ async function apiFetch(endpoint, options = {}) {
       }
 
       if (response.status === 401) {
+        if (!endpoint.includes('/usuarios/login') && !endpoint.includes('/usuarios/registro')) {
+          useSessionStore.getState().logout();
+        }
         errorData.title = errorData.title || 'Sesión no autorizada (っ- ‸ - ς)';
         errorData.detail =
           errorData.detail ||
@@ -278,6 +282,16 @@ export const alumnosApi = {
 
   // GET /api/alumnos/camino/{aulaId} (Alumno vía JWT)
   getCamino: (aulaId) => apiFetch(`/api/alumnos/camino/${aulaId}`),
+
+  // POST /api/alumnos/misiones/{misionId}/verificar-fase (Alumno vía JWT)
+  verificarFase: (misionId, { indiceFase, respuestaElegida }) =>
+    apiFetch(`/api/alumnos/misiones/${misionId}/verificar-fase`, {
+      method: 'POST',
+      body: JSON.stringify({
+        indiceFase: Number(indiceFase),
+        respuestaElegida: respuestaElegida ?? '',
+      }),
+    }),
 
   // POST /api/alumnos/misiones/{misionId}/resolver (Alumno vía JWT)
   resolverMision: (misionId, { respuestas }) =>

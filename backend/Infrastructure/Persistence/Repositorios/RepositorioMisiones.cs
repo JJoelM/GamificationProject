@@ -85,6 +85,10 @@ public class RepositorioMisiones : IRepositorioMisiones
                         borrador.TipoPlantilla, e.PayloadJson);
                     misionActivaEdicion.Actualizar(e.Narrativa, payloadSeguro, e.RecompensaXp);
                 }
+
+                var fichaGrimorio = await _db.FichasGrimorio
+                    .FirstOrDefaultAsync(f => f.MisionId == e.MisionId, ct);
+                fichaGrimorio?.ActualizarNarrativa(e.Narrativa);
                 break;
 
             case MisionValidada e:

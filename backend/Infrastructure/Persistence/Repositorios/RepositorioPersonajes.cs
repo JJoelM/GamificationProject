@@ -16,6 +16,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
     private static readonly Dictionary<string, Type> TiposDeEvento = new()
     {
         [nameof(ProgresoActualizado)] = typeof(ProgresoActualizado),
+        [nameof(MisionSuperadaPorPrimeraVez)] = typeof(MisionSuperadaPorPrimeraVez),
         [nameof(ArticuloComprado)] = typeof(ArticuloComprado),
         [nameof(ArticuloEquipado)] = typeof(ArticuloEquipado),
         [nameof(PistaUsada)] = typeof(PistaUsada),
@@ -90,7 +91,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
                     e.PersonajeId, e.AlumnoId, e.AulaId, e.MisionId, e.NumeroDeIntento,
                     e.PorcentajeCorrecto, e.EsRepaso,
                     JsonSerializer.Serialize(new { e.PorcentajeCorrecto }),
-                    e.Fecha, e.OcurridoEn));
+                    e.Fecha, e.OcurridoEn, e.XpGanado));
 
                 // Si aprobó la misión (>= 50%), desbloquear la ficha del Grimorio si existe
                 if (e.PorcentajeCorrecto >= 50)

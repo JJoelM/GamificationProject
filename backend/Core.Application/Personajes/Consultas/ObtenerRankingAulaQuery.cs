@@ -69,13 +69,14 @@ public sealed class ObtenerRankingAulaQueryHandler : IRequestHandler<ObtenerRank
 
         var xpEstaSemana = await _db.ResolucionesRegistradas
             .Where(r => r.PersonajeId == personajeId && r.Fecha >= hoy.AddDays(-7))
-            .SumAsync(r => (int?)r.PorcentajeCorrecto, cancellationToken) ?? 0;
+            .SumAsync(r => (int?)r.XpGanado, cancellationToken) ?? 0;
 
         var xpSemanaAnterior = await _db.ResolucionesRegistradas
             .Where(r => r.PersonajeId == personajeId && r.Fecha >= hoy.AddDays(-14) && r.Fecha < hoy.AddDays(-7))
-            .SumAsync(r => (int?)r.PorcentajeCorrecto, cancellationToken) ?? 0;
+            .SumAsync(r => (int?)r.XpGanado, cancellationToken) ?? 0;
 
-        var mejora = xpSemanaAnterior == 0 ? 100
+        var mejora = xpSemanaAnterior == 0
+            ? (xpEstaSemana > 0 ? 100.0 : 0.0)
             : ((double)(xpEstaSemana - xpSemanaAnterior) / xpSemanaAnterior) * 100;
 
         var miResumen = resumenes.FirstOrDefault(p => p.AlumnoId == request.AlumnoId);

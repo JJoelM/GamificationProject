@@ -10,6 +10,7 @@ import ModalSinPistas from './ModalSinPistas';
 import { useResolverMision } from '../../../hooks/useMisionMutations';
 import { usePersonaje } from '../../../hooks/usePersonaje';
 import { useUsarPista } from '../../../hooks/usePistas';
+import { alumnosApi } from '../../../services/api';
 import { playParchment, playChime, playSuccess } from '../../../utils/audio';
 
 /**
@@ -188,9 +189,6 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
               ...prev,
               [faseActualIdx]: [...(prev[faseActualIdx] || []), data.opcionADescartar],
             }));
-            if (respuestaFaseActual === data.opcionADescartar) {
-              setRespuestaFaseActual(null);
-            }
           }
         },
         onError: (err) => {
@@ -361,31 +359,40 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
   };
 
   // DISPARO DE ACCIÓN INSTANTÁNEO POR TURNO
-  const handleEjecutarAccionTurno = (opcionElegida) => {
+  const handleEjecutarAccionTurno = async (opcionElegida) => {
     if (enfriamientoActivo || turnoEjecutado) return;
 
     playParchment();
-    const nuevasRespuestas = { ...respuestas, [faseActualIdx]: opcionElegida };
-    setRespuestas(nuevasRespuestas);
     setTurnoEjecutado(true);
 
     const danio = Number(faseActual?.danioAlJefe) || 25;
     const penalizacion = faseActual?.penalizacionFallo || 'destello';
 
-    // Verificamos si la respuesta es correcta para reflejar el daño de forma instantánea
     let esCorrecta = false;
+    let explicacionFase = '';
     if (faseActual?.respuestaCorrecta) {
       esCorrecta = opcionElegida === faseActual.respuestaCorrecta;
-    } else {
-      // Si la misión vino del backend sanitizado o es mock:
-      const respuestasMockJefe = [
-        'O(N)',
-        'Condición de carrera (Race Condition)',
-        'Tabla Hash (Hash Map)',
-      ];
-      const esperada = respuestasMockJefe[faseActualIdx] || faseActual?.opciones?.[0];
-      esCorrecta = opcionElegida === esperada;
+      explicacionFase = faseActual?.explicacion || '';
+    } else if (mision?.misionId) {
+      try {
+        const verificacion = await alumnosApi.verificarFase(mision.misionId, {
+          indiceFase: faseActualIdx,
+          respuestaElegida: opcionElegida,
+        });
+        esCorrecta = Boolean(verificacion?.esCorrecta);
+        explicacionFase = verificacion?.explicacion || '';
+      } catch {
+        setTurnoEjecutado(false);
+        setMensajeTurno({
+          tipo: 'fallo',
+          texto: 'No se pudo verificar el ataque con el servidor. Intentá de nuevo.',
+        });
+        return;
+      }
     }
+
+    const nuevasRespuestas = { ...respuestas, [faseActualIdx]: opcionElegida };
+    setRespuestas(nuevasRespuestas);
 
     if (esCorrecta) {
       playSuccess();
@@ -393,13 +400,13 @@ function BatallaDeJefe({ mision, isOpen, onClose }) {
       setHpBoss((prev) => Math.max(0, prev - danio));
       setMensajeTurno({
         tipo: 'exito',
-        texto: `¡Ataque Certero! Infligiste ${danio} de daño a ${nombreJefe}.`,
+        texto: `¡Ataque Certero! Infligiste ${danio} de daño a ${nombreJefe}.${explicacionFase ? ` ${explicacionFase}` : ''}`,
       });
     } else {
       ejecutarPenalizacion(penalizacion);
       setMensajeTurno({
         tipo: 'fallo',
-        texto: `¡Ataque fallido! ${nombreJefe} resistió el golpe y desató contraataque (${penalizacion}).`,
+        texto: `¡Ataque fallido! ${nombreJefe} resistió el golpe y desató contraataque (${penalizacion}).${explicacionFase ? ` ${explicacionFase}` : ''}`,
       });
     }
   };

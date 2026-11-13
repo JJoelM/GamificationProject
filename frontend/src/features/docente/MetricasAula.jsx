@@ -166,6 +166,18 @@ function MetricasAula() {
         />
       )}
 
+      {!isLoading && !isError && !metricas && (
+        <Card className="p-8 text-center border-2 border-dashed border-[var(--border)]">
+          <BarChart3 size={32} className="mx-auto text-[var(--text-muted)] mb-2" />
+          <p className="font-display font-bold text-base text-[var(--text-primary)]">
+            Sin datos de métricas para esta aula
+          </p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">
+            Seleccioná un aula activa o esperá a que los estudiantes resuelvan las primeras misiones.
+          </p>
+        </Card>
+      )}
+
       {/* ── Contenido Principal de Métricas ── */}
       {!isLoading && !isError && metricas && (
         <>

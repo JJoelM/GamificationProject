@@ -27,6 +27,8 @@ public class FichaGrimorio
         ConceptosClave = conceptosClave;
         CreadaEn = DateTime.UtcNow;
     }
+
+    public void ActualizarNarrativa(string narrativa) => Narrativa = narrativa;
 }
 
 public class FichaGrimorioDesbloqueada

@@ -64,12 +64,10 @@ const cardVariants = {
 };
 
 function SelectorPage() {
-  const { setRol } = useSessionStore();
   const navigate = useNavigate();
 
-  const handleSelect = (rol, route) => {
-    setRol(rol);
-    navigate(route);
+  const handleSelect = (_, route) => {
+    navigate(route || '/auth');
   };
 
   return (
