@@ -104,6 +104,7 @@ builder.Services.AddAuthorization();
 
 var iaPermitLimit = builder.Configuration.GetValue("RateLimits:IaPermitLimit", 5);
 var iaWindowMinutes = builder.Configuration.GetValue("RateLimits:IaWindowMinutes", 10);
+var authPermitLimit = builder.Configuration.GetValue("RateLimits:AuthPermitLimit", 15);
 
 static string ObtenerIpClienteSegura(HttpContext httpContext, string? proxySecretEsperado)
 {
@@ -152,9 +153,9 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: ObtenerIpClienteSegura(httpContext, proxySecretConfigurado),
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = authPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0,
+                QueueLimit = 2,
             }));
 
     options.AddPolicy("ia", httpContext =>
@@ -220,6 +221,10 @@ app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck")
+   .ExcludeFromDescription();
+
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }))
+   .WithName("ApiHealthCheck")
    .ExcludeFromDescription();
 
 app.MapMisionesEndpoints();

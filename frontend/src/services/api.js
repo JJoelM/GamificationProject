@@ -89,6 +89,23 @@ async function apiFetch(endpoint, options = {}) {
   }
 }
 
+/**
+ * Realiza un chequeo liviano de salud al backend (/api/health).
+ * No consume cuotas de autenticación ni lanza excepciones si el servidor está en reposo.
+ * Devuelve `true` si el servidor respondió 200 OK, `false` en caso contrario.
+ */
+export async function checkHealth() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/health`, {
+      method: 'GET',
+      cache: 'no-store',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── Servicios de API de Usuarios y Autenticación ──
 export const usuariosApi = {
   // POST /api/usuarios/login

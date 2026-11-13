@@ -29,19 +29,25 @@ export async function onRequest(context) {
   const incomingUrl = new URL(request.url);
   const targetUrl = new URL(`${incomingUrl.pathname}${incomingUrl.search}`, backendBaseUrl);
 
-  // Copiar cabeceras eliminando hop-by-hop headers y headers de Cloudflare
-  const headers = new Headers(request.headers);
-  headers.delete('host');
-  headers.delete('cf-connecting-ip');
-  headers.delete('cf-ipcountry');
-  headers.delete('cf-ray');
-  headers.delete('cf-visitor');
-  headers.delete('x-real-client-ip');
-  headers.delete('x-proxy-secret');
-  headers.delete('x-forwarded-host'); // No enviar el host de Cloudflare para que el enrutador de Render no busque un dominio inexistente
+  // Filtrar cabeceras eliminando hop-by-hop headers y cabeceras internas de Cloudflare
+  // (crucial para evitar detección de bucle 'CDN-Loop: cloudflare' en el edge de Render)
+  const headers = new Headers();
+  for (const [key, value] of request.headers.entries()) {
+    const lowerKey = key.toLowerCase();
+    if (
+      lowerKey === 'host' ||
+      lowerKey.startsWith('cf-') ||
+      lowerKey === 'cdn-loop' ||
+      lowerKey === 'x-real-client-ip' ||
+      lowerKey === 'x-proxy-secret' ||
+      lowerKey === 'x-forwarded-host' ||
+      lowerKey === 'x-forwarded-proto'
+    ) {
+      continue;
+    }
+    headers.set(key, value);
+  }
 
-  // Fijar el Host explícito hacia el hostname de Render
-  headers.set('Host', targetUrl.host);
   headers.set('X-Forwarded-Proto', incomingUrl.protocol.replace(':', ''));
 
   const clientIp = request.headers.get('CF-Connecting-IP');
@@ -68,12 +74,8 @@ export async function onRequest(context) {
   try {
     const response = await fetch(targetUrl.toString(), init);
 
-    // Si Render devuelve 502 o 503 con su página de error o cabecera x-render-routing (servidor dormido o iniciando)
-    const isRenderWakingUp = response.status === 502 || response.status === 503;
-    const renderRouting = response.headers.get('x-render-routing');
-    const isHtml = (response.headers.get('content-type') || '').includes('text/html');
-
-    if (isRenderWakingUp && (renderRouting || isHtml)) {
+    // Si Render devuelve 502 o 503 (servidor en reposo o iniciando contenedor)
+    if (response.status === 502 || response.status === 503) {
       return new Response(
         JSON.stringify({
           title: 'Servidor despertando (っ˘ω˘ς )',
