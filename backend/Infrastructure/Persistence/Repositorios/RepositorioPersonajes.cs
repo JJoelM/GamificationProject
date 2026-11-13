@@ -75,15 +75,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
         {
             case ProgresoActualizado e:
                 // Proyección de resumen (para ranking y métricas del docente)
-                var resumen = await _db.PersonajesResumen
-                    .FirstOrDefaultAsync(p => p.PersonajeId == e.PersonajeId, ct);
-
-                if (resumen is null)
-                {
-                    resumen = new PersonajeResumen(e.PersonajeId, e.AlumnoId, e.AulaId);
-                    _db.PersonajesResumen.Add(resumen);
-                }
-
+                var resumen = await ObtenerOCrearResumenAsync(personaje, ct);
                 resumen.ActualizarProgreso(e.ExperienciaTotal, e.PuntosAccionTotal, e.RachaDiasActivos, e.MisionesCompletadas);
 
                 // Proyección de resolución individual (para métricas granulares)
@@ -115,13 +107,7 @@ public class RepositorioPersonajes : IRepositorioPersonajes
 
             case ArticuloComprado:
             case ArticuloEquipado:
-                var resumenBazar = await _db.PersonajesResumen
-                    .FirstOrDefaultAsync(p => p.PersonajeId == personaje.Id, ct);
-                if (resumenBazar is null)
-                {
-                    resumenBazar = new PersonajeResumen(personaje.Id, personaje.AlumnoId, personaje.AulaId);
-                    _db.PersonajesResumen.Add(resumenBazar);
-                }
+                var resumenBazar = await ObtenerOCrearResumenAsync(personaje, ct);
 
                 resumenBazar.ActualizarProgreso(
                     personaje.ExperienciaXP,
@@ -135,6 +121,20 @@ public class RepositorioPersonajes : IRepositorioPersonajes
                     personaje.TituloEquipado);
                 break;
         }
+    }
+
+    private async Task<PersonajeResumen> ObtenerOCrearResumenAsync(Personaje personaje, CancellationToken ct)
+    {
+        var resumen = _db.PersonajesResumen.Local.FirstOrDefault(p => p.PersonajeId == personaje.Id)
+            ?? await _db.PersonajesResumen.FirstOrDefaultAsync(p => p.PersonajeId == personaje.Id, ct);
+
+        if (resumen is null)
+        {
+            resumen = new PersonajeResumen(personaje.Id, personaje.AlumnoId, personaje.AulaId);
+            _db.PersonajesResumen.Add(resumen);
+        }
+
+        return resumen;
     }
 
     private static IEventoDominio Deserializar(EventoPersistido fila)
