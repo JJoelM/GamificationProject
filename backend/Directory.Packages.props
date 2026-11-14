@@ -5,12 +5,12 @@
 
   <ItemGroup>
     <!-- Microsoft / Entity Framework -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="9.0.22" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="9.0.23" />
 
     <!-- Base de datos PostgreSQL -->
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
@@ -20,13 +20,13 @@
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
 
     <!-- MediatR & OpenAPI/Scalar -->
-    <PackageVersion Include="MediatR" Version="14.3.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.19.0" />
+    <PackageVersion Include="MediatR" Version="15.0.0" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.21.0" />
 
     <!-- Testing -->
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.22" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.23" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
   </ItemGroup>
