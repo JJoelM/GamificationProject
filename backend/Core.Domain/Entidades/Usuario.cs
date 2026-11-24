@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Core.Domain.SeedWork;
 
 namespace Core.Domain.Entidades;
 
@@ -54,8 +55,19 @@ public class Usuario
 
     public void RegistrarFechaNacimiento(DateOnly fechaNacimiento) => FechaNacimiento = fechaNacimiento;
 
-    public void Activar() => EstadoCuenta = EstadoCuenta.Activa;
-    public void Suspender() => EstadoCuenta = EstadoCuenta.Suspendida;
+    public void Activar()
+    {
+        if (EstadoCuenta == EstadoCuenta.Eliminada)
+            throw new TransicionDeEstadoInvalidaException("No se puede reactivar una cuenta que fue eliminada.");
+        EstadoCuenta = EstadoCuenta.Activa;
+    }
+
+    public void Suspender()
+    {
+        if (EstadoCuenta == EstadoCuenta.Eliminada)
+            throw new TransicionDeEstadoInvalidaException("No se puede suspender una cuenta que fue eliminada.");
+        EstadoCuenta = EstadoCuenta.Suspendida;
+    }
 
     public void ActualizarNombre(string nombreCompleto)
     {

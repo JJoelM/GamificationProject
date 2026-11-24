@@ -196,4 +196,79 @@ public class GestionCuentaUsuarioTests
         await Assert.ThrowsAsync<ArgumentException>(() =>
             handler.Handle(command, CancellationToken.None));
     }
+
+    [Fact]
+    public async Task CambiarEstadoDeCuenta_CuentaEliminada_LanzaTransicionDeEstadoInvalidaException()
+    {
+        // Arrange
+        var db = new FakeDbContext();
+        var rolDocente = new Rol("Docente");
+        var docente = new Usuario("docente@unne.edu.ar", "Docente Eliminado", rolDocente.Id);
+        typeof(Usuario).GetProperty("Rol")?.SetValue(docente, rolDocente);
+        docente.Anonimizar();
+        db.UsuariosLista.Add(docente);
+
+        var handler = new CambiarEstadoDeCuentaCommandHandler(db);
+        var command = new CambiarEstadoDeCuentaCommand(docente.Id, EstadoCuenta.Activa, "Directivo", Guid.NewGuid());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TransicionDeEstadoInvalidaException>(() =>
+            handler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CambiarEstadoDeCuenta_DirectivoModificaPropiaCuenta_LanzaTransicionDeEstadoInvalidaException()
+    {
+        // Arrange
+        var db = new FakeDbContext();
+        var rolDirectivo = new Rol("Directivo");
+        var directivo = new Usuario("directivo@unne.edu.ar", "Directivo", rolDirectivo.Id);
+        typeof(Usuario).GetProperty("Rol")?.SetValue(directivo, rolDirectivo);
+        db.UsuariosLista.Add(directivo);
+
+        var handler = new CambiarEstadoDeCuentaCommandHandler(db);
+        var command = new CambiarEstadoDeCuentaCommand(directivo.Id, EstadoCuenta.Suspendida, "Directivo", directivo.Id);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TransicionDeEstadoInvalidaException>(() =>
+            handler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CambiarEstadoDeCuenta_DirectivoModificaOtroDirectivo_LanzaUnauthorizedAccessException()
+    {
+        // Arrange
+        var db = new FakeDbContext();
+        var rolDirectivo = new Rol("Directivo");
+        var otroDirectivo = new Usuario("otro.directivo@unne.edu.ar", "Otro Directivo", rolDirectivo.Id);
+        typeof(Usuario).GetProperty("Rol")?.SetValue(otroDirectivo, rolDirectivo);
+        db.UsuariosLista.Add(otroDirectivo);
+
+        var handler = new CambiarEstadoDeCuentaCommandHandler(db);
+        var command = new CambiarEstadoDeCuentaCommand(otroDirectivo.Id, EstadoCuenta.Suspendida, "Directivo", Guid.NewGuid());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            handler.Handle(command, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CambiarEstadoDeCuenta_AdministradorModificaDirectivo_ActualizaEstado()
+    {
+        // Arrange
+        var db = new FakeDbContext();
+        var rolDirectivo = new Rol("Directivo");
+        var directivo = new Usuario("directivo@unne.edu.ar", "Directivo", rolDirectivo.Id);
+        typeof(Usuario).GetProperty("Rol")?.SetValue(directivo, rolDirectivo);
+        db.UsuariosLista.Add(directivo);
+
+        var handler = new CambiarEstadoDeCuentaCommandHandler(db);
+        var command = new CambiarEstadoDeCuentaCommand(directivo.Id, EstadoCuenta.Suspendida, "Administrador", Guid.NewGuid());
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(EstadoCuenta.Suspendida, directivo.EstadoCuenta);
+    }
 }

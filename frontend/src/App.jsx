@@ -42,6 +42,7 @@ const RUTA_POR_ROL = {
   Docente: '/docente/dashboard',
   Alumno: '/alumno/dashboard',
   Directivo: '/directivo/dashboard',
+  Administrador: '/directivo/dashboard',
 };
 
 function ProtectedRoute({ allowedRoles, children }) {
@@ -81,8 +82,8 @@ function App() {
           <Route path="/alumno/grimorio" element={<ProtectedRoute allowedRoles={['Alumno']}><GrimorioSaber /></ProtectedRoute>} />
 
           {/* Entorno Directivo / Administrador */}
-          <Route path="/directivo/dashboard" element={<ProtectedRoute allowedRoles={['Directivo']}><DashboardDirectivo /></ProtectedRoute>} />
-          <Route path="/directivo/docentes" element={<ProtectedRoute allowedRoles={['Directivo']}><GestionDocentes /></ProtectedRoute>} />
+          <Route path="/directivo/dashboard" element={<ProtectedRoute allowedRoles={['Directivo', 'Administrador']}><DashboardDirectivo /></ProtectedRoute>} />
+          <Route path="/directivo/docentes" element={<ProtectedRoute allowedRoles={['Directivo', 'Administrador']}><GestionDocentes /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -123,11 +123,12 @@ function triggerDirectWakeUp() {
  * Realiza un chequeo liviano de salud al backend (/api/health) con AbortController.
  * Corta la conexión a los timeoutMs (por defecto 2.5s) para liberar inmediatamente los sockets
  * del navegador (evitando el límite de 6 conexiones simultáneas) y prevenir timeouts 524 en Cloudflare.
- * Devuelve `true` si el servidor respondió 200 OK, `false` en caso contrario.
+ * Devuelve `{ ok: boolean, blocked: boolean }` para distinguir cold-starts de bloqueos por adblocker.
  */
-export async function checkHealth(timeoutMs = 2500) {
+export async function checkHealthStatus(timeoutMs = 2500) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const inicio = Date.now();
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/health`, {
@@ -138,13 +139,24 @@ export async function checkHealth(timeoutMs = 2500) {
     if (!res.ok) {
       triggerDirectWakeUp();
     }
-    return res.ok;
-  } catch {
-    triggerDirectWakeUp();
-    return false;
+    return { ok: res.ok, blocked: false };
+  } catch (err) {
+    const elapsed = Date.now() - inicio;
+    const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
+    const isClientBlock = err?.name !== 'AbortError' && elapsed < 250 && isOnline;
+
+    if (!isClientBlock) {
+      triggerDirectWakeUp();
+    }
+    return { ok: false, blocked: isClientBlock };
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function checkHealth(timeoutMs = 2500) {
+  const { ok } = await checkHealthStatus(timeoutMs);
+  return ok;
 }
 
 // ── Servicios de API de Usuarios y Autenticación ──
