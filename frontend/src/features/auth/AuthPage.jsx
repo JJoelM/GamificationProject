@@ -7,7 +7,7 @@ import {
   CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import useSessionStore from '../../store/useSessionStore';
-import { usuariosApi, aulasApi, checkHealth } from '../../services/api';
+import { usuariosApi, aulasApi, checkHealth, checkHealthStatus } from '../../services/api';
 import Button from '../../components/ui/Button';
 import useServerWakeUpStore from '../../store/useServerWakeUpStore';
 import ServerWakeUpModal from '../../components/ui/ServerWakeUpModal';
@@ -103,7 +103,7 @@ function AuthPage() {
         return;
       }
 
-      const listo = await checkHealth(2500);
+      const { ok: listo, blocked } = await checkHealthStatus(2500);
 
       if (!useServerWakeUpStore.getState().isOpen) {
         detenerPolling();
@@ -114,6 +114,26 @@ function AuthPage() {
         detenerPolling();
         cerrarWakeUpModal();
         accionReintento();
+        return;
+      }
+
+      if (blocked) {
+        detenerPolling();
+        cerrarWakeUpModal();
+        setIsPending(false);
+        setError(
+          import.meta.env.DEV
+            ? {
+                title: 'Servidor local no disponible',
+                detail:
+                  'No se pudo conectar con el backend local. Asegurate de que la API esté corriendo (http://localhost:5230) o revisá si un bloqueador está interfiriendo.',
+              }
+            : {
+                title: 'Conexión bloqueada por el navegador',
+                detail:
+                  'Tu navegador o un bloqueador de anuncios/rastreadores (AdBlock) impidió verificar el estado del servidor. Desactivalo para este sitio e intentá nuevamente.',
+              }
+        );
         return;
       }
 

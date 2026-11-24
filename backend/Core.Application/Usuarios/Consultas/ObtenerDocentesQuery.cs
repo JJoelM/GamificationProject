@@ -26,7 +26,8 @@ public sealed class ObtenerDocentesQueryHandler : IRequestHandler<ObtenerDocente
     {
         return _db.Usuarios
             .Include(u => u.Rol)
-            .Where(u => u.Rol.Nombre != "Administrador")
+            .Where(u => u.Rol.Nombre != "Administrador"
+                     && u.EstadoCuenta != Core.Domain.Entidades.EstadoCuenta.Eliminada)
             .OrderBy(u => u.Rol.Nombre)
             .ThenBy(u => u.NombreCompleto)
             .Select(u => new DocenteResumenDto(

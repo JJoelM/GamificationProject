@@ -120,7 +120,8 @@ public static class UsuariosEndpoints
         grupo.MapPost("/{usuarioId:guid}/estado", async (
             Guid usuarioId, CambiarEstadoRequest request, ClaimsPrincipal usuario, IMediator mediator) =>
         {
-            await mediator.Send(new CambiarEstadoDeCuentaCommand(usuarioId, request.NuevoEstado, usuario.ObtenerRol()));
+            await mediator.Send(new CambiarEstadoDeCuentaCommand(
+                usuarioId, request.NuevoEstado, usuario.ObtenerRol(), usuario.ObtenerUsuarioId()));
             return Results.NoContent();
         })
         .WithName("CambiarEstadoDeCuenta")
