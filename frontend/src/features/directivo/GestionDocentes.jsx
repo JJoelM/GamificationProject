@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Mail, GraduationCap, BookOpen, AlertCircle
 } from 'lucide-react';
 import { usuariosApi } from '../../services/api';
+import useSessionStore from '../../store/useSessionStore';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -54,6 +55,7 @@ const estadoLabel = (estado) => {
 
 function GestionDocentes() {
   const queryClient = useQueryClient();
+  const usuarioActual = useSessionStore((s) => s.usuario);
 
   const [filtro, setFiltro] = useState('todas');
   const [filtroRol, setFiltroRol] = useState('todos');
@@ -304,10 +306,14 @@ function GestionDocentes() {
             <AnimatePresence>
               {usuariosFiltrados.map((u) => {
                 const isActiva = u.estadoCuenta === 'Activa';
+                const isEliminada = u.estadoCuenta === 'Eliminada';
                 const isPendiente =
                   u.estadoCuenta === 'Pendiente' ||
                   u.estadoCuenta === 'PendienteDeAprobacion' ||
                   u.estadoCuenta === 'PendienteDeAprobacionParental';
+                const esCuentaPropia = usuarioActual?.usuarioId === u.usuarioId;
+                const esDirectivoProtegido = u.rol === 'Directivo' && usuarioActual?.rol !== 'Administrador';
+                const puedeGestionarEstado = !isEliminada && !esCuentaPropia && !esDirectivoProtegido;
                 const isExpanded = expandedId === u.usuarioId;
                 const isDocente = u.rol === 'Docente';
 
@@ -370,7 +376,11 @@ function GestionDocentes() {
                           {estadoLabel(u.estadoCuenta)}
                         </Badge>
 
-                        {isPendiente ? (
+                        {!puedeGestionarEstado ? (
+                          <span className="text-[11px] font-display font-bold text-[var(--text-muted)] px-2 py-1 rounded-lg bg-[var(--bg-accent)] border border-[var(--border-muted)]">
+                            {esCuentaPropia ? 'Tu cuenta' : isEliminada ? 'Eliminada' : 'Solo Admin'}
+                          </span>
+                        ) : isPendiente ? (
                           <div className="flex gap-1.5 sm:gap-2">
                             <Button
                               size="sm"

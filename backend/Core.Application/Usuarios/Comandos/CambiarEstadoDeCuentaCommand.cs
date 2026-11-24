@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Core.Application.Usuarios.Comandos;
 
-public sealed record CambiarEstadoDeCuentaCommand(Guid UsuarioId, EstadoCuenta NuevoEstado, string RolDelSolicitante) : IRequest;
+public sealed record CambiarEstadoDeCuentaCommand(
+    Guid UsuarioId,
+    EstadoCuenta NuevoEstado,
+    string RolDelSolicitante,
+    Guid? SolicitanteId = null) : IRequest;
 
 public sealed class CambiarEstadoDeCuentaCommandHandler : IRequestHandler<CambiarEstadoDeCuentaCommand>
 {
@@ -16,12 +20,19 @@ public sealed class CambiarEstadoDeCuentaCommandHandler : IRequestHandler<Cambia
 
     public async Task Handle(CambiarEstadoDeCuentaCommand request, CancellationToken cancellationToken)
     {
+        if (request.SolicitanteId.HasValue && request.SolicitanteId.Value == request.UsuarioId)
+            throw new TransicionDeEstadoInvalidaException("No podés modificar el estado de tu propia cuenta.");
+
         var usuario = await _db.Usuarios.Include(u => u.Rol)
             .FirstOrDefaultAsync(u => u.Id == request.UsuarioId, cancellationToken)
             ?? throw new AgregadoNoEncontradoException(nameof(Usuario), request.UsuarioId);
 
-        if (usuario.Rol.Nombre == "Administrador" && request.RolDelSolicitante != "Administrador")
-            throw new UnauthorizedAccessException("Un Directivo no puede modificar una cuenta de Administrador.");
+        if ((usuario.Rol.Nombre == "Administrador" || usuario.Rol.Nombre == "Directivo")
+            && request.RolDelSolicitante != "Administrador")
+        {
+            throw new UnauthorizedAccessException(
+                $"Un Directivo no puede modificar una cuenta de {usuario.Rol.Nombre}.");
+        }
 
         switch (request.NuevoEstado)
         {
