@@ -9,12 +9,21 @@ namespace WebApi;
 public class ManejadorDeExcepciones : IExceptionHandler
 {
     private readonly ILogger<ManejadorDeExcepciones> _logger;
+    private readonly IHostEnvironment? _environment;
 
-    public ManejadorDeExcepciones(ILogger<ManejadorDeExcepciones> logger) => _logger = logger;
+    public ManejadorDeExcepciones(
+        ILogger<ManejadorDeExcepciones> logger,
+        IHostEnvironment? environment = null)
+    {
+        _logger = logger;
+        _environment = environment;
+    }
 
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        var esDesarrollo = _environment?.IsDevelopment() == true;
+
         var (status, titulo, detalle) = exception switch
         {
             AgregadoNoEncontradoException =>
@@ -44,21 +53,28 @@ public class ManejadorDeExcepciones : IExceptionHandler
                 (StatusCodes.Status409Conflict, "Conflicto al guardar el progreso",
                  "No se pudo registrar el progreso debido a una colisión concurrente de datos. Por favor reintenta."),
 
-            // Todo lo demás (errores inesperados) se loguea completo y entrega detalle diagnóstico
+            // Errores inesperados (HTTP 500): se loguea completo en servidor y se oculta
+            // el detalle técnico al cliente fuera de Development (fail-closed, RFC 9457).
             _ => (StatusCodes.Status500InternalServerError, "Error interno",
-                  $"Ocurrió un error inesperado ({exception.GetType().Name}: {exception.Message}). Si persiste, contactá al equipo."),
+                  esDesarrollo
+                      ? $"Ocurrió un error inesperado ({exception.GetType().Name}: {exception.Message}). Si persiste, contactá al equipo."
+                      : "Ocurrió un error interno inesperado. Si persiste, contactá al equipo."),
         };
 
         if (status == StatusCodes.Status500InternalServerError)
             _logger.LogError(exception, "Error no controlado en {Path}", httpContext.Request.Path);
 
         httpContext.Response.StatusCode = status;
-        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
-        {
-            Status = status,
-            Title = titulo,
-            Detail = detalle,
-        }, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(
+            new ProblemDetails
+            {
+                Status = status,
+                Title = titulo,
+                Detail = detalle,
+            },
+            options: null,
+            contentType: "application/problem+json",
+            cancellationToken: cancellationToken);
 
         return true;
     }

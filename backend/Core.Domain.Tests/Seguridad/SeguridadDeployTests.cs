@@ -100,6 +100,32 @@ public class SeguridadDeployTests
     }
 
     [Fact]
+    public async Task ManejadorDeExcepciones_AnteErrorInesperadoFueraDeDesarrollo_NoFiltraDetallesInternosYEmiteProblemJson()
+    {
+        var manejador = new ManejadorDeExcepciones(NullLogger<ManejadorDeExcepciones>.Instance);
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        var manejado = await manejador.TryHandleAsync(
+            context,
+            new InvalidOperationException("Fallo interno en Host=ep-secreto.neon.tech;Password=ClaveSensible123"),
+            CancellationToken.None);
+
+        Assert.True(manejado);
+        Assert.Equal(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
+        Assert.StartsWith("application/problem+json", context.Response.ContentType);
+
+        context.Response.Body.Position = 0;
+        using var reader = new StreamReader(context.Response.Body, Encoding.UTF8);
+        var cuerpo = await reader.ReadToEndAsync();
+
+        Assert.Contains("Ocurri", cuerpo);
+        Assert.DoesNotContain("InvalidOperationException", cuerpo);
+        Assert.DoesNotContain("ep-secreto.neon.tech", cuerpo);
+        Assert.DoesNotContain("ClaveSensible123", cuerpo);
+    }
+
+    [Fact]
     public void GeneradorDeTokensJwt_IncluyeClaimUsuarioIdYRol_SinExponerSecretos()
     {
         var config = new ConfigurationBuilder()
